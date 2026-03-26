@@ -1,0 +1,1 @@
+export const SUPPORT_MAIL = 'itsupport@codexng.com' as const
