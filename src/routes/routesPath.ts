@@ -14,6 +14,8 @@ export const routesPath = {
     ACADEMIC: {
       INDEX: "/academic",
       SESSION: "/academic/session",
+      SESSION_DETAILS_ID: (id:string) => `/academic/session/${id}`,
+      SESSION_DETAILS: "/academic/session/:id",
       CALENDER: "/academic/calender",
     },
     CLASSES: { INDEX: "/classes" },

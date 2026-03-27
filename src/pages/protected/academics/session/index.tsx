@@ -1,12 +1,22 @@
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn, formatMonthYearShort } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { routesPath } from "@/routes/routesPath";
+import { Check, Plus } from "lucide-react";
+import { useNavigate } from "react-router";
 
 export default function AcademicSession() {
+  const navigate = useNavigate();
   return (
     <DashboardLayout title="Academic Session">
-      <main className="px-4.5 py-6 space-y-5">
+      <main className="px-4.5 py-6 space-y-7">
+        <div className="flex items-center justify-between">
+          <p className="text-black-01 text-lg font-medium">All Sessions</p>
+          <Button className="text-sm">
+            <Plus /> New Session
+          </Button>
+        </div>
         <div className="grid lg:grid-cols-2 gap-6">
           {dummyData.academic_sessions.map((item, idx) => (
             <div
@@ -16,6 +26,11 @@ export default function AcademicSession() {
                   "border border-green-01",
               )}
               key={idx}
+              onClick={() => {
+                navigate(
+                  routesPath.PROTECTED.ACADEMIC.SESSION_DETAILS_ID(item.id),
+                );
+              }}
             >
               <div className="flex justify-between gap-3">
                 <div className="">
@@ -85,7 +100,7 @@ export default function AcademicSession() {
 const dummyData = {
   academic_sessions: [
     {
-      id: "session-2025-2026",
+      id: "234VEFE43JFJ4FDWEK",
       name: "2025 / 2026",
       start_date: "2025-09-27T10:30:00.000Z",
       end_date: "2026-07-27T10:30:00.000Z",
@@ -102,7 +117,7 @@ const dummyData = {
       },
     },
     {
-      id: "session-2026-2027",
+      id: "43REDMRR3R342323",
       name: "2026 / 2027",
       start_date: "2026-09-27T10:30:00.000Z",
       end_date: "2027-07-27T10:30:00.000Z",
@@ -119,7 +134,7 @@ const dummyData = {
       },
     },
     {
-      id: "session-2024-2025",
+      id: "06GKFGRRV435VF",
       name: "2024 / 2025",
       start_date: "2024-09-27T10:30:00.000Z",
       end_date: "2025-07-27T10:30:00.000Z",

@@ -25,3 +25,20 @@ export function formatMonthYearShort(dateString: string): string {
     year: "numeric",
   });
 }
+
+export const getVariantColor = (val?:string) => {
+  switch (val) {
+    case 'amber':
+      return "#854F0B";
+      case 'green':
+      return "#0F6E56";
+      case 'blue':
+      return "#185FA5";
+      case 'teal':
+      return "#0F6E56";
+      case 'red':
+      return "#A32D2D";
+    default:
+      return "#4A659D";
+  }
+}
