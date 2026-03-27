@@ -18,7 +18,7 @@ import { routesPath } from "@/routes/routesPath";
 import { useLocation, useNavigate } from "react-router";
 import PromptModal from "./modal/prompt-modal";
 import useToggleModal from "@/hooks/use-toggle";
-import { Calendar, DollarSign, Settings } from "lucide-react";
+import { BookOpen, DollarSign, Settings } from "lucide-react";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation().pathname;
@@ -81,11 +81,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ],
     academics: [
       {
-        title: "Academic Calender",
-        url: routesPath.PROTECTED.ACADEMIC_CAL.INDEX,
-        icon: Calendar,
-        isActive: location.startsWith(routesPath.PROTECTED.ACADEMIC_CAL.INDEX),
-        childActive: false,
+        title: "Academic Management",
+        url: "#",
+        icon: BookOpen,
+        isActive: location.includes(routesPath.PROTECTED.ACADEMIC.INDEX),
+        childActive: location.includes(routesPath.PROTECTED.ACADEMIC.INDEX),
+        items: [
+          {
+            title: "Academic Session",
+            url: routesPath.PROTECTED.ACADEMIC.SESSION,
+            isActive: location.includes(routesPath.PROTECTED.ACADEMIC.SESSION),
+          },
+          {
+            title: "Academic Calender",
+            url: routesPath.PROTECTED.ACADEMIC.CALENDER,
+            isActive: location.includes(routesPath.PROTECTED.ACADEMIC.CALENDER),
+          },
+        ],
       },
       {
         title: "Classes",

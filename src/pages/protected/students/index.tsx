@@ -61,12 +61,6 @@ export default function Students() {
               className: "",
               onActionClick: () => {},
             },
-            {
-              label: "Delete",
-              className:
-                "text-destructive focus:text-destructive focus:bg-destructive/10",
-              onActionClick: () => {},
-            },
           ]}
           perPage={10}
           totalPage={5}

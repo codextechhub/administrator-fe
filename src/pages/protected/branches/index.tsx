@@ -11,7 +11,7 @@ export default function Branches() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {dummyData.map((item, idx) => (
             <div
-              className="h-fit bg-white rounded-md w-full px-4 py-3"
+              className="h-fit bg-white rounded-md w-full px-4 py-3 cursor-pointer hover:scale-98 transition-all ease-linear"
               key={idx}
             >
               <div className="flex justify-between gap-3">

@@ -8,12 +8,16 @@ export const routesPath = {
   PROTECTED: {
     OVERVIEW: { INDEX: "/overview" },
     BRANCHES: { INDEX: "/branches" },
-    STUDENTS: { INDEX: "/students"},
-    TEACHERS: { INDEX: '/teachers', },
-    ADMINISTRATORS: { INDEX: '/administrators', },
-    ACADEMIC_CAL: { INDEX: '/academic-cal', },
-    CLASSES: { INDEX: '/classes', },
-    FEES: { INDEX: '/school-fees', },
-    SETTINGS: { INDEX: '/settings', },
+    STUDENTS: { INDEX: "/students" },
+    TEACHERS: { INDEX: "/teachers" },
+    ADMINISTRATORS: { INDEX: "/administrators" },
+    ACADEMIC: {
+      INDEX: "/academic",
+      SESSION: "/academic/session",
+      CALENDER: "/academic/calender",
+    },
+    CLASSES: { INDEX: "/classes" },
+    FEES: { INDEX: "/school-fees" },
+    SETTINGS: { INDEX: "/settings" },
   },
 };
