@@ -85,7 +85,9 @@ export default function AcademicSession() {
               <div className="flex items-center gap-3 mt-6 text-sm text-gray-01">
                 <p className="">{item?.metrics.branches} branches</p>{" "}
                 <span className="size-1 rounded-full block bg-gray-01" />
-                <p className="">{item?.metrics.students} students</p>
+                <p className="">
+                  {item?.metrics.students.toLocaleString("en-NG")} students
+                </p>
                 <span className="size-1 rounded-full block bg-gray-01" />
                 <p className="">{item?.metrics.classes} classes</p>
               </div>

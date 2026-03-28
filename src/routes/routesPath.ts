@@ -17,6 +17,8 @@ export const routesPath = {
       SESSION_DETAILS_ID: (id:string) => `/academic/session/${id}`,
       SESSION_DETAILS: "/academic/session/:id",
       CALENDER: "/academic/calender",
+      CALENDER_DETAILS_ID: (id:string) => `/academic/calender/${id}`,
+      CALENDER_DETAILS: "/academic/calender/:id",
     },
     CLASSES: { INDEX: "/classes" },
     FEES: { INDEX: "/school-fees" },
