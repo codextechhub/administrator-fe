@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { format, isBefore } from "date-fns";
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -15,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -30,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import type { CalendarEvent, EventColor } from "@/components/event-calendar";
 import {
   DefaultEndHour,
@@ -38,7 +35,9 @@ import {
   EndHour,
   StartHour,
 } from "@/components/event-calendar/constants";
-import { CalendarCheck, Trash } from "lucide-react";
+import { CalendarCheck, Trash2 } from "lucide-react";
+import { CustomInput } from "../custom/custom-input";
+import { CustomTextArea } from "../custom/custom-textarea";
 
 interface EventDialogProps {
   event: CalendarEvent | null;
@@ -233,9 +232,11 @@ export function EventDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-106.25">
+      <DialogContent className="sm:max-w-106.25 max-h-[95vh]! overflow-auto">
         <DialogHeader>
-          <DialogTitle>{event?.id ? "Edit Event" : "Create Event"}</DialogTitle>
+          <DialogTitle className="font-medium">
+            {event?.id ? "Edit Event" : "Create Event"}
+          </DialogTitle>
           <DialogDescription className="sr-only">
             {event?.id
               ? "Edit the details of this event"
@@ -249,35 +250,42 @@ export function EventDialog({
         )}
         <div className="grid gap-4 py-4">
           <div className="*:not-first:mt-1.5">
-            <Label htmlFor="title">Title</Label>
-            <Input
+            <CustomInput
               id="title"
+              label="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
             />
           </div>
 
           <div className="*:not-first:mt-1.5">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
+            <CustomTextArea
               id="description"
+              label="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              className="bg-gray-03 placeholder:text-[#21212166] placeholder:text-sm line-clamp-2"
               rows={3}
             />
           </div>
 
           <div className="flex gap-4">
             <div className="flex-1 *:not-first:mt-1.5">
-              <Label htmlFor="start-date">Start Date</Label>
+              <Label
+                className="text-sm text-black-01 font-normal"
+                htmlFor="start-date"
+              >
+                Start Date
+              </Label>
               <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     id="start-date"
                     variant={"outline"}
                     className={cn(
-                      "group bg-background hover:bg-background border-input w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px]",
-                      !startDate && "text-muted-foreground",
+                      "group bg-gray-03 hover:bg-gray-03 placeholder:text-[#21212166] border-0 w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px]",
+                      !startDate && "text-gray-01",
                     )}
                   >
                     <span
@@ -318,9 +326,17 @@ export function EventDialog({
 
             {!allDay && (
               <div className="min-w-28 *:not-first:mt-1.5">
-                <Label htmlFor="start-time">Start Time</Label>
+                <Label
+                  className="text-sm text-black-01 font-normal"
+                  htmlFor="start-time"
+                >
+                  Start Time
+                </Label>
                 <Select value={startTime} onValueChange={setStartTime}>
-                  <SelectTrigger id="start-time">
+                  <SelectTrigger
+                    id="start-time"
+                    className="shadow-none rounded-md h-11 py-0 border-0 bg-gray-03 w-full"
+                  >
                     <SelectValue placeholder="Select time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -337,15 +353,20 @@ export function EventDialog({
 
           <div className="flex gap-4">
             <div className="flex-1 *:not-first:mt-1.5">
-              <Label htmlFor="end-date">End Date</Label>
+              <Label
+                className="text-sm text-black-01 font-normal"
+                htmlFor="end-date"
+              >
+                End Date
+              </Label>
               <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     id="end-date"
                     variant={"outline"}
                     className={cn(
-                      "group bg-background hover:bg-background border-input w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px]",
-                      !endDate && "text-muted-foreground",
+                      "group bg-gray-03 hover:bg-gray-03 placeholder:text-[#21212166] border-0 w-full justify-between px-3 font-normal outline-offset-0 outline-none",
+                      !endDate && "text-gray-01",
                     )}
                   >
                     <span
@@ -383,9 +404,17 @@ export function EventDialog({
 
             {!allDay && (
               <div className="min-w-28 *:not-first:mt-1.5">
-                <Label htmlFor="end-time">End Time</Label>
+                <Label
+                  className="text-sm text-black-01 font-normal"
+                  htmlFor="end-time"
+                >
+                  End Time
+                </Label>
                 <Select value={endTime} onValueChange={setEndTime}>
-                  <SelectTrigger id="end-time">
+                  <SelectTrigger
+                    id="end-time"
+                    className="shadow-none rounded-md h-11 border-0 bg-gray-03 w-full"
+                  >
                     <SelectValue placeholder="Select time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -410,15 +439,16 @@ export function EventDialog({
           </div>
 
           <div className="*:not-first:mt-1.5">
-            <Label htmlFor="location">Location</Label>
-            <Input
+            <CustomInput
+              label="Location"
               id="location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
             />
           </div>
           <fieldset className="space-y-4">
-            <legend className="text-foreground text-sm leading-none font-medium">
+            <legend className="text-foreground text-sm leading-none">
               Etiquette
             </legend>
             <RadioGroup
@@ -446,12 +476,12 @@ export function EventDialog({
         <DialogFooter className="flex-row sm:justify-between">
           {event?.id && (
             <Button
-              variant="outline"
+              variant="outline-dest"
               size="icon"
               onClick={handleDelete}
               aria-label="Delete event"
             >
-              <Trash size={16} aria-hidden="true" />
+              <Trash2 size={16} aria-hidden="true" />
             </Button>
           )}
           <div className="flex flex-1 justify-end gap-2">

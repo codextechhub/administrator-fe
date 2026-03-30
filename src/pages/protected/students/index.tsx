@@ -89,7 +89,7 @@ const FORMAT_TABLE_DATA = (data: any) => {
     status: (
       <Badge
         variant={item.status?.toLowerCase() === "active" ? "active" : "red"}
-        className="w-fit"
+        className="w-fit min-w-22.5"
       >
         {item?.status || "---"}
       </Badge>
