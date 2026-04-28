@@ -2,9 +2,12 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import { badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { routesPath } from "@/routes/routesPath";
 import { Edit, GraduationCap, MapPin } from "lucide-react";
+import { useNavigate } from "react-router";
 
 export default function Classes() {
+  const navigate = useNavigate();
   return (
     <DashboardLayout title="Classes">
       <main className="px-4.5 py-6 space-y-5">
@@ -19,7 +22,7 @@ export default function Classes() {
                   <h4 className="font-medium">{item.name}</h4>
 
                   <div className="flex gap-1.5 items-center mt-1.5 text-gray-05">
-                    <MapPin className="size-3 text-[#854F0B]" />
+                    <MapPin className="size-3 text-amber-01" />
                     <p className="text-xs">{item.category}</p>
                   </div>
                 </div>
@@ -61,7 +64,16 @@ export default function Classes() {
               </div>
 
               <div className="inline-flex items-center gap-3 mt-4">
-                <Button size="sm">View</Button>
+                <Button
+                  onClick={() => {
+                    navigate(
+                      routesPath.PROTECTED.CLASSES.CLASS_DETAILS_ID(item.id),
+                    );
+                  }}
+                  size="sm"
+                >
+                  View
+                </Button>
                 <Button
                   size="sm"
                   variant={"outline"}
