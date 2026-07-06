@@ -1,9 +1,14 @@
 export const routesPath = {
   AUTH: {
-    LOGIN: "/login",
-    SIGNUP: "/signup",
-    FORGOT_PASSWORD: "/forgot-password",
-    RESET_PASSWORD: "/reset-password",
+    ACCOUNTS: "/accounts",
+    LOGIN: "/accounts",
+    FORGOT_PASSWORD: "/accounts/forgot-password",
+    RESET_PASSWORD: "/accounts/reset-password/:activation_key",
+    RESET_PASSWORD_ID: (activation_key: string) =>
+      `/accounts/reset-password/${activation_key}`,
+    ACTIVATE: "/accounts/activate/:activation_key",
+    ACTIVATE_ID: (activation_key: string) =>
+      `/accounts/activate/${activation_key}`,
   },
   PROTECTED: {
     OVERVIEW: { INDEX: "/overview" },

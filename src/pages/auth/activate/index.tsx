@@ -2,8 +2,8 @@ import { svgIcons } from "@/assets/svg";
 import { CustomInput } from "@/components/custom/custom-input";
 import { Button } from "@/components/ui/button";
 import {
-  usePasswordResetConfirmMutation,
-  usePasswordResetPreviewQuery,
+  useActivationPreviewQuery,
+  useActivateAccountMutation,
 } from "@/redux/services/auth/auth-api";
 import { routesPath } from "@/routes/routesPath";
 import { resetPasswordSchema } from "@/schema/auth";
@@ -13,9 +13,8 @@ import { Link, useNavigate, useParams } from "react-router";
 import { swipAnimateVariant } from "@/utils/animation";
 import { humanizeAuthError } from "@/utils/auth-errors";
 import { useFormik } from "formik";
-import { toast } from "sonner";
 
-export default function ResetPassword() {
+export default function ActivateAccount() {
   const { activation_key } = useParams<{ activation_key: string }>();
   const navigate = useNavigate();
   const [success, setSuccess] = useState(false);
@@ -24,24 +23,26 @@ export default function ResetPassword() {
     data: preview,
     isLoading: previewLoading,
     isError: previewError,
-  } = usePasswordResetPreviewQuery(activation_key!, { skip: !activation_key });
+  } = useActivationPreviewQuery(activation_key!, { skip: !activation_key });
 
-  const [passwordResetConfirm, { isLoading: confirmLoading }] =
-    usePasswordResetConfirmMutation();
+  const [activateAccount, { isLoading: activating }] =
+    useActivateAccountMutation();
+  const [apiError, setApiError] = useState("");
 
   const formik = useFormik({
     initialValues: { password: "", confirm_password: "" },
     validationSchema: resetPasswordSchema,
     onSubmit: (values) => {
-      passwordResetConfirm({ activation_key: activation_key!, ...values })
+      setApiError("");
+      // Activation only sets the password + marks the account active — it
+      // returns `{ message }`, NOT a login-shaped payload. Show the success
+      // panel and send the user to sign in.
+      activateAccount({ activation_key: activation_key!, ...values })
         .unwrap()
         .then(() => setSuccess(true))
         .catch((err) => {
-          toast.error(
-            humanizeAuthError(
-              err,
-              "Couldn't reset your password. Please try again.",
-            ),
+          setApiError(
+            humanizeAuthError(err, "Activation failed. Please try again."),
           );
         });
     },
@@ -51,7 +52,7 @@ export default function ResetPassword() {
     if (success) {
       const t = setTimeout(() => {
         navigate(routesPath.AUTH.LOGIN, { replace: true });
-      }, 7000);
+      }, 5000);
       return () => clearTimeout(t);
     }
   }, [success, navigate]);
@@ -60,7 +61,7 @@ export default function ResetPassword() {
     return (
       <div className="text-center space-y-1.5">
         <p className="text-sm font-medium text-gray-01 font-mont">
-          Verifying your reset link…
+          Verifying your invite link…
         </p>
       </div>
     );
@@ -71,20 +72,13 @@ export default function ResetPassword() {
       <div className="text-center space-y-4">
         <h4 className="font-semibold text-2xl text-black-01">Link Expired</h4>
         <p className="text-sm font-medium text-gray-01 font-mont max-w-72 mx-auto">
-          This password reset link is invalid or has expired. Please request a
-          new one.
+          This invite link is invalid or has expired. Please contact your
+          administrator for a new one.
         </p>
-        <Link to={routesPath.AUTH.FORGOT_PASSWORD} className="block mt-4">
-          <Button className="w-full h-11">Request New Link</Button>
-        </Link>
-        <Link
-          to={routesPath.AUTH.LOGIN}
-          className="font-mont font-medium text-sm text-black-01 inline-flex justify-center items-center mt-2 group"
-        >
-          <figure className="size-fit mr-1.5 group-hover:-translate-x-1 ease-linear transition-all">
-            {svgIcons.arrowLeft}
-          </figure>
-          Back to Log In
+        <Link to={routesPath.AUTH.LOGIN} className="block mt-4">
+          <Button variant="outline" className="w-full h-11">
+            Back to Log In
+          </Button>
         </Link>
       </div>
     );
@@ -109,11 +103,11 @@ export default function ResetPassword() {
           <form onSubmit={formik.handleSubmit}>
             <div className="text-center space-y-1.5">
               <h4 className="font-semibold text-2xl text-black-01">
-                Set a New Password
+                Set Your Password
               </h4>
               <p className="text-sm font-medium text-gray-01 font-mont max-w-84.5 mx-auto">
-                Your new password must be different from your previously used
-                password.
+                Welcome! Set a password to activate your account and get
+                started.
               </p>
             </div>
 
@@ -136,21 +130,29 @@ export default function ResetPassword() {
 
             <div className="mt-4 mb-9 space-y-4">
               <CustomInput
-                label="New Password"
+                label="Password"
                 id="password"
                 type="password"
-                placeholder="Enter your new password"
+                placeholder="Enter your password"
                 className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
                 {...formik.getFieldProps("password")}
+                onChange={(e) => {
+                  setApiError("");
+                  formik.handleChange(e);
+                }}
                 error={formik.touched.password ? formik.errors.password : ""}
               />
               <CustomInput
                 label="Confirm Password"
                 id="confirm_password"
                 type="password"
-                placeholder="Re-enter your new password"
+                placeholder="Re-enter your password"
                 className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
                 {...formik.getFieldProps("confirm_password")}
+                onChange={(e) => {
+                  setApiError("");
+                  formik.handleChange(e);
+                }}
                 error={
                   formik.touched.confirm_password
                     ? formik.errors.confirm_password
@@ -159,13 +161,19 @@ export default function ResetPassword() {
               />
             </div>
 
+            {apiError && (
+              <p className="text-xs font-medium text-destructive/70 -mt-6 mb-2">
+                {apiError}
+              </p>
+            )}
+
             <Button
-              disabled={!formik.isValid || !formik.dirty || confirmLoading}
-              loading={confirmLoading}
+              disabled={!formik.isValid || !formik.dirty || activating}
+              loading={activating}
               type="submit"
               className="w-full h-11"
             >
-              Reset Password
+              Activate Account
             </Button>
 
             <div className="text-center">
@@ -184,11 +192,11 @@ export default function ResetPassword() {
           <div>
             <div className="text-center space-y-1.5">
               <h4 className="font-semibold text-2xl text-black-01">
-                Password Reset!
+                Account Activated!
               </h4>
               <p className="text-sm font-medium text-gray-01 font-mont max-w-75.5 mx-auto">
-                Your password has been successfully reset. Click the button
-                below to log in.
+                Your account has been successfully activated. You can now log in
+                with your credentials.
               </p>
             </div>
 
@@ -198,18 +206,6 @@ export default function ResetPassword() {
             >
               Continue to Login
             </Button>
-
-            <div className="text-center mt-6">
-              <Link
-                to={routesPath.AUTH.LOGIN}
-                className="font-mont font-medium text-sm text-black-01 inline-flex justify-center items-center group"
-              >
-                <figure className="size-fit mr-1.5 group-hover:-translate-x-1 ease-linear transition-all">
-                  {svgIcons.arrowLeft}
-                </figure>
-                Back to Log In
-              </Link>
-            </div>
           </div>
         )}
       </motion.div>

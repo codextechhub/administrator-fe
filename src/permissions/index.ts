@@ -1,0 +1,167 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// PERMISSION REGISTRY
+//
+// Single source of truth. The backend permission keys ("module.resource.action")
+// exist ONLY inside REGISTRY below — nowhere else in the codebase.
+//
+// P.* names describe what the user is doing in the UI, not how the backend
+// models the permission. A reader of any other file cannot infer the backend
+// key format from the constant name alone.
+//
+// ── Code format: MM RR AA (6 digits) ─────────────────────────────────────────
+//   MM = module group   10=school  30=academics
+//   RR = resource       01 02 03 … (assigned sequentially per module)
+//   AA = action         01=view   02=create  03=update  04=delete
+//                       08=manage  09=suspend  10=reactivate  11=assign
+//                       39=view_sensitive
+//
+// ── Adding a permission ───────────────────────────────────────────────────────
+//   1. Pick the next free code in the right MM RR range.
+//   2. Add  "MMRRAA": "module.resource.action"  to REGISTRY.
+//   3. Add a named constant to P that describes the UI capability.
+//   4. Use P.YOUR_CONSTANT everywhere — never the raw key or the code directly.
+//
+// ── Adding a new module ───────────────────────────────────────────────────────
+//   1. Pick the next free MM.
+//   2. Start RR at 01 and AA at 01 within that range.
+//   3. Add a comment block and constants to P below.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const REGISTRY: Record<string, string> = {
+
+  // ── school / dashboard  (MM=10, RR=01) ─────────────────────────────────────
+  "100101": "school.dashboard.view",
+
+  // ── school / branches  (MM=10, RR=02) ──────────────────────────────────────
+  "100201": "school.branches.view",
+  "100202": "school.branches.create",
+  "100203": "school.branches.update",
+  "100208": "school.branches.manage",
+
+  // ── school / students  (MM=10, RR=03) ──────────────────────────────────────
+  "100301": "school.students.view",
+  "100302": "school.students.create",
+  "100303": "school.students.update",
+  "100308": "school.students.manage",
+  "100339": "school.students.view_sensitive",
+
+  // ── school / teachers  (MM=10, RR=04) ──────────────────────────────────────
+  "100401": "school.teachers.view",
+  "100402": "school.teachers.create",
+  "100403": "school.teachers.update",
+  "100408": "school.teachers.manage",
+
+  // ── school / administrators  (MM=10, RR=05) ────────────────────────────────
+  "100501": "school.administrators.view",
+  "100502": "school.administrators.create",
+  "100503": "school.administrators.update",
+  "100509": "school.administrators.suspend",
+  "100510": "school.administrators.reactivate",
+
+  // ── school / fees  (MM=10, RR=06) ──────────────────────────────────────────
+  "100601": "school.fees.view",
+  "100608": "school.fees.manage",
+
+  // ── school / settings  (MM=10, RR=07) ──────────────────────────────────────
+  "100701": "school.settings.view",
+  "100708": "school.settings.manage",
+
+  // ── school / roles  (MM=10, RR=08) ─────────────────────────────────────────
+  "100801": "school.roles.view",
+  "100811": "school.roles.assign",
+
+  // ── academics / session  (MM=30, RR=01) ────────────────────────────────────
+  "300101": "academics.session.view",
+  "300102": "academics.session.create",
+  "300103": "academics.session.update",
+  "300108": "academics.session.manage",
+
+  // ── academics / calendar  (MM=30, RR=02) ───────────────────────────────────
+  "300201": "academics.calendar.view",
+  "300202": "academics.calendar.create",
+  "300203": "academics.calendar.update",
+  "300208": "academics.calendar.manage",
+
+  // ── academics / classes  (MM=30, RR=03) ────────────────────────────────────
+  "300301": "academics.classes.view",
+  "300302": "academics.classes.create",
+  "300303": "academics.classes.update",
+  "300308": "academics.classes.manage",
+  "300311": "academics.classes.assign",
+
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Public constants
+// Names describe UI capabilities — not backend keys or permission structure.
+// ─────────────────────────────────────────────────────────────────────────────
+export const P = {
+
+  // ── School Dashboard ───────────────────────────────────────────────────────
+  VIEW_SCHOOL_DASHBOARD:   "100101",  // view the school admin dashboard metrics
+
+  // ── Branch Management ──────────────────────────────────────────────────────
+  BROWSE_BRANCHES:         "100201",  // view the school's branches list and detail
+  ADD_BRANCH:              "100202",  // add a new branch to the school
+  MODIFY_BRANCH:           "100203",  // edit branch details
+  MANAGE_BRANCH:           "100208",  // transition branch lifecycle / configuration
+
+  // ── Student Management ─────────────────────────────────────────────────────
+  BROWSE_STUDENTS:         "100301",  // view the student roster and profiles
+  ENROLL_STUDENT:          "100302",  // enroll / add a new student
+  MODIFY_STUDENT:          "100303",  // edit an existing student's record
+  MANAGE_STUDENTS:         "100308",  // student lifecycle: transfer, withdraw, graduate
+  VIEW_STUDENT_SENSITIVE:  "100339",  // read FLS-gated sensitive student fields
+
+  // ── Teacher Management ─────────────────────────────────────────────────────
+  BROWSE_TEACHERS:         "100401",  // view the teacher list and profiles
+  INVITE_TEACHER:          "100402",  // invite / add a new teacher
+  MODIFY_TEACHER:          "100403",  // edit an existing teacher's profile
+  MANAGE_TEACHERS:         "100408",  // teacher lifecycle and assignment management
+
+  // ── Administrator Management ───────────────────────────────────────────────
+  BROWSE_ADMINISTRATORS:   "100501",  // view school administrators
+  INVITE_ADMINISTRATOR:    "100502",  // invite a new school administrator
+  MODIFY_ADMINISTRATOR:    "100503",  // edit an administrator's profile
+  SUSPEND_ADMINISTRATOR:   "100509",  // suspend an administrator account
+  REACTIVATE_ADMINISTRATOR:"100510",  // reactivate a suspended administrator
+
+  // ── Fees ───────────────────────────────────────────────────────────────────
+  VIEW_FEES:               "100601",  // view fee structures and balances
+  MANAGE_FEES:             "100608",  // create/edit fee structures and adjustments
+
+  // ── Settings ───────────────────────────────────────────────────────────────
+  VIEW_SETTINGS:           "100701",  // view school-level settings
+  MANAGE_SETTINGS:         "100708",  // edit school-level settings and configuration
+
+  // ── Roles ──────────────────────────────────────────────────────────────────
+  VIEW_ROLES:              "100801",  // view school roles and assignments
+  ASSIGN_ROLE:             "100811",  // assign or revoke roles from school users
+
+  // ── Academic Sessions ──────────────────────────────────────────────────────
+  BROWSE_SESSIONS:         "300101",  // view academic sessions / terms
+  CREATE_SESSION:          "300102",  // create a new academic session
+  MODIFY_SESSION:          "300103",  // edit an academic session
+  MANAGE_SESSIONS:         "300108",  // session lifecycle: activate, archive, close
+
+  // ── Academic Calendar ──────────────────────────────────────────────────────
+  BROWSE_CALENDAR:         "300201",  // view the academic calendar and events
+  CREATE_CALENDAR_EVENT:   "300202",  // add a calendar event
+  MODIFY_CALENDAR_EVENT:   "300203",  // edit a calendar event
+  MANAGE_CALENDAR:         "300208",  // manage calendar configuration and bulk events
+
+  // ── Classes ────────────────────────────────────────────────────────────────
+  BROWSE_CLASSES:          "300301",  // view classes and their rosters
+  CREATE_CLASS:            "300302",  // create a new class
+  MODIFY_CLASS:            "300303",  // edit a class
+  MANAGE_CLASSES:          "300308",  // class lifecycle and configuration
+  ASSIGN_CLASS:            "300311",  // assign teachers/students to a class
+
+} as const;
+
+export type PermissionCode = (typeof P)[keyof typeof P];
+
+// Internal resolver — used only by usePermissions and PermissionGate.
+export function resolvePermissionKey(code: PermissionCode): string {
+  return REGISTRY[code] ?? "";
+}

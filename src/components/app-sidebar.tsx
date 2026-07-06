@@ -15,22 +15,66 @@ import { cn } from "@/lib/utils";
 import { HomeIcon, LogoutIcon, TeamMgtIcon } from "@/assets/navbar-svg";
 import { NavMain } from "./nav-main";
 import { routesPath } from "@/routes/routesPath";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation } from "react-router";
 import PromptModal from "./modal/prompt-modal";
 import useToggleModal from "@/hooks/use-toggle";
 import { BookOpen, DollarSign, Settings } from "lucide-react";
+import { usePermissions } from "@/hooks/use-permissions";
+import { useLogout } from "@/hooks/use-logout";
+import { P, type PermissionCode } from "@/permissions";
+import { useAppSelector } from "@/redux/store";
+import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
+import { useSchoolLogo } from "@/hooks/use-school-logo";
+
+// A nav item may declare a permission (single code or a list). When absent the
+// item always renders. `permissionMode` decides whether a list requires ANY
+// (default) or ALL of the listed codes.
+type NavPermission = PermissionCode | PermissionCode[] | null | undefined;
+
+interface NavItem {
+  title: string;
+  url: string;
+  icon?: React.ElementType;
+  isActive: boolean;
+  childActive: boolean;
+  permission?: NavPermission;
+  permissionMode?: "any" | "all";
+  items?: { title: string; url: string; isActive: boolean }[];
+}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation().pathname;
-  const navigate = useNavigate();
-  const handleLogout = () => {
-    navigate(routesPath.AUTH.LOGIN, { replace: true });
-  };
+
+  const { hasPermission, hasAnyPermission, hasAllPermissions } =
+    usePermissions();
+  const { handleLogout, isLoggingOut } = useLogout();
+
+  const school = useAppSelector(selectSchool);
+  const user = useAppSelector(selectUser);
+
+  const schoolName =
+    school?.name ?? user?.school_name ?? "";
+  // The raw school.logo is an auth-gated /media/ URL a browser <img> can't load;
+  // the hook fetches it with the token and returns a renderable blob: URL.
+  const logoBlobUrl = useSchoolLogo();
+  const roleLabel = humanizeRole(user?.user_type ?? user?.role);
 
   const { isOpen: openLogout, toggleClick: toggleLogout } =
     useToggleModal(false); // logout modal
 
-  const data = {
+  // A nav item is visible when it declares no permission, or when the current
+  // user satisfies the declared permission(s) per the item's mode.
+  const canSee = (item: NavItem): boolean => {
+    const permission = item.permission;
+    if (permission === null || permission === undefined) return true;
+    const codes = Array.isArray(permission) ? permission : [permission];
+    if (codes.length === 1) return hasPermission(codes[0]);
+    return item.permissionMode === "all"
+      ? hasAllPermissions(...codes)
+      : hasAnyPermission(...codes);
+  };
+
+  const data: Record<string, NavItem[]> = {
     overview: [
       {
         title: "Dashboard",
@@ -38,13 +82,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: HomeIcon,
         isActive: location.startsWith(routesPath.PROTECTED.OVERVIEW.INDEX),
         childActive: false,
-        items: [
-          //   {
-          //     title: "Schedule Payment",
-          //     url: "#",
-          //     isActive: false,
-          //   },
-        ],
+        permission: P.VIEW_SCHOOL_DASHBOARD,
+        items: [],
       },
       {
         title: "Branches",
@@ -52,6 +91,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: TeamMgtIcon,
         isActive: location.startsWith(routesPath.PROTECTED.BRANCHES.INDEX),
         childActive: false,
+        permission: P.BROWSE_BRANCHES,
       },
     ],
     people: [
@@ -61,6 +101,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: TeamMgtIcon,
         isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.INDEX),
         childActive: false,
+        permission: P.BROWSE_STUDENTS,
       },
       {
         title: "Teachers",
@@ -68,6 +109,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: TeamMgtIcon,
         isActive: location.startsWith(routesPath.PROTECTED.TEACHERS.INDEX),
         childActive: false,
+        permission: P.BROWSE_TEACHERS,
       },
       {
         title: "Administrators",
@@ -77,6 +119,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           routesPath.PROTECTED.ADMINISTRATORS.INDEX,
         ),
         childActive: false,
+        permission: P.BROWSE_ADMINISTRATORS,
       },
     ],
     academics: [
@@ -86,6 +129,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: BookOpen,
         isActive: location.includes(routesPath.PROTECTED.ACADEMIC.INDEX),
         childActive: location.includes(routesPath.PROTECTED.ACADEMIC.INDEX),
+        // Group is visible when the user can browse either sessions or the
+        // calendar; individual children are gated below via `subPermission`.
+        permission: [P.BROWSE_SESSIONS, P.BROWSE_CALENDAR],
+        permissionMode: "any",
         items: [
           {
             title: "Academic Session",
@@ -97,7 +144,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: routesPath.PROTECTED.ACADEMIC.CALENDER,
             isActive: location.includes(routesPath.PROTECTED.ACADEMIC.CALENDER),
           },
-        ],
+        ].filter((sub) =>
+          sub.title === "Academic Session"
+            ? hasPermission(P.BROWSE_SESSIONS)
+            : hasPermission(P.BROWSE_CALENDAR),
+        ),
       },
       {
         title: "Classes",
@@ -105,6 +156,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: TeamMgtIcon,
         isActive: location.startsWith(routesPath.PROTECTED.CLASSES.INDEX),
         childActive: false,
+        permission: P.BROWSE_CLASSES,
       },
     ],
     finance: [
@@ -114,6 +166,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: DollarSign,
         isActive: location.startsWith("#"),
         childActive: false,
+        permission: P.VIEW_FEES,
       },
       {
         title: "Settings",
@@ -121,11 +174,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: Settings,
         isActive: location.startsWith("#"),
         childActive: false,
+        permission: P.VIEW_SETTINGS,
       },
     ],
   };
+
+  // Filter each group's items by permission. A group whose items are all
+  // filtered out is dropped entirely (its label disappears with it).
+  const overview = data.overview.filter(canSee);
+  const people = data.people.filter(canSee);
+  const academics = data.academics.filter(canSee);
+  const finance = data.finance.filter(canSee);
+
   const { state } = useSidebar();
-  const schoolName = "Caleb International College";
   return (
     <>
       <Sidebar className="bg-white" collapsible="icon" {...props}>
@@ -137,11 +198,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-transparent cursor-pointer mx-auto justify-center overflow-hidden"
                 tooltip={schoolName}
               >
-                {/* <div className={cn("size-fit ")}>{svgIcons.logo}</div> */}
                 <div className={cn("size-fit ")}>
                   <img
-                    src="/image/caleb.jpeg"
-                    // src="/svg/icon.svg"
+                    src={logoBlobUrl ?? "/image/logo.png"}
                     alt="school logo"
                     className="size-7.5"
                   />
@@ -152,7 +211,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       {schoolName}
                     </h4>
                     <p className="text-xs text-gray-06 truncate">
-                      School Admin
+                      {roleLabel}
                     </p>
                   </div>
                 )}
@@ -161,10 +220,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent className="bg-white pt-3">
-          <NavMain items={data.overview} groupTitle="Overview" />
-          <NavMain items={data.people} groupTitle="People" />
-          <NavMain items={data.academics} groupTitle="Academics" />
-          <NavMain items={data.finance} groupTitle="Finance" />
+          {overview.length > 0 && (
+            <NavMain items={overview} groupTitle="Overview" />
+          )}
+          {people.length > 0 && (
+            <NavMain items={people} groupTitle="People" />
+          )}
+          {academics.length > 0 && (
+            <NavMain items={academics} groupTitle="Academics" />
+          )}
+          {finance.length > 0 && (
+            <NavMain items={finance} groupTitle="Finance" />
+          )}
         </SidebarContent>
         <SidebarFooter className="bg-white ">
           <SidebarMenu>
@@ -194,9 +261,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         src="/image/caution.png"
         onConfirmText="Log Out"
         canCancel
-        loading={false}
+        loading={isLoggingOut}
         onConfirmClass="bg-error-01 text-white shadow-xs hover:bg-error-01/90 focus-visible:ring-error-01/20"
       />
     </>
   );
+}
+
+// Turn a backend role token ("SCHOOL_ADMIN", "branch_admin") into a display
+// label ("School Admin"). Falls back to an empty string when nothing is set.
+function humanizeRole(value?: string | null): string {
+  if (!value) return "";
+  return value
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }

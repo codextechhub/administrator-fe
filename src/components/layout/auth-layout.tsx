@@ -1,30 +1,45 @@
+import { useEffect } from "react";
 import { Outlet } from "react-router";
+import ArrangingShapes from "@/components/auth/arranging-shapes";
+import { resetFavicon } from "@/utils/favicon";
 
-export default function SignUpWebLayout() {
+export default function AuthLayout() {
+  useEffect(() => {
+    document.title = "Accounts - XVS";
+    resetFavicon();
+  }, []);
+
   return (
     <main className="w-screen h-screen flex bg-white">
-      <div className="w-[45%] hidden lg:block relative">
-        <div className="size-full relative z-2 bg-linear-to-b from-primary to-sec hide-scrollbar text-white pt-2 xl:pt-10 flex flex-col items-center">
-          <div className="mb-10">
-            <img
-              src="/svg/logo-white.svg"
-              alt="codex logo"
-              className="mx-auto h-8 w-auto"
-            />
-          </div>
-        </div>
+      {/* Left 45% — the calm, premium blue panel (desktop only). */}
+      <div className="w-[45%] hidden lg:block relative bg-[#0b1f4a] bg-[radial-gradient(120%_120%_at_50%_28%,#11264f_0%,#0b1f4a_45%,#081530_100%)]">
+        {/* Subtle texture layered under the shapes. */}
+        <div className="absolute inset-0 size-full bg-[url(/image/authBg.png)] bg-cover bg-center opacity-[0.06] z-0" />
+        <ArrangingShapes />
       </div>
-      <div className="w-full flex-1 relative px-6 overflow-hidden">
-        <div className="lg:hidden py-3 sticky top-0">
+
+      {/* Right 55% — white form column, centered. */}
+      {/* Scroll container: a flex column that is at least the full viewport
+          tall. The content block uses `m-auto` so it sits vertically centered
+          when it fits, and — unlike `justify-center`, which clips the top of
+          overflowing flex children — falls back to scrolling naturally from the
+          top when the content is taller than the viewport (reset-password's 4
+          fields on a short phone). `100dvh` accounts for mobile browser chrome. */}
+      <div className="w-full flex-1 relative px-6 hide-scrollbar overflow-y-auto flex flex-col min-h-[100dvh]">
+        <div className="w-full m-auto max-w-107.5 py-6 shrink-0">
+          {/* Mobile-only logo — part of the centered block below lg. The blue
+              panel carries the logo on desktop, so this is hidden there. */}
           <img
-            src="/svg/logo.svg"
-            alt="codex logo"
-            width={80}
-            height={80}
-            className="mx-auto h-7 w-auto"
+            src="/image/logo.png"
+            alt="XVS logo"
+            className="lg:hidden h-8 w-auto mx-auto mb-6"
           />
-        </div>
-        <div className="h-full hide-scrollbar mt-5 md:mt-0 mx-auto max-w-107.5 pb-5 flex lg:items-center">
+          {/* Desktop-only logo (blue panel is shown alongside). */}
+          <img
+            src="/image/logo.png"
+            alt="XVS logo"
+            className="hidden lg:block h-12 w-auto mx-auto mb-6"
+          />
           <Outlet />
         </div>
       </div>

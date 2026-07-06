@@ -1,42 +1,44 @@
 import { svgIcons } from "@/assets/svg";
 import { CustomInput } from "@/components/custom/custom-input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
-import { swipAnimateVariant } from "@/utils/animation";
-import { useFormik } from "formik";
-import { forgotPasswordSchema } from "@/schema/auth";
+import { useForgotPasswordMutation } from "@/redux/services/auth/auth-api";
 import { routesPath } from "@/routes/routesPath";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
-import { REGEXP_ONLY_DIGITS } from "input-otp";
+import { forgotPasswordSchema } from "@/schema/auth";
+import { AnimatePresence, motion } from "motion/react";
+import { useState } from "react";
+import { Link } from "react-router";
+import { swipAnimateVariant } from "@/utils/animation";
+import { humanizeAuthError } from "@/utils/auth-errors";
+import { useFormik } from "formik";
+import { toast } from "sonner";
 
 export default function ForgotPassword() {
-  const [tab, setTab] = useState(1);
-  const navigate = useNavigate();
+  const [submitted, setSubmitted] = useState(false);
+  const [sentEmail, setSentEmail] = useState("");
+  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
 
   const formik = useFormik({
-    initialValues: { email: "", otp: "" },
+    initialValues: { email: "" },
     validationSchema: forgotPasswordSchema,
-    onSubmit: () => {
-      setTab(2);
+    onSubmit: (values) => {
+      forgotPassword({ email: values.email })
+        .unwrap()
+        .then(() => {
+          setSentEmail(values.email);
+          setSubmitted(true);
+        })
+        .catch((err) => {
+          toast.error(
+            humanizeAuthError(err, "Something went wrong. Please try again."),
+          );
+        });
     },
   });
-
-  const handleOtpSubmit = () => {
-    navigate(routesPath.AUTH.RESET_PASSWORD, {
-      state: formik.values,
-    });
-  };
 
   return (
     <AnimatePresence mode="wait" custom={1}>
       <motion.div
-        key={tab}
+        key={submitted ? "sent" : "form"}
         custom={1}
         variants={swipAnimateVariant}
         initial="enter"
@@ -48,14 +50,14 @@ export default function ForgotPassword() {
         }}
         className="w-full"
       >
-        {tab === 1 ? (
-          <form onSubmit={formik.handleSubmit} className="">
+        {!submitted ? (
+          <form onSubmit={formik.handleSubmit}>
             <div className="text-center space-y-1.5">
               <h4 className="font-semibold text-2xl text-black-01">
                 Forgot Password
               </h4>
               <p className="text-sm font-medium text-gray-01 font-mont">
-                Let’s help you recover your account
+                Let's help you recover your account
               </p>
             </div>
 
@@ -71,14 +73,15 @@ export default function ForgotPassword() {
             </div>
 
             <Button
-              disabled={!formik.isValid || !formik.dirty}
+              disabled={!formik.isValid || !formik.dirty || isLoading}
+              loading={isLoading}
               type="submit"
               className="w-full h-11"
             >
-              Reset Password
+              Send Reset Link
             </Button>
 
-            <div className=" text-center">
+            <div className="text-center">
               <Link
                 to={routesPath.AUTH.LOGIN}
                 className="font-mont font-medium text-sm text-black-01 inline-flex justify-center items-center mt-6 group"
@@ -91,50 +94,29 @@ export default function ForgotPassword() {
             </div>
           </form>
         ) : (
-          <div className="">
+          <div>
             <div className="text-center space-y-1.5">
               <h4 className="font-semibold text-2xl text-black-01">
                 Check your Email!
               </h4>
               <p className="text-sm font-medium text-gray-01 font-mont max-w-61.25 mx-auto">
-                We’ve sent a password rest link to {formik.values.email}
+                We've sent a password reset link to{" "}
+                <span className="text-black-01 font-semibold">{sentEmail}</span>
               </p>
             </div>
 
-            <div className="mt-9 flex justify-center">
-              <InputOTP
-                maxLength={6}
-                pattern={REGEXP_ONLY_DIGITS}
-                value={formik.values.otp}
-                onChange={(value) => formik.setFieldValue("otp", value)}
+            <p className="text-center font-mont text-sm text-gray-01 mt-9">
+              Didn't receive any email?{" "}
+              <button
+                type="button"
+                className="text-primary font-medium cursor-pointer"
+                onClick={() => setSubmitted(false)}
               >
-                <InputOTPGroup className="gap-2">
-                  {Array.from({ length: 6 }, (_, i) => (
-                    <InputOTPSlot
-                      key={i}
-                      index={i}
-                      className="size-10 md:size-11 lg:size-12"
-                      aria-invalid={false}
-                    />
-                  ))}
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
+                Try again
+              </button>
+            </p>
 
-            <Button
-              className="w-full h-11 mt-6"
-              disabled={formik.values.otp.length !== 6}
-              onClick={handleOtpSubmit}
-            >
-              Continue
-            </Button>
-
-            <div className="text-center space-y-6 mt-6">
-              <p className="font-mont font-medium text-sm text-black-01 ">
-                Didn’t receive any email?{" "}
-                <span className="text-primary">Click to resend</span>
-              </p>
-
+            <div className="text-center mt-6">
               <Link
                 to={routesPath.AUTH.LOGIN}
                 className="font-mont font-medium text-sm text-black-01 inline-flex justify-center items-center group"

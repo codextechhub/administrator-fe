@@ -5,6 +5,11 @@ import { AppSidebar } from "../app-sidebar";
 import { svgIcons } from "@/assets/svg";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useSessionTimeout } from "@/hooks/use-session-timeout";
+import { useTokenRefresh } from "@/hooks/use-token-refresh";
+import { SessionTimeoutModal } from "@/components/session-timeout-modal";
+import { useAppSelector } from "@/redux/store";
+import { selectUser } from "@/redux/features/auth/auth-slice";
 import {
   Combobox,
   ComboboxContent,
@@ -27,6 +32,18 @@ export default function DashboardLayout({
 }) {
   const navigate = useNavigate();
 
+  useTokenRefresh();
+  const { open, secondsLeft, isExpired, onContinue, onLogout, goToLogin } =
+    useSessionTimeout();
+
+  const user = useAppSelector(selectUser);
+  const fullName =
+    user?.full_name ||
+    [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
+  const roleLabel = humanizeRole(user?.user_type || user?.role);
+  const avatarFallback = initials(fullName);
+  const selectedBranch = user?.branch_name;
+
   const branchOptions = [
     { label: "All Branches", value: "all" },
     { label: "Primary - Ikeja", value: "primary-ikeja" },
@@ -35,6 +52,14 @@ export default function DashboardLayout({
   ];
   return (
     <>
+      <SessionTimeoutModal
+        open={open}
+        secondsLeft={secondsLeft}
+        isExpired={isExpired}
+        onContinue={onContinue}
+        onLogout={onLogout}
+        goToLogin={goToLogin}
+      />
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset className="bg-white-05">
@@ -66,7 +91,7 @@ export default function DashboardLayout({
             <Combobox items={branchOptions}>
               <ComboboxInput
                 showTrigger={false}
-                placeholder="Switch branch"
+                placeholder={selectedBranch || "Switch branch"}
                 className="border-primary ring-0!"
               />
               <ComboboxContent>
@@ -97,13 +122,13 @@ export default function DashboardLayout({
               <figure className="inline-flex items-center gap-x-3 pl-2.5 py-1 ">
                 <Avatar>
                   <AvatarImage src={"/image/avatar2.png"} />
-                  <AvatarFallback>OE</AvatarFallback>
+                  <AvatarFallback>{avatarFallback}</AvatarFallback>
                 </Avatar>
 
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Osegbo Emeka</span>
+                  <span className="truncate font-medium">{fullName}</span>
                   <span className="text-muted-foreground truncate text-xs">
-                    Head Teacher
+                    {roleLabel}
                   </span>
                 </div>
               </figure>
@@ -114,4 +139,25 @@ export default function DashboardLayout({
       </SidebarProvider>
     </>
   );
+}
+
+// Turn a backend role token ("SCHOOL_ADMIN", "branch_admin") into a display
+// label ("School Admin"). Empty string when nothing is set.
+function humanizeRole(value?: string | null): string {
+  if (!value) return "";
+  return value
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// Derive up to two uppercase initials from a full name for the avatar fallback.
+function initials(name?: string | null): string {
+  if (!name) return "";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  const first = parts[0][0] ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] ?? "" : "";
+  return (first + last).toUpperCase();
 }
