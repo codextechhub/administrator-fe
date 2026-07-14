@@ -5,7 +5,9 @@ import {
   createApi,
   fetchBaseQuery,
 } from "@reduxjs/toolkit/query/react";
-import { resetAuth, setToken, updatePermissions } from "../features/auth/auth-slice";
+import { resetAuth, setToken, updatePermissions, updateTenant } from "../features/auth/auth-slice";
+import type { TenantInfo } from "../features/auth/auth-types";
+import { getTenantSlug } from "@/utils/tenant-context";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 import { routesPath } from "@/routes/routesPath";
@@ -33,6 +35,39 @@ const AUTH_ENDPOINTS = new Set([
   "activateAccount",
 ]);
 
+// Endpoints that operate purely on the caller and therefore must NOT carry the
+// mandatory ?tenant= assertion (the backend 400s if one is sent). Union of the
+// unauthenticated auth routes plus the self-service /me family and logout.
+const TENANT_EXEMPT_ENDPOINTS = new Set([
+  ...AUTH_ENDPOINTS,
+  "logout",
+  "getMe",
+  "getMySecurityStats",
+  "getMyPasswordResets",
+  "changeMyPassword",
+]);
+
+// True when the request already asserts a tenant, so central injection leaves
+// it untouched (handles both string and object arg forms).
+const hasTenantParam = (args: string | FetchArgs): boolean => {
+  if (typeof args === "string") return /[?&]tenant=/.test(args);
+  if (typeof args.url === "string" && /[?&]tenant=/.test(args.url)) return true;
+  const params = (args as FetchArgs).params as Record<string, unknown> | undefined;
+  return !!params && params.tenant != null && params.tenant !== "";
+};
+
+// Append ?tenant=<slug> unless the endpoint is exempt or already asserts one.
+const injectTenant = (args: string | FetchArgs, endpoint: string): string | FetchArgs => {
+  if (TENANT_EXEMPT_ENDPOINTS.has(endpoint) || hasTenantParam(args)) return args;
+  const slug = getTenantSlug();
+  if (!slug) return args; // pre-login / legacy token — backend 400s, auth flow handles it
+  if (typeof args === "string") {
+    const sep = args.includes("?") ? "&" : "?";
+    return `${args}${sep}tenant=${encodeURIComponent(slug)}`;
+  }
+  return { ...args, params: { ...(args.params as object), tenant: slug } };
+};
+
 export const baseQuery = fetchBaseQuery({
   baseUrl,
   prepareHeaders: (headers, { endpoint }) => {
@@ -58,16 +93,23 @@ const forceLogoutAndRedirect = (api: Parameters<BaseQueryFn>[1]) => {
   window.location.href = routesPath.AUTH.LOGIN;
 };
 
-const fetchFreshPermissions = async (accessToken: string): Promise<string[] | null> => {
+// /user/auth/me/ is tenant-exempt, so this raw fetch needs no ?tenant=. It
+// refreshes both the permission set and the cached tenant context.
+const fetchFreshMe = async (
+  accessToken: string,
+): Promise<{ permissions: string[] | null; tenant: TenantInfo | null }> => {
   try {
     const response = await fetch(`${baseUrl}/user/auth/me/`, {
       headers: { Authorization: `Bearer ${accessToken}`, accept: "application/json" },
     });
-    if (!response.ok) return null;
+    if (!response.ok) return { permissions: null, tenant: null };
     const data = await response.json();
-    return data?.data?.permissions ?? null;
+    return {
+      permissions: data?.data?.permissions ?? null,
+      tenant: data?.data?.tenant ?? null,
+    };
   } catch {
-    return null;
+    return { permissions: null, tenant: null };
   }
 };
 
@@ -107,7 +149,10 @@ export const baseQueryInterceptor: BaseQueryFn<
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
-  const result = await baseQuery(args, api, extraOptions);
+  // Central tenant assertion: every authenticated, non-exempt request carries
+  // ?tenant=<the caller's slug> unless it already asserts one.
+  const tenantArgs = injectTenant(args, api.endpoint);
+  const result = await baseQuery(tenantArgs, api, extraOptions);
   if (!result?.error) return result;
 
   // Background requests (e.g. polls that resume the instant the tab regains
@@ -157,11 +202,12 @@ export const baseQueryInterceptor: BaseQueryFn<
       // selector reading state.auth.access stays consistent.
       api.dispatch(setToken(refreshed.access));
 
-      // Role may have changed since last login — keep permissions fresh.
-      const freshPermissions = await fetchFreshPermissions(refreshed.access);
-      if (freshPermissions) api.dispatch(updatePermissions(freshPermissions));
+      // Role may have changed since last login — keep permissions + tenant fresh.
+      const fresh = await fetchFreshMe(refreshed.access);
+      if (fresh.permissions) api.dispatch(updatePermissions(fresh.permissions));
+      if (fresh.tenant) api.dispatch(updateTenant(fresh.tenant));
 
-      const retry = await baseQuery(args, api, extraOptions);
+      const retry = await baseQuery(tenantArgs, api, extraOptions);
       if (retry?.error?.status === 401) {
         forceLogoutAndRedirect(api);
       }

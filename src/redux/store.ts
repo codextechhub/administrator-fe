@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
+import { bindTenantStore } from "@/utils/tenant-context";
 
 import { useDispatch, useSelector } from "react-redux";
 import type { TypedUseSelectorHook} from "react-redux";
@@ -44,6 +45,10 @@ export const store = configureStore({
 // Tracks window focus/online state so queries can use skipPollingIfUnfocused /
 // refetchOnFocus. Existing queries are unaffected (those behaviors are opt-in).
 setupListeners(store.dispatch);
+
+// Let the base query read the caller's asserted tenant slug straight from the
+// live store when injecting ?tenant= (non-hook call site).
+bindTenantStore(store.getState);
 
 export type AppDispatch = typeof store.dispatch;
 export const useAppDispatch = () => useDispatch<AppDispatch>();

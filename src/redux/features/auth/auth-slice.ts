@@ -1,6 +1,6 @@
 import type { RootStateType } from "@/redux/store";
 import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { type Auth, type SchoolInfo, type User } from "./auth-types";
+import { type Auth, type SchoolInfo, type TenantInfo, type User } from "./auth-types";
 
 // Shape of the login / activation response's `data` envelope.
 interface AuthPayload {
@@ -10,6 +10,7 @@ interface AuthPayload {
   session_id?: number;
   permissions?: string[];
   school?: SchoolInfo | null;
+  tenant?: TenantInfo | null;
 }
 
 const initialState: Auth = {
@@ -19,6 +20,7 @@ const initialState: Auth = {
    user: null,
    permissions: [],
    school: null,
+   tenant: null,
 };
 
 const authSlice = createSlice({
@@ -33,6 +35,7 @@ const authSlice = createSlice({
       state.session_id = action.payload.session_id || 0;
       state.permissions = action.payload.permissions ?? [];
       state.school = action.payload.school ?? null;
+      state.tenant = action.payload.tenant ?? null;
     },
     updateAuthUser: (state, action: PayloadAction<Partial<User>>) => {
       state.user = { ...(state.user as User), ...action.payload };
@@ -43,10 +46,13 @@ const authSlice = createSlice({
     updatePermissions: (state, action: PayloadAction<string[]>) => {
       state.permissions = action.payload;
     },
+    updateTenant: (state, action: PayloadAction<TenantInfo | null>) => {
+      state.tenant = action.payload;
+    },
   },
 });
 
-export const { setAuthUser, setToken, updateAuthUser, updatePermissions } = authSlice.actions;
+export const { setAuthUser, setToken, updateAuthUser, updatePermissions, updateTenant } = authSlice.actions;
 export const resetAuth = authSlice.actions.reset;
 
 export const authSliceReducer = authSlice.reducer;
@@ -54,3 +60,4 @@ export const authSliceReducer = authSlice.reducer;
 export const selectUser = (state: RootStateType) => state.auth.user;
 export const selectPermissions = (state: RootStateType) => state.auth.permissions ?? [];
 export const selectSchool = (state: RootStateType) => state.auth.school ?? null;
+export const selectTenant = (state: RootStateType) => state.auth.tenant ?? null;

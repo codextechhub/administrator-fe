@@ -1,4 +1,5 @@
-import { resetAuth, setAuthUser, updatePermissions } from "@/redux/features/auth/auth-slice";
+import { resetAuth, setAuthUser, updatePermissions, updateTenant } from "@/redux/features/auth/auth-slice";
+import type { TenantInfo } from "@/redux/features/auth/auth-types";
 import { baseApi } from "../base-api";
 import { routesPath } from "@/routes/routesPath";
 import { recordActivity } from "@/utils/session-activity";
@@ -110,12 +111,13 @@ export const authApi = baseApi.injectEndpoints({
         body,
       }),
     }),
-    getMe: builder.query<{ message: string; data: { user: unknown; permissions: string[] } }, void>({
+    getMe: builder.query<{ message: string; data: { user: unknown; permissions: string[]; tenant: TenantInfo | null } }, void>({
       query: () => ({ url: `/user/auth/me/`, method: "GET" }),
       async onQueryStarted(_, { queryFulfilled, dispatch }) {
         try {
           const { data } = await queryFulfilled;
           dispatch(updatePermissions(data.data.permissions));
+          dispatch(updateTenant(data.data.tenant ?? null));
         } catch {
           // /me failed (e.g. transient 5xx) — keep the persisted permissions;
           // the 401 interceptor handles a genuinely dead session.

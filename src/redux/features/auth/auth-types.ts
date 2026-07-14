@@ -5,6 +5,14 @@ export interface Auth {
   user?: User | null
   permissions?: string[]
   school?: SchoolInfo | null
+  tenant?: TenantInfo | null
+}
+
+// The caller's asserted tenant, from the login / me payload. Every tenant-owned
+// request carries ?tenant=<slug>; the slug must match this.
+export interface TenantInfo {
+  slug: string
+  name: string
 }
 
 export interface User {
