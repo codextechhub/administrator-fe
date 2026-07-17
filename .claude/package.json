@@ -1,0 +1,7 @@
+{
+  "name": "school-fe-claude-tools",
+  "private": true,
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}

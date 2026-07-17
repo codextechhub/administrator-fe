@@ -1,5 +1,5 @@
 import { Separator } from "@/components/ui/separator";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { AppSidebar } from "../app-sidebar";
 import { svgIcons } from "@/assets/svg";
@@ -62,9 +62,12 @@ export default function DashboardLayout({
       />
       <SidebarProvider>
         <AppSidebar />
-        <SidebarInset className="bg-white-05">
+        <SidebarInset className="bg-white-05 min-w-0 w-auto">
           <header className="flex justify-between h-15 px-3 lg:px-10 shrink-0 sticky top-0 z-10 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 bg-white border border-l-0 border-white-02">
             <div className="inline-flex items-center gap-2">
+              {/* Phone: the sidebar is offcanvas below md, so without a trigger
+                  the nav is unreachable on mobile. */}
+              <SidebarTrigger className="md:hidden size-8" />
               {hasBack && (
                 <>
                   <figure
@@ -134,7 +137,12 @@ export default function DashboardLayout({
               </figure>
             </div>
           </header>
-          <div className="flex flex-1 flex-col pt-0">{children}</div>
+          {/* grid-cols-1 (minmax(0,1fr)) zeroes the track's min-content floor so a
+              page's <main> can never be stretched past the viewport by wide
+              nowrap content (tables) — each page's own overflow-x-auto then
+              clips it. Ported from console-fe; do not remove (CLAUDE.md
+              §Responsive). */}
+          <div className="grid grid-cols-1 min-w-0 flex-1 pt-0">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </>

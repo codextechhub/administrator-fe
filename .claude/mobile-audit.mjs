@@ -42,11 +42,17 @@ for (const vp of VIEWPORTS) {
   page.on("pageerror", (e) => errors.push("PAGEERROR: " + e.message));
 
   try {
-    await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+    // school-fe's login page is /accounts (and /login redirects to it), so the
+    // "left the login page" check must exclude both — checking only /login
+    // passes instantly on the redirect without ever authenticating.
+    await page.goto(`${BASE}/accounts`, { waitUntil: "networkidle" });
     await page.getByPlaceholder("Enter your email").fill(EMAIL);
     await page.getByPlaceholder("Enter your password").fill(PASSWORD);
     await page.getByRole("button", { name: "Login" }).click();
-    await page.waitForURL((u) => !u.pathname.includes("/login"), { timeout: 20000 });
+    await page.waitForURL(
+      (u) => !u.pathname.includes("/login") && !u.pathname.includes("/accounts"),
+      { timeout: 20000 },
+    );
     console.log(`[${vp.name}] logged in`);
   } catch (e) {
     console.log(`[${vp.name}] LOGIN FAILED: ${e.message}`);
