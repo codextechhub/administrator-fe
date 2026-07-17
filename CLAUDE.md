@@ -87,3 +87,11 @@ and reports page-level horizontal overflow with the offending elements. **Look
 at the phone screenshots** — zero overflow with a crushed side-by-side layout
 is still a fail. Desktop remains the design source of truth; phone adapts
 (stack, wrap, cards) — never hide or truncate data away.
+
+**Depth policy — phones are view + simple actions, not full parity.** Phone
+users browse, read details, approve, and fill simple forms — those flows must
+be genuinely good. Complex multi-line creation/editing (fee structures, bulk
+editors, multi-row forms) stays desktop-first: on a phone it must be *usable*
+(no overflow, nothing broken or unreachable), but don't spend effort
+optimizing it or redesigning it phone-first, and never degrade the desktop
+experience to make it fit.
