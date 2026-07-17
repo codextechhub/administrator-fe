@@ -1,4 +1,4 @@
-# CLAUDE.md — school-fe
+# AGENTS.md — school-fe
 
 ## Pre-ship review (`ship-check`)
 
