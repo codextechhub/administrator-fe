@@ -1,7 +1,11 @@
+import { lazy } from "react";
 import { type RouteObject } from "react-router";
 import { routesPath } from "../routesPath";
-import Classes from "@/pages/protected/classes";
-import ClassDetails from "@/pages/protected/classes/class-details";
+
+// Route-level code splitting: each area page loads on first visit instead of
+// shipping in the main bundle. Suspense fallback lives in routes/lazy-root.tsx.
+const Classes = lazy(() => import("@/pages/protected/classes"));
+const ClassDetails = lazy(() => import("@/pages/protected/classes/class-details"));
 
 export const classesRoutes = [
   {
