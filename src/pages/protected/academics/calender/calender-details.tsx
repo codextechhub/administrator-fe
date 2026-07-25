@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/layout/dashboard-layout";
 import { useState } from "react";
 import { addDays, setHours, setMinutes, subDays } from "date-fns";
 
@@ -148,17 +147,15 @@ export default function CalenderDetails() {
   };
 
   return (
-    <DashboardLayout hasBack title="Academic Calender">
-      <main className="px-4.5 py-6 space-y-5">
-        <div className="flex flex-col">
-          <EventCalendar
-            events={events}
-            onEventAdd={handleEventAdd}
-            onEventUpdate={handleEventUpdate}
-            onEventDelete={handleEventDelete}
-          />
-        </div>
-      </main>
-    </DashboardLayout>
+    <main className="px-4.5 py-6 space-y-5">
+      <div className="flex flex-col">
+        <EventCalendar
+          events={events}
+          onEventAdd={handleEventAdd}
+          onEventUpdate={handleEventUpdate}
+          onEventDelete={handleEventDelete}
+        />
+      </div>
+    </main>
   );
 }

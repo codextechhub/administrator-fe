@@ -7,5 +7,6 @@ import { routesPath } from "../routesPath";
 const Dashboard = lazy(() => import("@/pages/protected/dashboard"));
 
 export const overviewRoutes = [
+  // No `handle.title` — the shell falls back to its generic greeting here.
   { path: routesPath.PROTECTED.OVERVIEW.INDEX, Component: Dashboard },
 ] as RouteObject[];

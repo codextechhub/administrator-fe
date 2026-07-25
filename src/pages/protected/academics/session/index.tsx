@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/layout/dashboard-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, formatMonthYearShort } from "@/lib/utils";
@@ -9,93 +8,91 @@ import { useNavigate } from "react-router";
 export default function AcademicSession() {
   const navigate = useNavigate();
   return (
-    <DashboardLayout title="Academic Session">
-      <main className="px-4.5 py-6 space-y-7">
-        <div className="flex items-center justify-between">
-          <p className="text-black-01 text-lg font-medium">All Sessions</p>
-          <Button className="text-sm">
-            <Plus /> New Session
-          </Button>
-        </div>
-        <div className="grid lg:grid-cols-2 gap-6">
-          {dummyData.academic_sessions.map((item, idx) => (
-            <div
-              className={cn(
-                "h-fit bg-white rounded-md w-full px-4 py-3 cursor-pointer hover:scale-98 transition-all ease-linear",
-                item.status?.toLowerCase() === "active" &&
-                  "border border-green-01",
-              )}
-              key={idx}
-              onClick={() => {
-                navigate(
-                  routesPath.PROTECTED.ACADEMIC.SESSION_DETAILS_ID(item.id),
-                );
-              }}
-            >
-              <div className="flex justify-between gap-3">
-                <div className="">
-                  <h5 className="text-base font-medium text-black-01">
-                    {item.name} Academic Session
-                  </h5>
-                  <p className="text-xs text-gray-01">
-                    {formatMonthYearShort(item.start_date)} -{" "}
-                    {formatMonthYearShort(item.end_date)}
-                  </p>
-                </div>
+    <main className="px-4.5 py-6 space-y-7">
+      <div className="flex items-center justify-between">
+        <p className="text-black-01 text-lg font-medium">All Sessions</p>
+        <Button className="text-sm">
+          <Plus /> New Session
+        </Button>
+      </div>
+      <div className="grid lg:grid-cols-2 gap-6">
+        {dummyData.academic_sessions.map((item, idx) => (
+          <div
+            className={cn(
+              "h-fit bg-white rounded-md w-full px-4 py-3 cursor-pointer hover:scale-98 transition-all ease-linear",
+              item.status?.toLowerCase() === "active" &&
+                "border border-green-01",
+            )}
+            key={idx}
+            onClick={() => {
+              navigate(
+                routesPath.PROTECTED.ACADEMIC.SESSION_DETAILS_ID(item.id),
+              );
+            }}
+          >
+            <div className="flex justify-between gap-3">
+              <div className="">
+                <h5 className="text-base font-medium text-black-01">
+                  {item.name} Academic Session
+                </h5>
+                <p className="text-xs text-gray-01">
+                  {formatMonthYearShort(item.start_date)} -{" "}
+                  {formatMonthYearShort(item.end_date)}
+                </p>
+              </div>
 
+              <Badge
+                variant={
+                  item.status?.toLowerCase() === "active"
+                    ? "active"
+                    : item.status?.toLowerCase() === "completed"
+                      ? "amber"
+                      : "pending"
+                }
+                className="text-[11px] h-fit py-0 rounded-full uppercase"
+              >
+                {item.status}
+              </Badge>
+            </div>
+
+            <div className="flex items-center gap-3 mt-3">
+              {item?.terms?.map((chi, id) => (
                 <Badge
                   variant={
-                    item.status?.toLowerCase() === "active"
-                      ? "active"
-                      : item.status?.toLowerCase() === "completed"
-                        ? "amber"
-                        : "pending"
+                    chi?.status === "pending"
+                      ? "outline"
+                      : chi?.status === "ongoing"
+                        ? "pending"
+                        : "active"
                   }
-                  className="text-[11px] h-fit py-0 rounded-full uppercase"
+                  key={id}
+                  className="h-fit text-xs py-0.5 rounded-full"
                 >
-                  {item.status}
+                  {chi?.label}{" "}
+                  {chi?.status === "completed" ? (
+                    <Check className="ml-1" />
+                  ) : chi?.status === "ongoing" ? (
+                    " — ongoing"
+                  ) : (
+                    ""
+                  )}
                 </Badge>
-              </div>
-
-              <div className="flex items-center gap-3 mt-3">
-                {item?.terms?.map((chi, id) => (
-                  <Badge
-                    variant={
-                      chi?.status === "pending"
-                        ? "outline"
-                        : chi?.status === "ongoing"
-                          ? "pending"
-                          : "active"
-                    }
-                    key={id}
-                    className="h-fit text-xs py-0.5 rounded-full"
-                  >
-                    {chi?.label}{" "}
-                    {chi?.status === "completed" ? (
-                      <Check className="ml-1" />
-                    ) : chi?.status === "ongoing" ? (
-                      " — ongoing"
-                    ) : (
-                      ""
-                    )}
-                  </Badge>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-3 mt-6 text-sm text-gray-01">
-                <p className="">{item?.metrics.branches} branches</p>{" "}
-                <span className="size-1 rounded-full block bg-gray-01" />
-                <p className="">
-                  {item?.metrics.students.toLocaleString("en-NG")} students
-                </p>
-                <span className="size-1 rounded-full block bg-gray-01" />
-                <p className="">{item?.metrics.classes} classes</p>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </main>
-    </DashboardLayout>
+
+            <div className="flex items-center gap-3 mt-6 text-sm text-gray-01">
+              <p className="">{item?.metrics.branches} branches</p>{" "}
+              <span className="size-1 rounded-full block bg-gray-01" />
+              <p className="">
+                {item?.metrics.students.toLocaleString("en-NG")} students
+              </p>
+              <span className="size-1 rounded-full block bg-gray-01" />
+              <p className="">{item?.metrics.classes} classes</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </main>
   );
 }
 

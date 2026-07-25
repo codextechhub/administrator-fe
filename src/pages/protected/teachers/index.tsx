@@ -1,7 +1,6 @@
 import { svgIcons } from "@/assets/svg";
 import { CustomInput } from "@/components/custom/custom-input";
 import CustomTable from "@/components/custom/custom-table";
-import DashboardLayout from "@/components/layout/dashboard-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,63 +10,61 @@ const tableHeader = ["Staff Name", "Staff ID", "Subject", "Status", "Action"];
 
 export default function Teachers() {
   return (
-    <DashboardLayout title="Teacher">
-      <main className="px-4.5 py-6 space-y-5">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, idx) => (
-            <div className="h-25.5 bg-white rounded-md w-full" key={idx} />
-          ))}
-        </div>
+    <main className="px-4.5 py-6 space-y-5">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <div className="h-25.5 bg-white rounded-md w-full" key={idx} />
+        ))}
+      </div>
 
-        <div className="flex items-center justify-between mt-8 gap-5">
-          <CustomInput
-            id="search"
-            canSearch
-            placeholder="Search..."
-            className="h-10"
-            containerClass="max-w-[280px]"
-          />
-
-          <div className="inline-flex items-center gap-3.5">
-            <Button
-              variant={"white"}
-              size="lg"
-              className="[&_svg]:size-5 font-medium font-mont"
-            >
-              {svgIcons.filterIcon} Filter
-            </Button>
-            <Button
-              variant={"white"}
-              size="lg"
-              className="[&_svg]:size-5 font-medium font-mont"
-            >
-              {svgIcons.exportIcon} Export
-            </Button>
-          </div>
-        </div>
-
-        <CustomTable
-          tableHeaderList={tableHeader}
-          tableBodyList={FORMAT_TABLE_DATA(dummyData?.students)}
-          dropDown
-          dropDownList={[
-            {
-              label: "View Details",
-              className: "",
-              onActionClick: () => {},
-            },
-            {
-              label: "Edit",
-              className: "",
-              onActionClick: () => {},
-            },
-          ]}
-          perPage={10}
-          totalPage={5}
-          currentPage={1}
+      <div className="flex items-center justify-between mt-8 gap-5">
+        <CustomInput
+          id="search"
+          canSearch
+          placeholder="Search..."
+          className="h-10"
+          containerClass="max-w-[280px]"
         />
-      </main>
-    </DashboardLayout>
+
+        <div className="inline-flex items-center gap-3.5">
+          <Button
+            variant={"white"}
+            size="lg"
+            className="[&_svg]:size-5 font-medium font-mont"
+          >
+            {svgIcons.filterIcon} Filter
+          </Button>
+          <Button
+            variant={"white"}
+            size="lg"
+            className="[&_svg]:size-5 font-medium font-mont"
+          >
+            {svgIcons.exportIcon} Export
+          </Button>
+        </div>
+      </div>
+
+      <CustomTable
+        tableHeaderList={tableHeader}
+        tableBodyList={FORMAT_TABLE_DATA(dummyData?.students)}
+        dropDown
+        dropDownList={[
+          {
+            label: "View Details",
+            className: "",
+            onActionClick: () => {},
+          },
+          {
+            label: "Edit",
+            className: "",
+            onActionClick: () => {},
+          },
+        ]}
+        perPage={10}
+        totalPage={5}
+        currentPage={1}
+      />
+    </main>
   );
 }
 

@@ -5,7 +5,7 @@ import { AppSidebar } from "../app-sidebar";
 import { svgIcons } from "@/assets/svg";
 import { ChevronLeft, Loader2, Undo2, UsersRound } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Outlet, useMatches, useNavigate } from "react-router";
 import { useSessionTimeout } from "@/hooks/use-session-timeout";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
 import { SessionTimeoutModal } from "@/components/session-timeout-modal";
@@ -36,18 +36,28 @@ import { ProxyUserDialog } from "@/components/proxy-user-dialog";
 import { P, resolvePermissionKey } from "@/permissions";
 import { exitProxySession } from "@/utils/proxy-session";
 
-export default function DashboardLayout({
-  children,
-  hasBack = false,
-  onBack,
-  title,
-}: {
-  children: React.ReactNode;
-  hasBack?: boolean;
+// Per-screen header config, declared on the route rather than passed as props.
+// The layout is now an eager LAYOUT ROUTE (see routes/protected/index.tsx), so
+// it renders once above the lazy page chunks and can't receive props from the
+// page it wraps — the route's `handle` is react-router's channel for exactly
+// this kind of static, route-owned metadata.
+export type DashboardHandle = {
+  /** Header title. Falls back to a generic greeting when omitted. */
   title?: string;
-  onBack?: () => void;
-}) {
+  /** Show the back affordance (defaults to history-back). */
+  hasBack?: boolean;
+};
+
+export default function DashboardLayout() {
   const navigate = useNavigate();
+
+  // Deepest matched route wins, so a nested screen can override its parent's
+  // header without the parent knowing about it.
+  const matches = useMatches();
+  const { title, hasBack = false } = matches.reduce<DashboardHandle>(
+    (acc, m) => ({ ...acc, ...((m.handle as DashboardHandle | undefined) ?? {}) }),
+    {},
+  );
   const dispatch = useAppDispatch();
 
   useTokenRefresh();
@@ -112,10 +122,7 @@ export default function DashboardLayout({
               {hasBack && (
                 <>
                   <figure
-                    onClick={() => {
-                      if (onBack) onBack();
-                      else navigate(-1);
-                    }}
+                    onClick={() => navigate(-1)}
                     className="uppercase font-light text-gray-01 text-sm inline-flex items-center cursor-pointer"
                   >
                     <ChevronLeft className="text-inherit size-5 mr-1" />
@@ -237,7 +244,9 @@ export default function DashboardLayout({
               nowrap content (tables) — each page's own overflow-x-auto then
               clips it. Ported from console-fe; do not remove (CLAUDE.md
               §Responsive). */}
-          <div className="grid grid-cols-1 min-w-0 flex-1 pt-0">{children}</div>
+          <div className="grid grid-cols-1 min-w-0 flex-1 pt-0">
+            <Outlet />
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </>
