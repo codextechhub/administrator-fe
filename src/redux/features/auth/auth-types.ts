@@ -6,6 +6,44 @@ export interface Auth {
   permissions?: string[]
   school?: SchoolInfo | null
   tenant?: TenantInfo | null
+  /** Set only while this admin is proxying another user in their own school. */
+  impersonation?: ActiveImpersonation | null
+}
+
+/**
+ * An active proxy ("impersonation") session.
+ *
+ * `id` is echoed on every proxied request as `X-Impersonation-Session`. The
+ * actor snapshot is the ORIGINAL signed-in context, retained verbatim so
+ * exiting the proxy — or recovering from a collapsed session — can restore the
+ * real user instantly, without waiting on a network round-trip.
+ */
+export interface ActiveImpersonation {
+  id: number
+  /** Always the actor's own school tenant: school proxying is intra-tenant. */
+  tenantSlug: string
+  target: ProxyTargetIdentity
+  actor: AuthContextSnapshot
+}
+
+/** Minimal identity of a proxy target, as returned by the targets search. */
+export interface ProxyTargetIdentity {
+  id: number
+  email: string
+  full_name: string
+  user_type: string
+  role: string
+  tenant_slug: string
+  tenant_name: string
+  school_name: string | null
+}
+
+/** The four pieces of state that together define "who the app thinks I am". */
+export interface AuthContextSnapshot {
+  user: User | null
+  school: SchoolInfo | null
+  tenant: TenantInfo | null
+  permissions: string[]
 }
 
 // The caller's asserted tenant, from the login / me payload. Every tenant-owned

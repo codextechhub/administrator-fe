@@ -1,5 +1,5 @@
-import { resetAuth, setAuthUser, updatePermissions, updateTenant } from "@/redux/features/auth/auth-slice";
-import type { TenantInfo } from "@/redux/features/auth/auth-types";
+import { resetAuth, setAuthContext, setAuthUser } from "@/redux/features/auth/auth-slice";
+import type { SchoolInfo, TenantInfo, User } from "@/redux/features/auth/auth-types";
 import { baseApi } from "../base-api";
 import { routesPath } from "@/routes/routesPath";
 import { recordActivity } from "@/utils/session-activity";
@@ -8,6 +8,23 @@ import { endSession } from "@/utils/end-session";
 import type { LoginResponse } from "./auth-types";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
+/**
+ * `/user/auth/me/` — the effective identity of the current session.
+ *
+ * "Effective" matters: while a proxy session is active the backend resolves
+ * this endpoint as the proxied target, so the payload describes the target,
+ * not the signed-in admin.
+ */
+export interface MeResponse {
+  message: string;
+  data: {
+    user: User | null;
+    school: SchoolInfo | null;
+    tenant: TenantInfo | null;
+    permissions: string[];
+  };
+}
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -111,13 +128,24 @@ export const authApi = baseApi.injectEndpoints({
         body,
       }),
     }),
-    getMe: builder.query<{ message: string; data: { user: unknown; permissions: string[]; tenant: TenantInfo | null } }, void>({
+    getMe: builder.query<MeResponse, void>({
       query: () => ({ url: `/user/auth/me/`, method: "GET" }),
       async onQueryStarted(_, { queryFulfilled, dispatch }) {
         try {
           const { data } = await queryFulfilled;
-          dispatch(updatePermissions(data.data.permissions));
-          dispatch(updateTenant(data.data.tenant ?? null));
+          // `/me` is the authority on WHO the session currently acts as — not
+          // just what it may do. While a proxy session is active it returns the
+          // TARGET's identity, so applying the whole context (user + school
+          // included, not permissions/tenant alone) is what keeps the shell from
+          // rendering the admin's name beside the target's data. Every field
+          // is no-op guarded in the slice, so an unchanged context still costs
+          // nothing on the ordinary mount/refresh/focus runs.
+          dispatch(setAuthContext({
+            user: data.data.user ?? null,
+            school: data.data.school ?? null,
+            tenant: data.data.tenant ?? null,
+            permissions: data.data.permissions ?? [],
+          }));
         } catch {
           // /me failed (e.g. transient 5xx) — keep the persisted permissions;
           // the 401 interceptor handles a genuinely dead session.

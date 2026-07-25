@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import AppProvider from "./redux/provider.tsx";
+import { installStaleChunkReload } from "@/utils/stale-chunk";
 import "@fontsource/montserrat/400.css";
 import "@fontsource/montserrat/500.css";
 import "@fontsource/montserrat/600.css";
@@ -13,6 +14,9 @@ import "@fontsource/outfit/500.css";
 import "@fontsource/outfit/600.css";
 import "@fontsource/outfit/700.css";
 import "@fontsource/outfit/800.css";
+
+// Recover from stale dynamic-import chunks after a redeploy (guarded reload).
+installStaleChunkReload();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

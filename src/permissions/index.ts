@@ -13,6 +13,7 @@
 //   RR = resource       01 02 03 … (assigned sequentially per module)
 //   AA = action         01=view   02=create  03=update  04=delete
 //                       08=manage  09=suspend  10=reactivate  11=assign
+//                       12=start   13=end
 //                       39=view_sensitive
 //
 // ── Adding a permission ───────────────────────────────────────────────────────
@@ -69,6 +70,16 @@ const REGISTRY: Record<string, string> = {
   // ── school / roles  (MM=10, RR=08) ─────────────────────────────────────────
   "100801": "school.roles.view",
   "100811": "school.roles.assign",
+
+  // ── school / impersonation  (MM=10, RR=09) ─────────────────────────────────
+  // School-scoped proxy: act as another active user in your OWN school. The
+  // backend seeds these to school_admin only (see the backend's
+  // seed_school_permissions.py, whose table must stay in lockstep with this
+  // registry). Deliberately a separate namespace from platform.impersonation.*
+  // — a school key can never reach across tenants.
+  "100901": "school.impersonation.view",
+  "100912": "school.impersonation.start",
+  "100913": "school.impersonation.end",
 
   // ── academics / session  (MM=30, RR=01) ────────────────────────────────────
   "300101": "academics.session.view",
@@ -137,6 +148,11 @@ export const P = {
   // ── Roles ──────────────────────────────────────────────────────────────────
   VIEW_ROLES:              "100801",  // view school roles and assignments
   ASSIGN_ROLE:             "100811",  // assign or revoke roles from school users
+
+  // ── Proxy (view the app as another user in this school) ────────────────────
+  VIEW_PROXY_SESSIONS:     "100901",  // read the proxy session history / trail
+  START_PROXY_SESSION:     "100912",  // search users and start viewing as one
+  END_PROXY_SESSION:       "100913",  // end any proxy session in this school
 
   // ── Academic Sessions ──────────────────────────────────────────────────────
   BROWSE_SESSIONS:         "300101",  // view academic sessions / terms

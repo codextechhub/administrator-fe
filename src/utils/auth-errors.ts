@@ -67,6 +67,8 @@ const SAFE_MESSAGES = new Set<string>([
   "This invitation link has already been used. Please log in.",
   "This invitation link has expired. Please contact your administrator.",
   "Invalid or expired reset link.",
+  "Invalid or expired key. Contact your administrator for assistance.",
+  "Reset key has expired. Try again.",
   "Passwords do not match.",
   "User not found.",
 ]);

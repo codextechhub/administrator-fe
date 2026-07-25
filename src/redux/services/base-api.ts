@@ -5,8 +5,15 @@ import {
   createApi,
   fetchBaseQuery,
 } from "@reduxjs/toolkit/query/react";
-import { resetAuth, setToken, updatePermissions, updateTenant } from "../features/auth/auth-slice";
-import type { TenantInfo } from "../features/auth/auth-types";
+import {
+  resetAuth,
+  setAuthContext,
+  setImpersonation,
+  setToken,
+  updatePermissions,
+  updateTenant,
+} from "../features/auth/auth-slice";
+import type { ActiveImpersonation, TenantInfo } from "../features/auth/auth-types";
 import { getTenantSlug } from "@/utils/tenant-context";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
@@ -14,6 +21,13 @@ import { routesPath } from "@/routes/routesPath";
 import { refreshTokenSingleFlight } from "@/utils/token-refresh";
 import { endSession } from "@/utils/end-session";
 import { captureReturnTo } from "@/utils/return-to";
+import {
+  AUTH_ENDPOINTS,
+  TENANT_EXEMPT_ENDPOINTS,
+  blockedDuringIdentitySwap,
+  sendsImpersonationHeader,
+} from "./api-endpoints";
+import { isIdentitySwapInProgress, runWithIdentitySwap } from "@/utils/identity-swap";
 
 const getAccessToken = () => {
   const token = Cookies.get("token");
@@ -22,30 +36,14 @@ const getAccessToken = () => {
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
-// Endpoints that must never carry a (possibly stale) Bearer token. Sending one
-// to the login/activation/reset routes makes the backend treat the request as
-// already-authenticated, which can surface as a 500. Mirrors AUTH_URLS below;
-// prepareHeaders only has the endpoint name to work with, not the URL.
-const AUTH_ENDPOINTS = new Set([
-  "login",
-  "forgotPassword",
-  "passwordResetPreview",
-  "passwordResetConfirm",
-  "activationPreview",
-  "activateAccount",
-]);
+// The endpoint-name sets (auth / tenant-exempt / impersonation) live in
+// ./api-endpoints — see that module for why and how to extend them.
 
-// Endpoints that operate purely on the caller and therefore must NOT carry the
-// mandatory ?tenant= assertion (the backend 400s if one is sent). Union of the
-// unauthenticated auth routes plus the self-service /me family and logout.
-const TENANT_EXEMPT_ENDPOINTS = new Set([
-  ...AUTH_ENDPOINTS,
-  "logout",
-  "getMe",
-  "getMySecurityStats",
-  "getMyPasswordResets",
-  "changeMyPassword",
-]);
+// Read the active proxy session straight off the live store. Typed loosely
+// because the base query only ever receives the root state as `unknown`.
+const readImpersonation = (getState: () => unknown): ActiveImpersonation | null =>
+  (getState() as { auth?: { impersonation?: ActiveImpersonation | null } })?.auth
+    ?.impersonation ?? null;
 
 // True when the request already asserts a tenant, so central injection leaves
 // it untouched (handles both string and object arg forms).
@@ -70,10 +68,18 @@ const injectTenant = (args: string | FetchArgs, endpoint: string): string | Fetc
 
 export const baseQuery = fetchBaseQuery({
   baseUrl,
-  prepareHeaders: (headers, { endpoint }) => {
+  prepareHeaders: (headers, { endpoint, getState }) => {
     const accessToken = getAccessToken();
     if (accessToken && !AUTH_ENDPOINTS.has(endpoint)) {
       headers.set("Authorization", `Bearer ${accessToken}`);
+    }
+    // While a proxy session is active every data call rides with the session
+    // header, so the backend resolves the request — and evaluates RBAC — as the
+    // target user. The auth routes, logout and the impersonation management
+    // endpoints themselves are exempt: they must act as the original actor.
+    const impersonation = readImpersonation(getState);
+    if (impersonation && sendsImpersonationHeader(endpoint)) {
+      headers.set("X-Impersonation-Session", String(impersonation.id));
     }
     headers.set("accept", "application/json");
     return headers;
@@ -97,10 +103,20 @@ const forceLogoutAndRedirect = (api: Parameters<BaseQueryFn>[1]) => {
 // refreshes both the permission set and the cached tenant context.
 const fetchFreshMe = async (
   accessToken: string,
+  impersonation: ActiveImpersonation | null,
 ): Promise<{ permissions: string[] | null; tenant: TenantInfo | null }> => {
   try {
     const response = await fetch(`${baseUrl}/user/auth/me/`, {
-      headers: { Authorization: `Bearer ${accessToken}`, accept: "application/json" },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        accept: "application/json",
+        // Raw fetch, so it bypasses prepareHeaders — the proxy header has to be
+        // replayed by hand or a post-refresh /me would hydrate the ACTOR's
+        // permissions while the rest of the app still runs as the target.
+        ...(impersonation
+          ? { "X-Impersonation-Session": String(impersonation.id) }
+          : {}),
+      },
     });
     if (!response.ok) return { permissions: null, tenant: null };
     const data = await response.json();
@@ -111,6 +127,31 @@ const fetchFreshMe = async (
   } catch {
     return { permissions: null, tenant: null };
   }
+};
+
+/**
+ * Return to the original identity after the server ended the proxy session
+ * behind our back (idle timeout, target logged out, target deactivated).
+ *
+ * The retained actor snapshot makes this instant and offline-safe — no network
+ * call is needed to know who the admin really is. Runs inside the identity-swap
+ * gate so the target's still-mounted screens cannot refire under the restored
+ * actor, and resets the cache only after the gate lifts.
+ */
+const restoreActorAfterCollapse = async (
+  api: Parameters<BaseQueryFn>[1],
+  impersonation: ActiveImpersonation,
+) => {
+  await runWithIdentitySwap(async () => {
+    api.dispatch(setImpersonation(null));
+    api.dispatch(setAuthContext(impersonation.actor));
+    // Lazily imported: the route table imports pages that import this module,
+    // so a static import would be circular.
+    const { router } = await import("@/routes");
+    await router.navigate(routesPath.PROTECTED.OVERVIEW.INDEX, { replace: true });
+  });
+  api.dispatch(baseApi.util.resetApiState());
+  toast.info("Your proxy session ended. You are back in your own account.");
 };
 
 const extractFirstDetailError = (detail: unknown): string | null => {
@@ -149,6 +190,19 @@ export const baseQueryInterceptor: BaseQueryFn<
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
+  // Identity-swap gate: a proxy start/exit replaces the effective user while
+  // the old identity's screens are still mounted. Drop their in-flight refires
+  // here so they never reach the backend under the wrong identity. The error
+  // shape matches an abort, which the suppression below already keeps silent.
+  if (isIdentitySwapInProgress() && blockedDuringIdentitySwap(api.endpoint)) {
+    return {
+      error: {
+        status: "FETCH_ERROR",
+        error: "AbortError: identity swap in progress",
+      } as FetchBaseQueryError,
+    };
+  }
+
   // Central tenant assertion: every authenticated, non-exempt request carries
   // ?tenant=<the caller's slug> unless it already asserts one.
   const tenantArgs = injectTenant(args, api.endpoint);
@@ -168,6 +222,16 @@ export const baseQueryInterceptor: BaseQueryFn<
   // and a number for HTTP responses, so narrow access via `any`.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const res: any = result.error;
+
+  // Cache resets and the identity-swap gate intentionally abort requests during
+  // an identity change. They are not connectivity failures and must never
+  // produce a burst of misleading "Could not reach the server" toasts.
+  if (
+    res?.status === "FETCH_ERROR" &&
+    /abort|aborted/i.test(String(res?.error ?? ""))
+  ) {
+    return result;
+  }
 
   if (res?.status === 400 || res?.status === 422) {
     // Auth routes (login, reset, activate…) own their own inline/panel error
@@ -203,13 +267,23 @@ export const baseQueryInterceptor: BaseQueryFn<
       api.dispatch(setToken(refreshed.access));
 
       // Role may have changed since last login — keep permissions + tenant fresh.
-      const fresh = await fetchFreshMe(refreshed.access);
+      const activeImpersonation = readImpersonation(api.getState);
+      const fresh = await fetchFreshMe(refreshed.access, activeImpersonation);
       if (fresh.permissions) api.dispatch(updatePermissions(fresh.permissions));
       if (fresh.tenant) api.dispatch(updateTenant(fresh.tenant));
 
       const retry = await baseQuery(tenantArgs, api, extraOptions);
       if (retry?.error?.status === 401) {
-        forceLogoutAndRedirect(api);
+        if (activeImpersonation) {
+          // The actor's token was just refreshed successfully, so a second 401
+          // while proxying is the PROXY session dying, not the login session:
+          // the server ends it on idle timeout (30 min), target logout or
+          // target deactivation. Logging the admin out here would be wrong —
+          // restore their own identity instead of leaving a broken screen.
+          await restoreActorAfterCollapse(api, activeImpersonation);
+        } else {
+          forceLogoutAndRedirect(api);
+        }
       }
       return retry;
     }
@@ -283,5 +357,6 @@ export const baseApi = createApi({
     "Classes",
     "Fees",
     "Roles",
+    "ProxySessions",
   ],
 });

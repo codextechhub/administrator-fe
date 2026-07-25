@@ -3,13 +3,18 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { AppSidebar } from "../app-sidebar";
 import { svgIcons } from "@/assets/svg";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2, Undo2, UsersRound } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useSessionTimeout } from "@/hooks/use-session-timeout";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
 import { SessionTimeoutModal } from "@/components/session-timeout-modal";
-import { useAppSelector } from "@/redux/store";
-import { selectUser } from "@/redux/features/auth/auth-slice";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
+import {
+  selectActorPermissions,
+  selectImpersonation,
+  selectUser,
+} from "@/redux/features/auth/auth-slice";
 import {
   Combobox,
   ComboboxContent,
@@ -18,6 +23,18 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "../ui/combobox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { ProxySessionBanner } from "@/components/proxy-session-banner";
+import { ProxyUserDialog } from "@/components/proxy-user-dialog";
+import { P, resolvePermissionKey } from "@/permissions";
+import { exitProxySession } from "@/utils/proxy-session";
 
 export default function DashboardLayout({
   children,
@@ -31,6 +48,7 @@ export default function DashboardLayout({
   onBack?: () => void;
 }) {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   useTokenRefresh();
   const { open, secondsLeft, isExpired, onContinue, onLogout, goToLogin } =
@@ -43,6 +61,25 @@ export default function DashboardLayout({
   const roleLabel = humanizeRole(user?.user_type || user?.role);
   const avatarFallback = initials(fullName);
   const selectedBranch = user?.branch_name;
+
+  // Proxy ("view as another user"). The capability is checked against the
+  // ORIGINAL actor's grants: while a session is active `permissions` holds the
+  // TARGET's keys, so gating on those would hide the exit from the very admin
+  // who needs it.
+  const impersonation = useAppSelector(selectImpersonation);
+  const actorPermissions = useAppSelector(selectActorPermissions);
+  const canProxy = actorPermissions.includes(
+    resolvePermissionKey(P.START_PROXY_SESSION)
+  );
+  const [proxyDialogOpen, setProxyDialogOpen] = useState(false);
+  const [isExitingProxy, setIsExitingProxy] = useState(false);
+
+  const exitProxy = async () => {
+    if (!impersonation || isExitingProxy) return;
+    setIsExitingProxy(true);
+    await exitProxySession({ dispatch, navigate }, impersonation);
+    setIsExitingProxy(false);
+  };
 
   const branchOptions = [
     { label: "All Branches", value: "all" },
@@ -63,7 +100,11 @@ export default function DashboardLayout({
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset className="bg-white-05 min-w-0 w-auto">
-          <header className="flex justify-between h-15 px-3 lg:px-10 shrink-0 sticky top-0 z-10 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 bg-white border border-l-0 border-white-02">
+          {/* Banner + header pin together: two independently sticky bars at
+              top-0 would overlap as soon as the page scrolls. */}
+          <div className="sticky top-0 z-10 shrink-0">
+          <ProxySessionBanner />
+          <header className="flex justify-between h-15 px-3 lg:px-10 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 bg-white border border-l-0 border-white-02">
             <div className="inline-flex items-center gap-2">
               {/* Phone: the sidebar is offcanvas below md, so without a trigger
                   the nav is unreachable on mobile. */}
@@ -72,7 +113,8 @@ export default function DashboardLayout({
                 <>
                   <figure
                     onClick={() => {
-                      onBack ? onBack() : navigate(-1);
+                      if (onBack) onBack();
+                      else navigate(-1);
                     }}
                     className="uppercase font-light text-gray-01 text-sm inline-flex items-center cursor-pointer"
                   >
@@ -122,21 +164,74 @@ export default function DashboardLayout({
                 className=" data-[orientation=vertical]:h-7"
               />
 
-              <figure className="inline-flex items-center gap-x-3 pl-2.5 py-1 ">
-                <Avatar>
-                  <AvatarImage src={"/image/avatar2.png"} />
-                  <AvatarFallback>{avatarFallback}</AvatarFallback>
-                </Avatar>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Open account menu"
+                    // min-w-0 + the truncating spans keep a long name from
+                    // widening the header past a 390px viewport.
+                    className="inline-flex min-w-0 items-center gap-x-3 rounded-full py-1 pl-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                  >
+                    <Avatar className="shrink-0">
+                      <AvatarImage src={"/image/avatar2.png"} />
+                      <AvatarFallback>{avatarFallback}</AvatarFallback>
+                    </Avatar>
 
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{fullName}</span>
-                  <span className="text-muted-foreground truncate text-xs">
-                    {roleLabel}
-                  </span>
-                </div>
-              </figure>
+                    {/* The identity block is desktop-only: on a phone the
+                        avatar alone opens the same menu, and the banner already
+                        names the proxied user. */}
+                    <div className="hidden min-w-0 sm:grid text-left text-sm leading-tight">
+                      <span className="truncate font-medium">{fullName}</span>
+                      <span className="text-muted-foreground truncate text-xs">
+                        {roleLabel}
+                      </span>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="flex flex-col">
+                    <span className="truncate font-medium text-black-01">
+                      {fullName}
+                    </span>
+                    <span className="truncate text-xs font-normal text-muted-foreground">
+                      {user?.email || roleLabel}
+                    </span>
+                  </DropdownMenuLabel>
+                  {canProxy && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setProxyDialogOpen(true)}>
+                        <UsersRound className="size-4" />
+                        {impersonation ? "View as someone else" : "View as user"}
+                      </DropdownMenuItem>
+                      {impersonation && (
+                        <DropdownMenuItem
+                          disabled={isExitingProxy}
+                          onClick={exitProxy}
+                        >
+                          {isExitingProxy ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Undo2 className="size-4" />
+                          )}
+                          Exit proxy
+                        </DropdownMenuItem>
+                      )}
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </header>
+          </div>
+
+          {canProxy && (
+            <ProxyUserDialog
+              open={proxyDialogOpen}
+              onOpenChange={setProxyDialogOpen}
+            />
+          )}
           {/* grid-cols-1 (minmax(0,1fr)) zeroes the track's min-content floor so a
               page's <main> can never be stretched past the viewport by wide
               nowrap content (tables) — each page's own overflow-x-auto then
