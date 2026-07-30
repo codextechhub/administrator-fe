@@ -1,25 +1,5 @@
 # CLAUDE.md — school-fe
 
-## Build for every school, not for the first one
-
-XVS is a **multi-tenant product** and this is its school-facing frontend. The
-school using any screen you build might have one site or six. Corona Secondary
-School (at `xvs.codexng.com`) is simply the first tenant — not the template.
-
-- **Never build a screen that only makes sense for one shape of school.** If it
-  looks right only because of how the first school happens to be set up, it isn't
-  finished.
-- **Where a school has no branches, the branch dimension must recede** — no empty
-  column, no disabled filter, no `—` placeholder, no branch switcher holding a
-  single meaningless entry. Remove it; don't grey it out.
-- **Where a school has several, branch must be visible wherever it changes
-  meaning** — which branch a record belongs to, and which branch the user is acting
-  for.
-- **Don't hard-code the first school's specifics** — class names, term names,
-  campus names, fee amounts, or its particular structure. Those belong in data.
-- **Check both shapes before calling a screen done:** a single-site school and a
-  multi-branch one. One fixture proves nothing about tenancy.
-
 ## Pre-ship review (`ship-check`)
 
 When I say **`ship-check`** (or "run the ship-check") on a change, answer these
