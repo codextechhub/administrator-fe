@@ -37,6 +37,36 @@ without naming *what* makes it so.
 Finish with a one-line **verdict**: ship / fix-first, and the single most
 important thing to do before shipping.
 
+## Wrapping up: report in plain words
+
+When you finish a task — a build, an investigation, a document, a round of
+decisions — close with a plain-language breakdown rather than a wall of prose.
+Short numbered lines, one point each, ordinary words. Assume I am reading it tired.
+
+Use **only** the sections that actually apply, and **skip the ones that don't** —
+an empty heading is worse than no heading, and never pad a section to fill it out.
+
+- **What you now have** — the finished things, one line each. Only if something was
+  produced.
+- **What you decided** — decisions taken and locked, one line each. Only if
+  decisions were actually made.
+- **What we found wrong in the code** — real defects and gaps, grouped under short
+  themes once there are more than about four. **Only if there are findings** — if
+  nothing is wrong, leave this out entirely rather than writing "nothing found".
+- **Where to go next** — the order of the next steps, and which of them are
+  unblocked right now.
+
+How to write it:
+
+- Plain words beat precise jargon. "The page breaks on a phone" lands; "flex
+  container overflows at the `md` breakpoint" does not.
+- Size things honestly in both directions — say when something feared turns out to
+  be a one-line fix, and say when something small turns out to be load-bearing.
+- Put the worst finding where it cannot be missed, even if that breaks the order.
+- Keep file/line references out of the breakdown; they belong in the detail above
+  it, not in the summary.
+- Don't re-explain what I already know from the conversation.
+
 ## Fixing problems: root cause, not symptom
 
 When I ask you to fix a problem, treat the reported issue as one *instance* of
