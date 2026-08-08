@@ -2,7 +2,7 @@
 // PERMISSION REGISTRY
 //
 // Single source of truth. The backend permission keys ("module.resource.action")
-// exist ONLY inside REGISTRY below — nowhere else in the codebase.
+// exist ONLY inside REGISTRY below - nowhere else in the codebase.
 //
 // P.* names describe what the user is doing in the UI, not how the backend
 // models the permission. A reader of any other file cannot infer the backend
@@ -20,7 +20,7 @@
 //   1. Pick the next free code in the right MM RR range.
 //   2. Add  "MMRRAA": "module.resource.action"  to REGISTRY.
 //   3. Add a named constant to P that describes the UI capability.
-//   4. Use P.YOUR_CONSTANT everywhere — never the raw key or the code directly.
+//   4. Use P.YOUR_CONSTANT everywhere - never the raw key or the code directly.
 //
 // ── Adding a new module ───────────────────────────────────────────────────────
 //   1. Pick the next free MM.
@@ -76,7 +76,7 @@ const REGISTRY: Record<string, string> = {
   // backend seeds these to school_admin only (see the backend's
   // seed_school_permissions.py, whose table must stay in lockstep with this
   // registry). Deliberately a separate namespace from platform.impersonation.*
-  // — a school key can never reach across tenants.
+  // - a school key can never reach across tenants.
   "100901": "school.impersonation.view",
   "100912": "school.impersonation.start",
   "100913": "school.impersonation.end",
@@ -104,7 +104,7 @@ const REGISTRY: Record<string, string> = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public constants
-// Names describe UI capabilities — not backend keys or permission structure.
+// Names describe UI capabilities - not backend keys or permission structure.
 // ─────────────────────────────────────────────────────────────────────────────
 export const P = {
 
@@ -177,7 +177,7 @@ export const P = {
 
 export type PermissionCode = (typeof P)[keyof typeof P];
 
-// Internal resolver — used only by usePermissions and PermissionGate.
+// Internal resolver - used only by usePermissions and PermissionGate.
 export function resolvePermissionKey(code: PermissionCode): string {
   return REGISTRY[code] ?? "";
 }

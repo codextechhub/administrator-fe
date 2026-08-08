@@ -32,7 +32,7 @@ const initialState: Auth = {
 };
 
 // `/me` re-runs on mount, on token refresh and (since focus-refetch) every time
-// the user tabs back — but the context it returns is almost always identical to
+// the user tabs back - but the context it returns is almost always identical to
 // what is already in the store. Assigning unconditionally would hand every
 // `selectPermissions` / `selectTenant` consumer a brand-new reference on each of
 // those runs, re-rendering the whole protected tree and rewriting redux-persist
@@ -146,7 +146,7 @@ export const selectSchool = (state: RootStateType) => state.auth.school ?? null;
 export const selectTenant = (state: RootStateType) => state.auth.tenant ?? null;
 export const selectImpersonation = (state: RootStateType) =>
   state.auth.impersonation ?? null;
-// While proxying, `permissions` holds the TARGET's grants — so a "can I proxy?"
+// While proxying, `permissions` holds the TARGET's grants - so a "can I proxy?"
 // check must read the retained actor snapshot, otherwise the exit affordance
 // disappears the moment the proxy starts (stranding the admin as the target).
 export const selectActorPermissions = (state: RootStateType) =>

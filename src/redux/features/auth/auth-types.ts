@@ -15,7 +15,7 @@ export interface Auth {
  *
  * `id` is echoed on every proxied request as `X-Impersonation-Session`. The
  * actor snapshot is the ORIGINAL signed-in context, retained verbatim so
- * exiting the proxy — or recovering from a collapsed session — can restore the
+ * exiting the proxy - or recovering from a collapsed session - can restore the
  * real user instantly, without waiting on a network round-trip.
  */
 export interface ActiveImpersonation {
@@ -71,7 +71,7 @@ export interface User {
   branch_name: string | null
   created_at: string
   updated_at: string
-  // FLS-strippable admin-metadata fields — absent from the payload for school
+  // FLS-strippable admin-metadata fields - absent from the payload for school
   // users who lack `platform.team.view`; the backend lists them in
   // `_stripped_fields` instead (see @/utils/fls). Optional so consumers must
   // guard rather than assume presence.

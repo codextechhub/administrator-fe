@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getJwtExp, isJwtExpired } from "./jwt";
 
-// Build a JWT the way SimpleJWT does: base64url segments (RFC 7515) — '+'
+// Build a JWT the way SimpleJWT does: base64url segments (RFC 7515) - '+'
 // becomes '-', '/' becomes '_', and padding is stripped. The junk claim is
 // crafted so the encoded payload actually contains those characters, which is
 // exactly the case the old atob()-based decoder crashed on.

@@ -2,7 +2,7 @@
 // Endpoint classification for the base query.
 //
 // `prepareHeaders` and the base-query wrapper only ever see the RTK Query
-// endpoint *name* — never the final URL — so every "does this request get X?"
+// endpoint *name* - never the final URL - so every "does this request get X?"
 // rule has to be expressed as a name set. They live here (rather than inline in
 // base-api.ts) so the rules are a single source of truth and can be unit tested
 // without pulling the whole store/api graph into the test.
@@ -37,7 +37,7 @@ export const TENANT_EXEMPT_ENDPOINTS = new Set([
 
 // The impersonation management endpoints themselves. They are authorised as the
 // ORIGINAL actor (starting/ending/listing proxy sessions), never as the proxied
-// target — riding them with the session header would either 403 (the target
+// target - riding them with the session header would either 403 (the target
 // rarely holds school.impersonation.*) or, worse, allow proxy chaining.
 export const IMPERSONATION_ENDPOINTS = new Set([
   "getProxyTargets",
@@ -48,7 +48,7 @@ export const IMPERSONATION_ENDPOINTS = new Set([
 
 // Requests that must always run as the token owner regardless of an active
 // proxy session: the unauthenticated auth routes and logout (which revokes the
-// ACTOR's token pair). `/me` is intentionally absent — while proxying it must
+// ACTOR's token pair). `/me` is intentionally absent - while proxying it must
 // return the *target's* identity, which is exactly how the client learns who it
 // is now acting as.
 export const IMPERSONATION_HEADER_EXEMPT_ENDPOINTS = new Set([
@@ -65,7 +65,7 @@ export const sendsImpersonationHeader = (endpoint: string): boolean =>
  * True when a request fired mid identity-swap must be short-circuited.
  *
  * `getMe` is the swap's own hydration call and the impersonation/auth endpoints
- * drive the swap itself — they must always reach the network. Everything else
+ * drive the swap itself - they must always reach the network. Everything else
  * belongs to the identity that is being torn down.
  */
 export const blockedDuringIdentitySwap = (endpoint: string): boolean =>

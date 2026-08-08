@@ -11,7 +11,7 @@ const COOKIE_ATTRS: Cookies.CookieAttributes = {
   secure: window.location.protocol === "https:",
 };
 
-// Single writer for the auth cookie pair — every login/refresh path goes
+// Single writer for the auth cookie pair - every login/refresh path goes
 // through here so the attributes can never drift between call sites.
 export const setAuthCookies = (access: string, refresh?: string): void => {
   Cookies.set("token", access, COOKIE_ATTRS);
@@ -51,7 +51,7 @@ const doRefresh = async (refreshToken: string): Promise<RefreshOutcome> => {
     return { ok: false, reason: "network_error" };
   }
 
-  // Only 401 means the refresh token is definitively bad — force re-auth.
+  // Only 401 means the refresh token is definitively bad - force re-auth.
   if (response.status === 401) return { ok: false, reason: "token_invalid" };
   // 5xx (and anything else non-ok) is transient: caller should keep the user signed in.
   if (!response.ok) return { ok: false, reason: "server_error" };
@@ -67,11 +67,11 @@ const doRefresh = async (refreshToken: string): Promise<RefreshOutcome> => {
   if (!access) return { ok: false, reason: "server_error" };
   const refresh = data?.data?.refresh;
 
-  // The session was torn down while this refresh was in flight — discard the
+  // The session was torn down while this refresh was in flight - discard the
   // result rather than writing cookies for a session the user has left.
   if (sessionInvalidated) return { ok: false, reason: "token_invalid" };
 
-  // Cookie is the source of truth across all refresh callers — persist
+  // Cookie is the source of truth across all refresh callers - persist
   // immediately so the next reader sees the rotated values.
   setAuthCookies(access, refresh);
 
@@ -79,9 +79,9 @@ const doRefresh = async (refreshToken: string): Promise<RefreshOutcome> => {
 };
 
 /**
- * Shared single-flight refresh. All concurrent callers in the tab — RTK Query
+ * Shared single-flight refresh. All concurrent callers in the tab - RTK Query
  * 401 retries, the proactive route-change hook, and the idle "Continue" button
- * — wait on the same in-flight request, so the backend only sees one rotation
+ * - wait on the same in-flight request, so the backend only sees one rotation
  * per window of concurrent activity.
  *
  * Reads the refresh token from the cookie, which is updated immediately on

@@ -21,7 +21,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // The framework stack changes only on dependency bumps — splitting it
+        // The framework stack changes only on dependency bumps - splitting it
         // out of the app entry lets browsers keep it cached across deploys.
         manualChunks: {
           "vendor-react": [

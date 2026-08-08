@@ -60,8 +60,8 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           // grid-cols-1 (= minmax(0,1fr)) zeroes the implicit column's
-          // min-content floor. Without it a long unbreakable string — an email,
-          // a wide table — stretches the dialog's own grid track past
+          // min-content floor. Without it a long unbreakable string - an email,
+          // a wide table - stretches the dialog's own grid track past
           // max-w/100vw, and the content bleeds off a phone screen even though
           // the box itself is clamped. Same fix as the DashboardLayout children
           // wrapper (CLAUDE.md §Responsive); it belongs on the primitive so

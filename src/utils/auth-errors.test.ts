@@ -25,7 +25,7 @@ describe("humanizeAuthError", () => {
     );
   });
 
-  it("NEVER returns a raw SCREAMING_SNAKE code — unknown codes fall back", () => {
+  it("NEVER returns a raw SCREAMING_SNAKE code - unknown codes fall back", () => {
     const err = { status: 400, data: { error: { code: "SOME_UNMAPPED_BACKEND_CODE" } } };
     const out = humanizeAuthError(err, FALLBACK);
     expect(out).toBe(FALLBACK);

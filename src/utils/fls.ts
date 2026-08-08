@@ -9,7 +9,7 @@
  *       → user has no permission to see it → hide the element entirely
  *
  *   • field present in response but empty/null
- *       → field exists, just has no value → render "—" (or a placeholder)
+ *       → field exists, just has no value → render "-" (or a placeholder)
  *
  * Usage:
  *
@@ -17,11 +17,11 @@
  *
  *   // Hide a row entirely when the field was stripped
  *   {!isStripped(student, "medical_notes") && (
- *     <Row label="Medical Notes" value={student.medical_notes ?? "—"} />
+ *     <Row label="Medical Notes" value={student.medical_notes ?? "-"} />
  *   )}
  *
  *   // Pick a display value in one expression
- *   {isStripped(student, "guardian_contacts") ? null : (student.guardian_contacts ?? "—")}
+ *   {isStripped(student, "guardian_contacts") ? null : (student.guardian_contacts ?? "-")}
  */
 
 /** Any object that may carry the _stripped_fields array from the backend. */
@@ -39,7 +39,7 @@ export function isStripped(
 }
 
 /**
- * Builds a Set of stripped field names for a single data object — useful
+ * Builds a Set of stripped field names for a single data object - useful
  * when checking multiple fields to avoid repeated .includes() calls.
  *
  *   const stripped = strippedFields(student);

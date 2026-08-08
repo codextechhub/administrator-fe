@@ -1,6 +1,6 @@
 import type { ProxyTargetIdentity } from "@/redux/features/auth/auth-types";
 
-/** A user this admin may proxy — an active member of their own school. */
+/** A user this admin may proxy - an active member of their own school. */
 export type ProxyTarget = ProxyTargetIdentity;
 
 /** The backend's paginated envelope (see core/pagination.py XVSPagination). */

@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 // Decorative background for the login page's blue panel: a swarm of small
 // shapes that begin scattered and settle into a neat centered grid formation,
-// then breathe with a gentle infinite float. Purely presentational — the
+// then breathe with a gentle infinite float. Purely presentational - the
 // container is aria-hidden and pointer-events-none so it never interferes with
 // the form. All motion is transform/opacity only (GPU-composited).
 
@@ -13,8 +13,8 @@ const SHAPE_COUNT = 28;
 // relative to the panel box.
 const GRID_COLS = 7;
 const GRID_ROWS = 4;
-const GRID_LEFT = 26; // % — left edge of the formation
-const GRID_TOP = 34; // % — top edge of the formation
+const GRID_LEFT = 26; // % - left edge of the formation
+const GRID_TOP = 34; // % - top edge of the formation
 const GRID_GAP_X = 8; // % between columns
 const GRID_GAP_Y = 10; // % between rows
 
@@ -38,7 +38,7 @@ interface Shape {
 }
 
 // A tiny deterministic PRNG (mulberry32) so every reload produces the identical
-// scatter — the arrangement should feel authored, not random each visit.
+// scatter - the arrangement should feel authored, not random each visit.
 function mulberry32(seed: number) {
   return function () {
     seed |= 0;

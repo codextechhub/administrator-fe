@@ -9,7 +9,7 @@ import type {
 // Proxy ("impersonation") session management.
 //
 // Every endpoint here is authorised as the ORIGINAL signed-in admin, never as
-// the proxied target — `api-endpoints.ts` keeps them out of the
+// the proxied target - `api-endpoints.ts` keeps them out of the
 // X-Impersonation-Session header path, which is what prevents proxy chaining.
 //
 // Scope is the caller's OWN school: the backend pins the target pool to the
@@ -55,7 +55,7 @@ export const impersonationApi = baseApi.injectEndpoints({
     }),
 
     // The audit read surface for past sessions (requires
-    // school.impersonation.view). No screen consumes this yet — it exists so the
+    // school.impersonation.view). No screen consumes this yet - it exists so the
     // trail is one hook away when the school audit view lands.
     getProxySessions: builder.query<
       PaginatedResponse<ProxySession>,

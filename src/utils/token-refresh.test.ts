@@ -65,7 +65,7 @@ describe("refreshTokenSingleFlight", () => {
     expect(await mod.refreshTokenSingleFlight()).toEqual({ ok: false, reason: "token_invalid" });
   });
 
-  it("maps 5xx to server_error (transient — stay signed in)", async () => {
+  it("maps 5xx to server_error (transient - stay signed in)", async () => {
     Cookies.set("refresh_token", "r");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("oops", { status: 503 })));
 

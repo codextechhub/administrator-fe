@@ -34,7 +34,7 @@ export default function ActivateAccount() {
     validationSchema: resetPasswordSchema,
     onSubmit: (values) => {
       setApiError("");
-      // Activation only sets the password + marks the account active — it
+      // Activation only sets the password + marks the account active - it
       // returns `{ message }`, NOT a login-shaped payload. Show the success
       // panel and send the user to sign in.
       activateAccount({ activation_key: activation_key!, ...values })

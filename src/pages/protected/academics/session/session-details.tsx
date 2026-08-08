@@ -90,7 +90,7 @@ export default function SessionDetails() {
                   <div className="inline-flex items-center gap-3">
                     <p className="text-xs">
                       {chi.start_date}
-                      {chi.end_date && ` — ${chi.end_date}`}
+                      {chi.end_date && ` - ${chi.end_date}`}
                     </p>
                     <Badge
                       variant={chi.color_code as any}
@@ -128,9 +128,9 @@ const dummyData = {
   session_name: "2025 / 2026 Academic Session",
   status: "Active",
   branches: [
-    { id: "branch-001", name: "Primary — Magodo" },
-    { id: "branch-002", name: "Secondary — Magodo" },
-    { id: "branch-003", name: "Primary — Lekki" },
+    { id: "branch-001", name: "Primary - Magodo" },
+    { id: "branch-002", name: "Secondary - Magodo" },
+    { id: "branch-003", name: "Primary - Lekki" },
   ],
   terms: [
     {

@@ -41,7 +41,7 @@ export default function Login() {
           // the Console.
           if (res.data.user.user_type === "CX_STAFF") {
             setApiError(
-              "This portal is for school accounts. Codex staff sign in at the Console — console.codexng.com.",
+              "This portal is for school accounts. Codex staff sign in at the Console - console.codexng.com.",
             );
             return;
           }

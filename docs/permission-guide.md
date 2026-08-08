@@ -29,14 +29,14 @@ Nowhere else in the codebase should reference a raw `"school.x.y"` or `"academic
 ```ts
 import { P } from "@/permissions";
 
-// Names describe UI capabilities — never use raw strings or codes directly
+// Names describe UI capabilities - never use raw strings or codes directly
 P.BROWSE_STUDENTS        // "100301"  →  "school.students.view" internally
 P.ENROLL_STUDENT         // "100302"  →  "school.students.create"
 P.VIEW_STUDENT_SENSITIVE // "100339"  →  "school.students.view_sensitive"
 P.BROWSE_SESSIONS        // "300101"  →  "academics.session.view"
 ```
 
-The `P` object is a flat map of UI-intent names to opaque numeric codes. Names describe what the user is doing in the UI — not the backend key structure. A reader of any file outside `src/permissions/index.ts` cannot infer the backend key format from the constant name alone.
+The `P` object is a flat map of UI-intent names to opaque numeric codes. Names describe what the user is doing in the UI - not the backend key structure. A reader of any file outside `src/permissions/index.ts` cannot infer the backend key format from the constant name alone.
 
 To add a new permission: pick the next code in the correct range, add it to `REGISTRY` and `P` with a UI-intent name, then use `P.YOUR_CONSTANT` everywhere.
 
@@ -74,11 +74,11 @@ Login response
 
 > **By design, school-fe has NO route-level permission guards.** Enforcement is
 > page-level (sidebar filtering + `PermissionGate`) with the **backend as the
-> authoritative check** — every protected API call is validated server-side and
+> authoritative check** - every protected API call is validated server-side and
 > returns 403 if the caller lacks the key. The frontend gates only shape the UI;
 > they never protect data on their own.
 
-### 1. Sidebar — hide menu items the user cannot access
+### 1. Sidebar - hide menu items the user cannot access
 
 Each nav item in `app-sidebar.tsx` has an optional `permission` field. Items are filtered before render; a group is hidden when all its items are filtered out.
 
@@ -91,14 +91,14 @@ Each nav item in `app-sidebar.tsx` has an optional `permission` field. Items are
   permissionMode: "any",
 }
 
-// Multiple permissions — any one grants visibility
+// Multiple permissions - any one grants visibility
 {
   title: "Academics",
   permission: [P.BROWSE_SESSIONS, P.BROWSE_CALENDAR, P.BROWSE_CLASSES],
   permissionMode: "any",   // visible if any key is present
 }
 
-// Multiple permissions — must have all
+// Multiple permissions - must have all
 {
   title: "Roles",
   permission: [P.VIEW_ROLES, P.ASSIGN_ROLE],
@@ -119,7 +119,7 @@ Each nav item in `app-sidebar.tsx` has an optional `permission` field. Items are
 
 ---
 
-### 2. `PermissionGate` — hide or replace UI elements inside a page
+### 2. `PermissionGate` - hide or replace UI elements inside a page
 
 Use this for buttons, sections, or any element inside a page the user can already visit.
 
@@ -148,12 +148,12 @@ import { P } from "@/permissions";
   <Button>Manage Fees</Button>
 </PermissionGate>
 
-// Multiple permissions — any one
+// Multiple permissions - any one
 <PermissionGate permission={[P.ADD_BRANCH, P.MODIFY_BRANCH]}>
   <Button>Save</Button>
 </PermissionGate>
 
-// Multiple permissions — all required
+// Multiple permissions - all required
 <PermissionGate
   permission={[P.BROWSE_STUDENTS, P.MODIFY_STUDENT]}
   mode="all"
@@ -193,13 +193,13 @@ dropDownList={(row) => [
 
 When adding a new section to the app, work through this checklist:
 
-- [ ] **Verify the permission keys exist** in the backend registry (`vs_rbac` app / `seed_school_permissions`). Don't invent keys — a typo silently denies access to everyone.
-- [ ] **Add the key** to `REGISTRY` and a UI-intent `P.*` constant in `src/permissions/index.ts` — nowhere else references the raw string.
+- [ ] **Verify the permission keys exist** in the backend registry (`vs_rbac` app / `seed_school_permissions`). Don't invent keys - a typo silently denies access to everyone.
+- [ ] **Add the key** to `REGISTRY` and a UI-intent `P.*` constant in `src/permissions/index.ts` - nowhere else references the raw string.
 - [ ] **Add a sidebar item** in `app-sidebar.tsx` with the correct `permission` and `permissionMode`.
 - [ ] **Add `PermissionGate`** around action buttons inside the page (Add, Edit, Manage).
 - [ ] **Use `hasPermission()` directly** to filter dropdown action items.
-- [ ] **Trust the backend** — the protected endpoint must enforce the same key server-side. The frontend gate is presentation only.
-- [ ] **Test both paths**: (a) a user with the permission sees the affordance, (b) a user without does not — and the API returns 403 if they force the request.
+- [ ] **Trust the backend** - the protected endpoint must enforce the same key server-side. The frontend gate is presentation only.
+- [ ] **Test both paths**: (a) a user with the permission sees the affordance, (b) a user without does not - and the API returns 403 if they force the request.
 
 ---
 
@@ -225,14 +225,14 @@ hasModuleAccess("school.", "academics.")                      // any key under a
 
 Permissions are loaded at login. Two mechanisms keep them in sync after that:
 
-- **On app mount** — `authenticated.tsx` calls `GET /user/auth/me/` via `useGetMeQuery`. The `onQueryStarted` handler dispatches `updatePermissions` with the fresh list. This catches any role changes that happened while the token was still valid.
-- **On token refresh** — `base-api.ts` calls `fetchFreshPermissions()` immediately after a successful token refresh and dispatches `updatePermissions`. This covers the silent re-authentication path.
+- **On app mount** - `authenticated.tsx` calls `GET /user/auth/me/` via `useGetMeQuery`. The `onQueryStarted` handler dispatches `updatePermissions` with the fresh list. This catches any role changes that happened while the token was still valid.
+- **On token refresh** - `base-api.ts` calls `fetchFreshPermissions()` immediately after a successful token refresh and dispatches `updatePermissions`. This covers the silent re-authentication path.
 
 **Remaining gap:** If a user's permissions are revoked and their token has not yet expired, there is a window (up to the token's lifespan) before the next app mount triggers a sync. The backend will still return 403 on any API call that requires the revoked permission, so the user cannot actually perform the action even if the UI briefly shows the button.
 
 ### 2. Adding a wrong code fails silently
 
-A code that doesn't exist in `REGISTRY` (e.g. a typo or a code that was never added) resolves to `""` via `resolvePermissionKey`, which will never match any backend permission. The guard **fails closed** — it denies everyone, including admins. TypeScript will catch a code that isn't a valid `PermissionCode` value, but it won't catch a valid code that was mapped to the wrong backend key. Always cross-reference with the backend's `seed_school_permissions` table before committing.
+A code that doesn't exist in `REGISTRY` (e.g. a typo or a code that was never added) resolves to `""` via `resolvePermissionKey`, which will never match any backend permission. The guard **fails closed** - it denies everyone, including admins. TypeScript will catch a code that isn't a valid `PermissionCode` value, but it won't catch a valid code that was mapped to the wrong backend key. Always cross-reference with the backend's `seed_school_permissions` table before committing.
 
 ### 3. Routes with `permission: null` (always-visible) are unguarded
 
@@ -244,7 +244,7 @@ The frontend checks the flat `permissions[]` array. If a school_admin's login re
 
 ---
 
-## Field-Level Security (FLS) — Hiding Stripped Response Fields
+## Field-Level Security (FLS) - Hiding Stripped Response Fields
 
 The backend serializer mixin (`FieldSecurityMixin` in `vs_rbac/fls.py`) can strip individual fields from an API response when the requesting user lacks the required read permission. Instead of sending the field at all, the backend appends a `_stripped_fields` array to the response listing every field it removed.
 
@@ -261,7 +261,7 @@ This lets the frontend distinguish two different states:
 | State | What it means | What to show |
 |-------|--------------|-------------|
 | Field in `_stripped_fields` | User has no permission to see it | Hide the element entirely |
-| Field absent / null / empty, not stripped | Field exists, no data yet | Render `"—"` |
+| Field absent / null / empty, not stripped | Field exists, no data yet | Render `"-"` |
 
 School users have four admin-metadata fields (`password_changed_at`, `last_login_at`, `invited_by_id`, `invited_by_name`) stripped from their own user payload; the sensitive-student fields are gated behind `P.VIEW_STUDENT_SENSITIVE` (`school.students.view_sensitive`).
 
@@ -274,14 +274,14 @@ import { isStripped, strippedFields } from "@/utils/fls";
 
 // Single field check
 {!isStripped(student, "medical_notes") && (
-  <Row label="Medical Notes" value={student.medical_notes ?? "—"} />
+  <Row label="Medical Notes" value={student.medical_notes ?? "-"} />
 )}
 
-// Multiple fields — build a Set once to avoid repeated .includes() calls
+// Multiple fields - build a Set once to avoid repeated .includes() calls
 const stripped = strippedFields(student);
 
-<Row label="Medical Notes"        hidden={stripped.has("medical_notes")}        value={student.medical_notes ?? "—"} />
-<Row label="Guardian Contacts"    hidden={stripped.has("guardian_contacts")}    value={student.guardian_contacts ?? "—"} />
+<Row label="Medical Notes"        hidden={stripped.has("medical_notes")}        value={student.medical_notes ?? "-"} />
+<Row label="Guardian Contacts"    hidden={stripped.has("guardian_contacts")}    value={student.guardian_contacts ?? "-"} />
 ```
 
 ### Typing API responses
@@ -331,7 +331,7 @@ User navigates to URL
 
 ## Current Permission Map
 
-### `school` module (MM=10) — administration & people
+### `school` module (MM=10) - administration & people
 
 | Backend key | Code | Sensitivity | UI constant |
 |---|---|---|---|
@@ -361,7 +361,7 @@ User navigates to URL
 | school.roles.view | 100801 | NORMAL | `VIEW_ROLES` |
 | school.roles.assign | 100811 | SENSITIVE | `ASSIGN_ROLE` |
 
-### `academics` module (MM=30) — sessions, calendar & classes
+### `academics` module (MM=30) - sessions, calendar & classes
 
 | Backend key | Code | Sensitivity | UI constant |
 |---|---|---|---|

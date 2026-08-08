@@ -39,7 +39,7 @@ import { exitProxySession } from "@/utils/proxy-session";
 // Per-screen header config, declared on the route rather than passed as props.
 // The layout is now an eager LAYOUT ROUTE (see routes/protected/index.tsx), so
 // it renders once above the lazy page chunks and can't receive props from the
-// page it wraps — the route's `handle` is react-router's channel for exactly
+// page it wraps - the route's `handle` is react-router's channel for exactly
 // this kind of static, route-owned metadata.
 export type DashboardHandle = {
   /** Header title. Falls back to a generic greeting when omitted. */
@@ -241,7 +241,7 @@ export default function DashboardLayout() {
           )}
           {/* grid-cols-1 (minmax(0,1fr)) zeroes the track's min-content floor so a
               page's <main> can never be stretched past the viewport by wide
-              nowrap content (tables) — each page's own overflow-x-auto then
+              nowrap content (tables) - each page's own overflow-x-auto then
               clips it. Ported from console-fe; do not remove (CLAUDE.md
               §Responsive). */}
           <div className="grid grid-cols-1 min-w-0 flex-1 pt-0">

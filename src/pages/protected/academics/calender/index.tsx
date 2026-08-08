@@ -66,7 +66,7 @@ export default function AcademicCalender() {
                   {chi?.status === "completed" ? (
                     <Check className="ml-1" />
                   ) : chi?.status === "ongoing" ? (
-                    " — ongoing"
+                    " - ongoing"
                   ) : (
                     ""
                   )}

@@ -1,5 +1,5 @@
 /**
- * auth-errors — turn a backend/RTK-Query error into a clear, user-facing
+ * auth-errors - turn a backend/RTK-Query error into a clear, user-facing
  * sentence for the /accounts auth pages.
  *
  * The backend (apps/core/response.error_response) returns:
@@ -135,7 +135,7 @@ const transportMessage = (err: unknown): string | undefined => {
  * @param fallback  Copy returned when the error is unrecognized. NEVER a code.
  */
 export function humanizeAuthError(err: unknown, fallback: string): string {
-  // 1. Network / timeout / parsing — before touching the (absent) body.
+  // 1. Network / timeout / parsing - before touching the (absent) body.
   const transport = transportMessage(err);
   if (transport) return transport;
 

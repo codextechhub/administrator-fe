@@ -21,7 +21,7 @@ import {
   SkeletonRow,
 } from "@/components/custom/skeletons";
 
-/** Ghost rows shown while a list loads — enough to fill the fold, not so many
+/** Ghost rows shown while a list loads - enough to fill the fold, not so many
  *  that the page grows past the real result. */
 const GHOST_ROWS = 6;
 
@@ -162,7 +162,7 @@ const CustomTable = ({
             <>
               {/* One announcement for the whole surface; the ghost rows
                   themselves are aria-hidden decoration. `loadingText` keeps
-                  working — it is now what the screen reader hears. */}
+                  working - it is now what the screen reader hears. */}
               <TableRow aria-hidden={false} className="hover:bg-transparent">
                 <TableCell colSpan={ghostColumns} className="h-0 border-0 p-0">
                   <SkeletonLoadingLabel text={loadingText || "Loading…"} />

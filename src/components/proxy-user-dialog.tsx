@@ -34,7 +34,7 @@ const SEARCH_DEBOUNCE_MS = 350;
  *
  * Phone-first: the whole sheet is a single column, results are full-width rows
  * with truncating text (never a table), and the confirm button is thumb-height
- * and always on screen — starting/exiting a proxy is a "simple action" and must
+ * and always on screen - starting/exiting a proxy is a "simple action" and must
  * work properly at 390px (CLAUDE.md §Responsive depth policy).
  */
 export function ProxyUserDialog({
@@ -169,7 +169,7 @@ export function ProxyUserDialog({
                         {initials(target.full_name)}
                       </span>
                       {/* min-w-0 is what lets the truncate below actually
-                          truncate inside a flex row — without it long emails
+                          truncate inside a flex row - without it long emails
                           push the row past a 390px viewport. */}
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-semibold text-black-01">

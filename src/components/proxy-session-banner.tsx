@@ -10,7 +10,7 @@ import { exitProxySession } from "@/utils/proxy-session";
  * Always-on notice that this session is acting as someone else.
  *
  * Impersonation is the one state where every screen lies about who you are, so
- * the exit has to be reachable from ANY screen without hunting through a menu —
+ * the exit has to be reachable from ANY screen without hunting through a menu -
  * hence a persistent bar rather than a toast or a menu item alone. It sits above
  * the header inside the scroll container so it is the first thing on the page
  * and cannot be scrolled away from on a phone.
@@ -20,7 +20,7 @@ import { exitProxySession } from "@/utils/proxy-session";
  * instead of pushing the button off a 390px viewport.
  *
  * Stickiness is owned by the layout's header wrapper, which pins the banner and
- * the header together — pinning them separately would overlap them on scroll.
+ * the header together - pinning them separately would overlap them on scroll.
  */
 export function ProxySessionBanner() {
   const impersonation = useAppSelector(selectImpersonation);
@@ -46,7 +46,7 @@ export function ProxySessionBanner() {
       <p className="min-w-0 flex-1 truncate text-xs font-medium sm:text-sm">
         You are viewing as{" "}
         <span className="font-semibold">{impersonation.target.full_name}</span>
-        <span className="hidden sm:inline"> — everything you do is recorded against your account.</span>
+        <span className="hidden sm:inline"> - everything you do is recorded against your account.</span>
       </p>
       <button
         type="button"

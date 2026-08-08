@@ -10,7 +10,7 @@ import type { LoginResponse } from "./auth-types";
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
 /**
- * `/user/auth/me/` — the effective identity of the current session.
+ * `/user/auth/me/` - the effective identity of the current session.
  *
  * "Effective" matters: while a proxy session is active the backend resolves
  * this endpoint as the proxied target, so the payload describes the target,
@@ -41,7 +41,7 @@ export const authApi = baseApi.injectEndpoints({
 
           // Identity check: this portal is for school accounts only. A Codex
           // staff login succeeds at the backend (it's the shared endpoint),
-          // but we refuse to open a session here — write NO cookies and NO
+          // but we refuse to open a session here - write NO cookies and NO
           // Redux state, and fire-and-forget a logout to blacklist the token
           // pair the backend just issued. The login page inspects the
           // fulfilled payload's user_type and renders the console-redirect
@@ -58,20 +58,20 @@ export const authApi = baseApi.injectEndpoints({
                 },
                 body: JSON.stringify({ refresh }),
               }).catch(() => {
-                // Best-effort revocation — the pair simply ages out if it fails.
+                // Best-effort revocation - the pair simply ages out if it fails.
               });
             }
             return;
           }
 
-          // A fresh, valid session — re-enable token refresh in case a prior
+          // A fresh, valid session - re-enable token refresh in case a prior
           // session in this JS context invalidated it.
           resetSessionInvalidation();
           setAuthCookies(data?.data?.access || "", data?.data?.refresh || "");
           recordActivity();
           dispatch(setAuthUser(data?.data));
         } catch {
-          // Login failed — the mutation hook surfaces the error to the page;
+          // Login failed - the mutation hook surfaces the error to the page;
           // nothing to clean up because nothing was written yet.
         }
       },
@@ -87,7 +87,7 @@ export const authApi = baseApi.injectEndpoints({
         try {
           await queryFulfilled;
         } catch {
-          // Server-side revocation failed — proceed with client-side cleanup anyway.
+          // Server-side revocation failed - proceed with client-side cleanup anyway.
         } finally {
           endSession();
           dispatch(resetAuth());
@@ -133,7 +133,7 @@ export const authApi = baseApi.injectEndpoints({
       async onQueryStarted(_, { queryFulfilled, dispatch }) {
         try {
           const { data } = await queryFulfilled;
-          // `/me` is the authority on WHO the session currently acts as — not
+          // `/me` is the authority on WHO the session currently acts as - not
           // just what it may do. While a proxy session is active it returns the
           // TARGET's identity, so applying the whole context (user + school
           // included, not permissions/tenant alone) is what keeps the shell from
@@ -147,7 +147,7 @@ export const authApi = baseApi.injectEndpoints({
             permissions: data.data.permissions ?? [],
           }));
         } catch {
-          // /me failed (e.g. transient 5xx) — keep the persisted permissions;
+          // /me failed (e.g. transient 5xx) - keep the persisted permissions;
           // the 401 interceptor handles a genuinely dead session.
         }
       },

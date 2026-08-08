@@ -1,5 +1,5 @@
 /**
- * PermissionGate — conditionally renders UI based on the user's permissions.
+ * PermissionGate - conditionally renders UI based on the user's permissions.
  * Import permission codes from @/permissions and use P.* constants.
  *
  * Hide entirely (default):
@@ -12,12 +12,12 @@
  *     <Button>Edit Student</Button>
  *   </PermissionGate>
  *
- * Array — any one (default):
+ * Array - any one (default):
  *   <PermissionGate permission={[P.ENROLL_STUDENT, P.MODIFY_STUDENT]}>
  *     <Button>Save</Button>
  *   </PermissionGate>
  *
- * Array — must have all:
+ * Array - must have all:
  *   <PermissionGate permission={[P.BROWSE_STUDENTS, P.MODIFY_STUDENT]} mode="all">
  *     <Button>Edit</Button>
  *   </PermissionGate>

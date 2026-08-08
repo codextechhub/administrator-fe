@@ -18,7 +18,7 @@ const { LOGIN } = routesPath.AUTH;
 // Auto-recovery for a transient /me failure (network glitch, server blip).
 // Rather than stranding the user behind a manual button, we silently re-run the
 // context query on an escalating backoff. Full page reloads are deliberately
-// avoided — re-running the one failed query recovers just as well and stays
+// avoided - re-running the one failed query recovers just as well and stays
 // invisible when it succeeds, instead of flashing a white screen and tearing
 // down the store/cache. After MAX_AUTO_RETRIES failures the failure no longer
 // looks transient, so we fall back to the manual retry card (the honest exit
@@ -38,7 +38,7 @@ export default function Authenticated() {
   useEffect(() => {
     if (!shouldRedirect) return;
     // Only show the expiry banner + clean up when there was an actual session
-    // to end. A missing cookie just means "go log in" — no banner needed.
+    // to end. A missing cookie just means "go log in" - no banner needed.
     if (refreshExpired || idleTooLong) {
       endSession(
         idleTooLong
@@ -50,14 +50,14 @@ export default function Authenticated() {
     // there. Must run AFTER endSession (which clears sessionStorage).
     captureReturnTo();
     // Hard-redirect (full reload) rather than an in-SPA navigate so all the
-    // stale in-memory state from the dead session — Redux store, RTK Query
-    // cache, module-level refresh/logout flags — is torn down. This keeps every
+    // stale in-memory state from the dead session - Redux store, RTK Query
+    // cache, module-level refresh/logout flags - is torn down. This keeps every
     // logout path consistent and prevents a stale token leaking into the next
     // login attempt.
     window.location.replace(LOGIN);
   }, [shouldRedirect, refreshExpired, idleTooLong]);
 
-  // Sync permissions on mount — catches role changes that happened while the
+  // Sync permissions on mount - catches role changes that happened while the
   // token was still valid. onQueryStarted in getMe dispatches updatePermissions.
   //
   // refetchOnFocus re-runs it the moment the user tabs back, closing the window
@@ -67,7 +67,7 @@ export default function Authenticated() {
   // gate short-circuits to "ready" while a tenant is present, so a background
   // refetch never flips the mounted app back to a spinner, and the slice's
   // update reducers no-op when the context comes back unchanged (the common
-  // case) — so the usual focus costs nothing beyond the request itself.
+  // case) - so the usual focus costs nothing beyond the request itself.
   const {
     isLoading: isLoadingContext,
     isFetching: isFetchingContext,
@@ -99,7 +99,7 @@ export default function Authenticated() {
   // repo's eslint config (react-hooks v7 `set-state-in-effect`) requires.
   if (contextGateState === "ready" && retryAttempts !== 0) setRetryAttempts(0);
 
-  // "logout": /me succeeded but carried no tenant — the context is gone, so the
+  // "logout": /me succeeded but carried no tenant - the context is gone, so the
   // session is effectively logged out. Run the standard logout sequence rather
   // than stranding the user. (A transient /me error is "retry", handled below.)
   useEffect(() => {
@@ -150,7 +150,7 @@ export default function Authenticated() {
   // change. This boundary protects every tenant-scoped screen and bulk flow.
   if (contextGateState !== "ready") {
     // A "retry" while auto-recovery is still in flight (attempts remaining), or a
-    // refetch triggered by it, is a reconnection — not the initial load and not a
+    // refetch triggered by it, is a reconnection - not the initial load and not a
     // dead end. Show a quiet "Reconnecting…" spinner; the alarming card is
     // reserved for when every auto-retry has failed.
     const autoRetrying =
@@ -172,7 +172,7 @@ export default function Authenticated() {
       );
     }
 
-    // "retry" with auto-recovery exhausted — the failure no longer looks
+    // "retry" with auto-recovery exhausted - the failure no longer looks
     // transient. Offer a manual retry (which restarts the backoff) rather than
     // logging out or retrying forever.
     if (contextGateState === "retry") {

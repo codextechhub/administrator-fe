@@ -6,7 +6,7 @@
 // the bytes with the access token and hands back a local blob: URL. RTK Query
 // caches/dedupes it, so the sidebar and favicon share a single request.
 //
-// Returns undefined while loading or when the school has no logo — callers fall
+// Returns undefined while loading or when the school has no logo - callers fall
 // back to the bundled default.
 
 import { skipToken } from "@reduxjs/toolkit/query";

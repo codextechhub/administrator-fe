@@ -1,7 +1,7 @@
 // Persists the wall-clock timestamp of the user's last interaction so the
 // Authenticated gate can detect "left overnight" sessions on the next reload.
 // Activity events fire very frequently (mousemove, scroll), so writes are
-// throttled — the in-memory ref in useSessionTimeout remains the authoritative
+// throttled - the in-memory ref in useSessionTimeout remains the authoritative
 // source while the page is open; this is only a stale-on-mount safety net.
 
 const KEY = "_last_activity";
@@ -37,6 +37,6 @@ export function clearActivity(): void {
   try {
     localStorage.removeItem(KEY);
   } catch {
-    // Same private-mode caveat as recordActivity — nothing to clean up.
+    // Same private-mode caveat as recordActivity - nothing to clean up.
   }
 }

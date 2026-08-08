@@ -28,12 +28,12 @@ const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
   reducer: persistedReducer,
-  // import.meta.env.NODE_ENV does not exist under Vite — only MODE/DEV/PROD.
+  // import.meta.env.NODE_ENV does not exist under Vite - only MODE/DEV/PROD.
   // Using it left DevTools enabled in production builds.
   devTools: import.meta.env.DEV,
   // Both dev tripwires are back on (RTK no-ops them in production builds). The
   // serializable check ignores redux-persist's own lifecycle actions, which
-  // legitimately carry non-serializable payloads — the documented allow-list.
+  // legitimately carry non-serializable payloads - the documented allow-list.
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {

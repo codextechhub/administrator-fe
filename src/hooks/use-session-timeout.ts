@@ -11,7 +11,7 @@ const BASE_URL = import.meta.env.VITE_BACKEND_URL as string;
 
 // Fire-and-forget: tells the backend to blacklist the current refresh token.
 // Accepts explicit tokens so the call still works after cookies have been cleared.
-// Intentionally not awaited — client-side logout proceeds regardless of outcome.
+// Intentionally not awaited - client-side logout proceeds regardless of outcome.
 function revokeSessionOnBackend(tokens?: { access: string; refresh: string }): void {
   const access = tokens?.access ?? Cookies.get("token") ?? "";
   const refresh = tokens?.refresh ?? Cookies.get("refresh_token") ?? "";
@@ -33,7 +33,7 @@ export const IDLE_MS = 5 * 60 * 1000;       // 5 minutes idle before warning
 export const WARNING_MS = 10 * 60 * 1000;   // 10-minute countdown before expiry
 
 // NOTE: window "focus" is deliberately NOT an activity event. Returning to the
-// tab must first be judged against the wall clock (catchUp below) — treating
+// tab must first be judged against the wall clock (catchUp below) - treating
 // the regained focus itself as activity would stamp lastActivity = now and
 // silently erase a long absence before the idle check could run.
 const ACTIVITY_EVENTS = [
@@ -55,7 +55,7 @@ export function useSessionTimeout() {
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Timestamps tracked on refs so closures always read the latest value.
-  // Initialised to 0 (not Date.now() — impure during render); the mount
+  // Initialised to 0 (not Date.now() - impure during render); the mount
   // effect's resetIdleTimer() call stamps it before anything reads it.
   const lastActivityRef = useRef<number>(0);
   const warningStartedAtRef = useRef<number | null>(null);
@@ -123,7 +123,7 @@ export function useSessionTimeout() {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     // Derive the warning start from lastActivity, not the firing time: browsers
     // throttle/suspend background timers, so this timeout can fire arbitrarily
-    // late — the countdown must still measure from the true idle deadline.
+    // late - the countdown must still measure from the true idle deadline.
     idleTimerRef.current = setTimeout(
       () => startCountdown(lastActivityRef.current + IDLE_MS),
       IDLE_MS,
@@ -131,8 +131,8 @@ export function useSessionTimeout() {
   }, [startCountdown]);
 
   // Wall-clock catch-up, run on EVERY wake-up signal (activity event, window
-  // focus, visibilitychange). Timers can be suspended for the entire absence —
-  // system sleep, display sleep, Chrome tab freezing — so no timer may have
+  // focus, visibilitychange). Timers can be suspended for the entire absence -
+  // system sleep, display sleep, Chrome tab freezing - so no timer may have
   // fired before the user physically returns. Whichever signal lands first
   // must judge the absence from lastActivity before anything resets it.
   // Returns false when the idle threshold was crossed (warning/expiry shown).
@@ -140,7 +140,7 @@ export function useSessionTimeout() {
     const now = Date.now();
 
     if (isWarningOpenRef.current && warningStartedAtRef.current) {
-      // Warning already open — just verify it hasn't expired while suspended.
+      // Warning already open - just verify it hasn't expired while suspended.
       if (now - warningStartedAtRef.current >= WARNING_MS) expireSession();
       return false;
     }
@@ -152,7 +152,7 @@ export function useSessionTimeout() {
       return false;
     }
     if (lastActivityRef.current && idleElapsed >= IDLE_MS) {
-      // Crossed idle threshold while away — start countdown at the correct offset.
+      // Crossed idle threshold while away - start countdown at the correct offset.
       startCountdown(lastActivityRef.current + IDLE_MS);
       return false;
     }
@@ -160,7 +160,7 @@ export function useSessionTimeout() {
   }, [expireSession, startCountdown]);
 
   // Wire up activity listeners. mousemove/scroll fire continuously, so the
-  // timer reset is throttled — clearTimeout/setTimeout per event would churn
+  // timer reset is throttled - clearTimeout/setTimeout per event would churn
   // the event loop for no behavioural gain at this resolution.
   useEffect(() => {
     let lastReset = 0;
@@ -169,7 +169,7 @@ export function useSessionTimeout() {
       if (t - lastReset < 1_000) return;
       lastReset = t;
       // The first event after a long absence is the user *returning*, not
-      // activity — catch up first; only reset when still inside the window.
+      // activity - catch up first; only reset when still inside the window.
       if (catchUp()) resetIdleTimer();
     };
     ACTIVITY_EVENTS.forEach((e) => window.addEventListener(e, handleActivity));
@@ -181,7 +181,7 @@ export function useSessionTimeout() {
     };
   }, [catchUp, resetIdleTimer]);
 
-  // Catch up when the tab becomes visible again, AND on window focus — an
+  // Catch up when the tab becomes visible again, AND on window focus - an
   // app-switch (Cmd+Tab) can return the user without any visibilitychange
   // when the tab stayed nominally visible the whole time.
   useEffect(() => {
@@ -209,7 +209,7 @@ export function useSessionTimeout() {
       return;
     }
 
-    // Dismiss the modal immediately — don't wait for the network round-trip.
+    // Dismiss the modal immediately - don't wait for the network round-trip.
     warningStartedAtRef.current = null;
     isWarningOpenRef.current = false;
     setOpen(false);
@@ -226,11 +226,11 @@ export function useSessionTimeout() {
       logout();
       return;
     }
-    // transient error — user stays signed in; next 401 will retry the refresh
+    // transient error - user stays signed in; next 401 will retry the refresh
   }, [dispatch, logout, resetIdleTimer]);
 
   const goToLogin = useCallback(() => {
-    // Explicitly blacklist the session even though expireSession already tried —
+    // Explicitly blacklist the session even though expireSession already tried -
     // this covers the case where the first call failed (transient network error).
     if (capturedTokensRef.current) {
       revokeSessionOnBackend(capturedTokensRef.current);

@@ -8,7 +8,7 @@
 
 const KEY = "_auth_return_to";
 
-// Auth/entry routes we must never bounce back to — that would loop the user
+// Auth/entry routes we must never bounce back to - that would loop the user
 // through login again. Mirrors routesPath.AUTH: everything lives under
 // /accounts, plus the legacy /login redirect.
 const AUTH_PREFIXES = ["/accounts", "/login"];

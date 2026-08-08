@@ -1,9 +1,9 @@
-# CLAUDE.md — school-fe
+# CLAUDE.md - school-fe
 
 ## Pre-ship review (`ship-check`)
 
 When I say **`ship-check`** (or "run the ship-check") on a change, answer these
-four questions about the code you just wrote — honestly and specifically, not as
+four questions about the code you just wrote - honestly and specifically, not as
 a rubber stamp. Point at real files/lines, name concrete risks, and if the answer
 to 1 or 2 is "no", say so and propose the fix. Don't claim "secure/efficient"
 without naming *what* makes it so.
@@ -11,7 +11,7 @@ without naming *what* makes it so.
 1. **Did you build this in the most secure way?**
    - `rbac_permission` (or equivalent authz) on every new view, and the right
      verb (view vs create/update/generate). Entity/tenant scoping via the
-     standard resolver — can a caller read/write another tenant's rows by
+     standard resolver - can a caller read/write another tenant's rows by
      changing a pk or `?entity=`?
    - What does the serializer expose? Flag raw `JSONField`/metadata, PII,
      secrets, internal ids. Apply FLS where the field is sensitive.
@@ -39,28 +39,28 @@ important thing to do before shipping.
 
 ## Wrapping up: report in plain words
 
-When you finish a task — a build, an investigation, a document, a round of
-decisions — close with a plain-language breakdown rather than a wall of prose.
+When you finish a task - a build, an investigation, a document, a round of
+decisions - close with a plain-language breakdown rather than a wall of prose.
 Short numbered lines, one point each, ordinary words. Assume I am reading it tired.
 
-Use **only** the sections that actually apply, and **skip the ones that don't** —
+Use **only** the sections that actually apply, and **skip the ones that don't** -
 an empty heading is worse than no heading, and never pad a section to fill it out.
 
-- **What you now have** — the finished things, one line each. Only if something was
+- **What you now have** - the finished things, one line each. Only if something was
   produced.
-- **What you decided** — decisions taken and locked, one line each. Only if
+- **What you decided** - decisions taken and locked, one line each. Only if
   decisions were actually made.
-- **What we found wrong in the code** — real defects and gaps, grouped under short
-  themes once there are more than about four. **Only if there are findings** — if
+- **What we found wrong in the code** - real defects and gaps, grouped under short
+  themes once there are more than about four. **Only if there are findings** - if
   nothing is wrong, leave this out entirely rather than writing "nothing found".
-- **Where to go next** — the order of the next steps, and which of them are
+- **Where to go next** - the order of the next steps, and which of them are
   unblocked right now.
 
 How to write it:
 
 - Plain words beat precise jargon. "The page breaks on a phone" lands; "flex
   container overflows at the `md` breakpoint" does not.
-- Size things honestly in both directions — say when something feared turns out to
+- Size things honestly in both directions - say when something feared turns out to
   be a one-line fix, and say when something small turns out to be load-bearing.
 - Put the worst finding where it cannot be missed, even if that breaks the order.
 - Keep file/line references out of the breakdown; they belong in the detail above
@@ -70,10 +70,10 @@ How to write it:
 ## Fixing problems: root cause, not symptom
 
 When I ask you to fix a problem, treat the reported issue as one *instance* of
-a potentially wider defect — fix it holistically:
+a potentially wider defect - fix it holistically:
 
-1. **Trace it to its source.** Ask why the bug exists — a wrong assumption, a
-   missing invariant, a fragile pattern — not just where it surfaced.
+1. **Trace it to its source.** Ask why the bug exists - a wrong assumption, a
+   missing invariant, a fragile pattern - not just where it surfaced.
 2. **Fix the class, not the case.** If the same root cause can bite elsewhere
    (other screens, endpoints, callers of the same helper), fix it at the choke
    point they all share, or sweep the other occurrences in the same change.
@@ -81,20 +81,20 @@ a potentially wider defect — fix it holistically:
    where else it applied, so the fix is reviewable as a class-fix, not a patch.
 
 A fix that only silences the reported symptom while the source remains is not
-done — that includes suppressing errors, special-casing one caller, or adding
+done - that includes suppressing errors, special-casing one caller, or adding
 a guard where the real problem is upstream. The goal is that future problems
 from the same source never happen.
 
-## Responsive views — every screen must work on phone AND desktop
+## Responsive views - every screen must work on phone AND desktop
 
 Every screen you build or change must render well at desktop **and** small
-widths — a user switching from PC to phone must never get a broken view.
+widths - a user switching from PC to phone must never get a broken view.
 Horizontal page overflow is a bug, full stop.
 
 House conventions (proven app-wide in console-fe; apply them here):
 - The DashboardLayout children wrapper needs `grid grid-cols-1 min-w-0` so
   nowrap tables can never stretch a page past the viewport. **Known gap:**
-  this repo's `dashboard-layout.tsx` does NOT have that wrapper yet — port it
+  this repo's `dashboard-layout.tsx` does NOT have that wrapper yet - port it
   from console-fe (`src/components/layout/dashboard-layout.tsx`) on the first
   responsive pass, along with CustomTable's phone-card mode (rows render as
   stacked label/value cards below `md`; dense tables opt out with
@@ -114,14 +114,20 @@ House conventions (proven app-wide in console-fe; apply them here):
 for this app's seeded login). It drives each route logged-in at 390px (phone)
 and 820px (tablet), screenshots both to `/tmp/verify-design/shots-responsive/`,
 and reports page-level horizontal overflow with the offending elements. **Look
-at the phone screenshots** — zero overflow with a crushed side-by-side layout
+at the phone screenshots** - zero overflow with a crushed side-by-side layout
 is still a fail. Desktop remains the design source of truth; phone adapts
-(stack, wrap, cards) — never hide or truncate data away.
+(stack, wrap, cards) - never hide or truncate data away.
 
-**Depth policy — phones are view + simple actions, not full parity.** Phone
-users browse, read details, approve, and fill simple forms — those flows must
+**Depth policy - phones are view + simple actions, not full parity.** Phone
+users browse, read details, approve, and fill simple forms - those flows must
 be genuinely good. Complex multi-line creation/editing (fee structures, bulk
 editors, multi-row forms) stays desktop-first: on a phone it must be *usable*
 (no overflow, nothing broken or unreachable), but don't spend effort
 optimizing it or redesigning it phone-first, and never degrade the desktop
 experience to make it fit.
+
+## Writing punctuation
+
+Do not use em dashes (Unicode U+2014) anywhere in source code, comments,
+documentation, tests, or user-facing copy. Use a comma, colon, parentheses, or
+an ordinary hyphen (`-`), whichever reads most naturally.

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { bindTenantStore, getTenantSlug } from "./tenant-context";
 
 // Unlike console-fe, this app has no impersonation fallback and no
-// appendTenantQuery helper — the base query is the only consumer, and it reads
+// appendTenantQuery helper - the base query is the only consumer, and it reads
 // the asserted slug through getTenantSlug().
 describe("getTenantSlug", () => {
   it("reads the slug from the bound store", () => {

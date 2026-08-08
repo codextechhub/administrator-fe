@@ -26,7 +26,7 @@ describe("captureReturnTo / consumeReturnTo", () => {
   });
 
   // This app's auth pages all live under /accounts (routesPath.AUTH), plus the
-  // legacy /login redirect — unlike console-fe there is no `/:email/login`
+  // legacy /login redirect - unlike console-fe there is no `/:email/login`
   // route, so a nested path merely ending in /login is a normal protected page.
   it("does not capture auth routes", () => {
     for (const p of [

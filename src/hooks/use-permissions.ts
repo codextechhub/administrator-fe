@@ -16,7 +16,7 @@ export function usePermissions() {
 
   // True when the user holds ANY backend key under a module prefix
   // (e.g. "school.", "academics."). Used for whole-console visibility, where
-  // gating on one specific key would be too narrow — a user with only
+  // gating on one specific key would be too narrow - a user with only
   // school.dashboard.view should still see the school workspace. This is the
   // one place we read raw backend keys, by design.
   const hasModuleAccess = (...prefixes: string[]): boolean =>

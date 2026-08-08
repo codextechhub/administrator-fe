@@ -1,6 +1,6 @@
 // Shape-aware loading ghosts. A loading screen should preview the layout of
-// the data that is about to arrive — ghost table rows, ghost cards, ghost stat
-// tiles — instead of a spinner that tells the user nothing about what is
+// the data that is about to arrive - ghost table rows, ghost cards, ghost stat
+// tiles - instead of a spinner that tells the user nothing about what is
 // coming. Built on the <Skeleton> primitive so the pulse/reduced-motion policy
 // lives in exactly one place.
 //
@@ -62,7 +62,7 @@ export function SkeletonRow({
 }
 
 /**
- * Ghost of a phone list card — the stacked label/value rendering a table row
+ * Ghost of a phone list card - the stacked label/value rendering a table row
  * collapses into below `md`. `lines` is how many label/value pairs to preview.
  */
 export function SkeletonCard({
@@ -86,7 +86,7 @@ export function SkeletonCard({
       <SkeletonText width={ghostWidth(rowIndex)} className="h-4 max-w-[60%]" />
       {Array.from({ length: Math.max(1, lines) }).map((_, i) => (
         // Label and value each get their own bounded column so the width
-        // cycle actually varies them — a flex-1 ghost would stretch to a
+        // cycle actually varies them - a flex-1 ghost would stretch to a
         // uniform bar and read as a progress meter, not as content.
         <div key={i} className="flex items-center justify-between gap-3">
           <div className="w-1/3">

@@ -1,13 +1,13 @@
-// Responsive audit driver — visits routes at phone/tablet widths, detects
+// Responsive audit driver - visits routes at phone/tablet widths, detects
 // page-level horizontal overflow, and screenshots each route+viewport.
 // Read-only: navigates + screenshots only, never submits a form.
 // Ported from console-fe (.claude/skills/verify-design/_mobile_audit.mjs).
 // One-time setup in this folder: `npm init -y && npm i playwright` (uses the
-// system Chrome via channel:"chrome" — no browser download). Override
+// system Chrome via channel:"chrome" - no browser download). Override
 // EMAIL/PASSWORD with this app's seeded login; defaults below are console-fe's.
 //
-//   BASE_URL  frontend origin — required
-//   ROUTES    space/comma-separated paths — required
+//   BASE_URL  frontend origin - required
+//   ROUTES    space/comma-separated paths - required
 //   EMAIL / PASSWORD  seeded super-admin (defaults as drive.mjs)
 
 import { chromium } from "playwright";
@@ -43,7 +43,7 @@ for (const vp of VIEWPORTS) {
 
   try {
     // school-fe's login page is /accounts (and /login redirects to it), so the
-    // "left the login page" check must exclude both — checking only /login
+    // "left the login page" check must exclude both - checking only /login
     // passes instantly on the redirect without ever authenticating.
     await page.goto(`${BASE}/accounts`, { waitUntil: "networkidle" });
     await page.getByPlaceholder("Enter your email").fill(EMAIL);

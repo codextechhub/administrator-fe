@@ -4,7 +4,7 @@
 // Starting or exiting a proxy session replaces the effective user underneath a
 // fully mounted app. Screens rendered for the OLD identity can refire their
 // queries faster than React unmounts them (router.navigate resolves before the
-// commit), and those requests would go out under the NEW identity's headers —
+// commit), and those requests would go out under the NEW identity's headers -
 // producing misleading 403 toasts and false PROXY_ACTION_FAILED rows in the
 // backend audit trail. The responses would be thrown away by the post-swap
 // cache reset anyway.
@@ -26,7 +26,7 @@ export const isIdentitySwapInProgress = (): boolean => swapDepth > 0;
 
 /**
  * Run `work` with the gate raised. Re-entrant (depth counted) so a nested swap
- * — e.g. an aborted start that immediately restores the actor — cannot lower
+ * - e.g. an aborted start that immediately restores the actor - cannot lower
  * the gate while the outer swap is still running. Always lowers, even if
  * `work` throws.
  */

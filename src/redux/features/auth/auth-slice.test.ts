@@ -11,7 +11,7 @@ import {
 
 // `/me` re-runs on mount, on token refresh and on window focus, almost always
 // returning the identical context. The reducers no-op in that case so Immer
-// hands back the very same state object — anything else re-renders the whole
+// hands back the very same state object - anything else re-renders the whole
 // protected tree and rewrites redux-persist for nothing. These tests pin that
 // identity guarantee (toBe, not toEqual) because it is the entire point.
 const stateWith = (partial: Partial<Auth>): Auth => ({
@@ -36,7 +36,7 @@ describe("updatePermissions", () => {
   it("treats a REORDERED permissions array as a change (comparison is order-sensitive by design)", () => {
     // Order-sensitivity is deliberate: an index-wise compare is O(n) with no
     // sorting/allocation on the hot path, and the backend returns a stable
-    // order — so a reordering is rare and a needless re-render is the safe
+    // order - so a reordering is rare and a needless re-render is the safe
     // side to err on (never a missed permission update).
     const state = stateWith({ permissions: ["student.view", "student.create"] });
     const next = authSliceReducer(state, updatePermissions(["student.create", "student.view"]));
@@ -59,7 +59,7 @@ describe("updatePermissions", () => {
 
   it("assigns when the persisted session has no permissions key (legacy state)", () => {
     // samePermissions() requires a truthy existing array, so undefined always
-    // takes the assignment branch — even for an empty incoming list.
+    // takes the assignment branch - even for an empty incoming list.
     const state = stateWith({ permissions: undefined });
     const next = authSliceReducer(state, updatePermissions([]));
 

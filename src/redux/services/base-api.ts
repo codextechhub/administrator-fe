@@ -37,7 +37,7 @@ const getAccessToken = () => {
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
 // The endpoint-name sets (auth / tenant-exempt / impersonation) live in
-// ./api-endpoints — see that module for why and how to extend them.
+// ./api-endpoints - see that module for why and how to extend them.
 
 // Read the active proxy session straight off the live store. Typed loosely
 // because the base query only ever receives the root state as `unknown`.
@@ -58,7 +58,7 @@ const hasTenantParam = (args: string | FetchArgs): boolean => {
 const injectTenant = (args: string | FetchArgs, endpoint: string): string | FetchArgs => {
   if (TENANT_EXEMPT_ENDPOINTS.has(endpoint) || hasTenantParam(args)) return args;
   const slug = getTenantSlug();
-  if (!slug) return args; // pre-login / legacy token — backend 400s, auth flow handles it
+  if (!slug) return args; // pre-login / legacy token - backend 400s, auth flow handles it
   if (typeof args === "string") {
     const sep = args.includes("?") ? "&" : "?";
     return `${args}${sep}tenant=${encodeURIComponent(slug)}`;
@@ -74,7 +74,7 @@ export const baseQuery = fetchBaseQuery({
       headers.set("Authorization", `Bearer ${accessToken}`);
     }
     // While a proxy session is active every data call rides with the session
-    // header, so the backend resolves the request — and evaluates RBAC — as the
+    // header, so the backend resolves the request - and evaluates RBAC - as the
     // target user. The auth routes, logout and the impersonation management
     // endpoints themselves are exempt: they must act as the original actor.
     const impersonation = readImpersonation(getState);
@@ -110,7 +110,7 @@ const fetchFreshMe = async (
       headers: {
         Authorization: `Bearer ${accessToken}`,
         accept: "application/json",
-        // Raw fetch, so it bypasses prepareHeaders — the proxy header has to be
+        // Raw fetch, so it bypasses prepareHeaders - the proxy header has to be
         // replayed by hand or a post-refresh /me would hydrate the ACTOR's
         // permissions while the rest of the app still runs as the target.
         ...(impersonation
@@ -133,7 +133,7 @@ const fetchFreshMe = async (
  * Return to the original identity after the server ended the proxy session
  * behind our back (idle timeout, target logged out, target deactivated).
  *
- * The retained actor snapshot makes this instant and offline-safe — no network
+ * The retained actor snapshot makes this instant and offline-safe - no network
  * call is needed to know who the admin really is. Runs inside the identity-swap
  * gate so the target's still-mounted screens cannot refire under the restored
  * actor, and resets the cache only after the gate lifts.
@@ -211,7 +211,7 @@ export const baseQueryInterceptor: BaseQueryFn<
 
   // Background requests (e.g. polls that resume the instant the tab regains
   // focus) pass `{ silent: true }` so a transient 5xx never interrupts the
-  // user with a global error toast — they just retry on the next cycle. The
+  // user with a global error toast - they just retry on the next cycle. The
   // refresh/retry and force-logout machinery still runs.
   const silent = !!(extraOptions as { silent?: boolean } | undefined)?.silent;
   const notify = (message: string) => {
@@ -236,7 +236,7 @@ export const baseQueryInterceptor: BaseQueryFn<
   if (res?.status === 400 || res?.status === 422) {
     // Auth routes (login, reset, activate…) own their own inline/panel error
     // UX and route the message through humanizeAuthError, so never fire a global
-    // toast here — doing so leaks the raw backend detail (and even machine
+    // toast here - doing so leaks the raw backend detail (and even machine
     // codes like INVITATION_NOT_FOUND) into the UI beside the friendly panel.
     if (!isAuthRoute(args)) {
       const message =
@@ -250,8 +250,8 @@ export const baseQueryInterceptor: BaseQueryFn<
 
   if (res?.status === 401) {
     // A 401 on an auth route (login, reset, activate…) means bad credentials or
-    // an expired link — not a recoverable session. Never run the refresh/retry
-    // machinery here — doing otherwise would attempt a token refresh and retry
+    // an expired link - not a recoverable session. Never run the refresh/retry
+    // machinery here - doing otherwise would attempt a token refresh and retry
     // the login itself. No toast either: the page owns the error UI (it routes
     // the caught error through humanizeAuthError), so a global toast here would
     // duplicate the inline message.
@@ -266,7 +266,7 @@ export const baseQueryInterceptor: BaseQueryFn<
       // selector reading state.auth.access stays consistent.
       api.dispatch(setToken(refreshed.access));
 
-      // Role may have changed since last login — keep permissions + tenant fresh.
+      // Role may have changed since last login - keep permissions + tenant fresh.
       const activeImpersonation = readImpersonation(api.getState);
       const fresh = await fetchFreshMe(refreshed.access, activeImpersonation);
       if (fresh.permissions) api.dispatch(updatePermissions(fresh.permissions));
@@ -278,7 +278,7 @@ export const baseQueryInterceptor: BaseQueryFn<
           // The actor's token was just refreshed successfully, so a second 401
           // while proxying is the PROXY session dying, not the login session:
           // the server ends it on idle timeout (30 min), target logout or
-          // target deactivation. Logging the admin out here would be wrong —
+          // target deactivation. Logging the admin out here would be wrong -
           // restore their own identity instead of leaving a broken screen.
           await restoreActorAfterCollapse(api, activeImpersonation);
         } else {
@@ -293,7 +293,7 @@ export const baseQueryInterceptor: BaseQueryFn<
       return result;
     }
 
-    // network_error, server_error, no_token — transient. Keep the user signed
+    // network_error, server_error, no_token - transient. Keep the user signed
     // in; the failing query surfaces its own error. Do not show the misleading
     // "session could not be restored" toast.
     return result;

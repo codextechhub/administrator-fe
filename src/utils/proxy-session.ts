@@ -20,8 +20,8 @@ import { runWithIdentitySwap } from "@/utils/identity-swap";
 // Proxy session orchestration.
 //
 // Entering and leaving a proxy is the same three-part manoeuvre in both
-// directions — swap the stored identity, re-hydrate it from `/me`, then reset
-// the RTK Query cache — and getting the ORDER wrong is what produces
+// directions - swap the stored identity, re-hydrate it from `/me`, then reset
+// the RTK Query cache - and getting the ORDER wrong is what produces
 // half-switched clients. It lives here, once, rather than in each component
 // that offers the affordance (start dialog, exit banner, account menu), so
 // there is a single place where the sequence can be reviewed and fixed.
@@ -44,7 +44,7 @@ interface SwapDeps {
  *  1. inside the identity-swap gate, write the new identity and navigate to a
  *     route both identities can see (the outgoing user's screens may be
  *     unreachable for the incoming one);
- *  2. still gated, refetch `/me` — the ONLY authority on the effective user —
+ *  2. still gated, refetch `/me` - the ONLY authority on the effective user -
  *     and apply it verbatim;
  *  3. after the gate lifts, reset the cache so every mounted screen refetches
  *     exactly once, cleanly, under the settled identity.
@@ -92,7 +92,7 @@ const applyIdentity = async (
  *
  * Returns true when the client is fully switched. On any failure AFTER the
  * server created the session, the session is ended again and the original
- * identity restored — a half-switched client (server proxying, client not, or
+ * identity restored - a half-switched client (server proxying, client not, or
  * vice versa) is never an acceptable resting state.
  */
 export const startProxySession = async (
@@ -122,7 +122,7 @@ export const startProxySession = async (
       // Optimistic placeholder: the target's name/permissions are unknown until
       // `/me` answers, and showing the ACTOR's context under an active proxy
       // banner would be a lie. The tenant is carried over because school
-      // proxying is intra-tenant — dropping it would trip the auth-context gate
+      // proxying is intra-tenant - dropping it would trip the auth-context gate
       // and blank the app mid-swap.
       optimisticContext: {
         user: null,
@@ -153,7 +153,7 @@ export const startProxySession = async (
         "That account could not be loaded. You are back in your own account.",
       );
     } else {
-      // The start itself failed — the interceptor already toasted the reason
+      // The start itself failed - the interceptor already toasted the reason
       // (403 / 404 / network) and nothing was switched.
     }
     return false;
@@ -165,7 +165,7 @@ export const startProxySession = async (
  *
  * The retained actor snapshot is restored even when the server call fails
  * (already expired, offline): refusing to exit would strand the admin inside
- * someone else's account, which is strictly worse than a stale server row —
+ * someone else's account, which is strictly worse than a stale server row -
  * and that row is closed by the idle sweep, the next start, or logout.
  */
 export const exitProxySession = async (
