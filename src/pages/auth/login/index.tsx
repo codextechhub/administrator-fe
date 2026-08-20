@@ -49,7 +49,7 @@ export default function Login() {
           // true and Codex staff were being let through. See auth-api.
           if (res.data.tenant?.kind === "PLATFORM") {
             setApiError(
-              "This portal is for school accounts. Codex staff sign in at the Console - console.codexng.com.",
+              "This portal is for school accounts. Codex staff sign in at the Console - intranet.codexng.com.",
             );
             return;
           }
