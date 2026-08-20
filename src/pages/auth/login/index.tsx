@@ -8,9 +8,13 @@ import { loginSchema } from "@/schema/auth";
 import { useFormik } from "formik";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import NoSchoolNotice from "@/components/auth/no-school-notice";
+import { currentSchoolSlug } from "@/utils/school-host";
 
 export default function Login() {
   const navigate = useNavigate();
+  // Read once per mount: the address cannot change without a page load.
+  const [schoolSlug] = useState(() => currentSchoolSlug());
   const [login, { isLoading }] = useLoginMutation();
   const [apiError, setApiError] = useState("");
   // Read once at mount (lazy initialiser); the effect only clears the flag so
@@ -36,10 +40,14 @@ export default function Login() {
         .then((res) => {
           // Identity check: this portal is for school accounts only. The login
           // succeeds at the shared backend endpoint even for Codex staff, but
-          // auth-api's onQueryStarted writes NO cookies/state for CX_STAFF (and
-          // blacklists the issued pair). Refuse to navigate and point them to
-          // the Console.
-          if (res.data.user.user_type === "CX_STAFF") {
+          // auth-api's onQueryStarted writes NO cookies/state for a platform
+          // account (and blacklists the issued pair). Refuse to navigate and
+          // point them to the Console.
+          //
+          // Read off the tenant, not the user: the `user_type` column this used
+          // to test was removed from the API, so the test could no longer be
+          // true and Codex staff were being let through. See auth-api.
+          if (res.data.tenant?.kind === "PLATFORM") {
             setApiError(
               "This portal is for school accounts. Codex staff sign in at the Console - console.codexng.com.",
             );
@@ -56,6 +64,16 @@ export default function Login() {
         });
     },
   });
+
+  // Sign-in has to name the school it is for, and this address names none, so
+  // the form is not offered. See NoSchoolNotice.
+  if (!schoolSlug) {
+    return (
+      <div className="w-full">
+        <NoSchoolNotice action="sign in" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">

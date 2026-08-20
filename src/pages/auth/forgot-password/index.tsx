@@ -11,8 +11,11 @@ import { swipAnimateVariant } from "@/utils/animation";
 import { humanizeAuthError } from "@/utils/auth-errors";
 import { useFormik } from "formik";
 import { toast } from "sonner";
+import NoSchoolNotice from "@/components/auth/no-school-notice";
+import { currentSchoolSlug } from "@/utils/school-host";
 
 export default function ForgotPassword() {
+  const [schoolSlug] = useState(() => currentSchoolSlug());
   const [submitted, setSubmitted] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
@@ -34,6 +37,10 @@ export default function ForgotPassword() {
         });
     },
   });
+
+  // A reset is scoped to one school, so an address that names none has nothing
+  // to reset against.
+  if (!schoolSlug) return <NoSchoolNotice action="reset your password" />;
 
   return (
     <AnimatePresence mode="wait" custom={1}>

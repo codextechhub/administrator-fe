@@ -57,7 +57,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // The raw school.logo is an auth-gated /media/ URL a browser <img> can't load;
   // the hook fetches it with the token and returns a renderable blob: URL.
   const logoBlobUrl = useSchoolLogo();
-  const roleLabel = humanizeRole(user?.user_type ?? user?.role);
+  const roleLabel = humanizeRole(user?.role);
 
   const { isOpen: openLogout, toggleClick: toggleLogout } =
     useToggleModal(false); // logout modal

@@ -177,7 +177,7 @@ export function ProxyUserDialog({
                         </span>
                         <span className="block truncate text-xs text-gray-500">{target.email}</span>
                         <span className="mt-0.5 block truncate text-[11px] text-gray-400">
-                          {humanize(target.role || target.user_type)}
+                          {humanize(target.role) || "No role assigned"}
                         </span>
                       </span>
                       <span className="shrink-0 text-xs font-semibold text-primary">

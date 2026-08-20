@@ -6,6 +6,7 @@ import { recordActivity } from "@/utils/session-activity";
 import { resetSessionInvalidation, setAuthCookies } from "@/utils/token-refresh";
 import { endSession } from "@/utils/end-session";
 import type { LoginResponse } from "./auth-types";
+import { currentSchoolSlug } from "@/utils/school-host";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -29,10 +30,18 @@ export interface MeResponse {
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, { email: string; password: string }>({
+      // The tenant is added here, not at the call site: one email address can
+      // now be an account at several schools with no connection between them,
+      // so "find the user by email" is only unambiguous once the sign-in names
+      // the school it is addressed to. It comes from the address this page is
+      // served at, which is the only thing that can answer it before anyone has
+      // authenticated. A BODY key, not the `?tenant=` query assertion the
+      // authenticated endpoints take - there is no token yet to check one
+      // against.
       query: (user) => ({
         url: `/user/auth/login/`,
         method: "POST",
-        body: user,
+        body: { ...user, tenant: currentSchoolSlug() },
       }),
       async onQueryStarted(_, { queryFulfilled, dispatch }) {
         try {
@@ -43,10 +52,16 @@ export const authApi = baseApi.injectEndpoints({
           // staff login succeeds at the backend (it's the shared endpoint),
           // but we refuse to open a session here - write NO cookies and NO
           // Redux state, and fire-and-forget a logout to blacklist the token
-          // pair the backend just issued. The login page inspects the
-          // fulfilled payload's user_type and renders the console-redirect
-          // error.
-          if (data?.data?.user?.user_type === "CX_STAFF") {
+          // pair the backend just issued. The login page inspects the same
+          // field and renders the console-redirect error.
+          //
+          // Read off the TENANT, not off the user. This used to test
+          // `user.user_type === "CX_STAFF"`, and that column was removed from
+          // the API: the test could no longer be true, so the guard was
+          // silently letting Codex staff open a school session. Which side of
+          // the platform boundary an account sits on is a fact about its
+          // tenant, and the tenant cannot be wrong about itself.
+          if (data?.data?.tenant?.kind === "PLATFORM") {
             const refresh = data?.data?.refresh;
             if (refresh) {
               fetch(`${baseUrl}/user/auth/logout/`, {
@@ -96,10 +111,13 @@ export const authApi = baseApi.injectEndpoints({
       },
     }),
     forgotPassword: builder.mutation<{ message: string }, { email: string }>({
+      // Scoped to this school for the same reason as login, and with a sharper
+      // consequence: a reset asked for here must never rewrite the password of
+      // an account that shares the address at a different school.
       query: (payload) => ({
         url: `/user/auth/password/reset/request/`,
         method: "POST",
-        body: payload,
+        body: { ...payload, tenant: currentSchoolSlug() },
       }),
     }),
     passwordResetPreview: builder.query<{ message: string; data: { email: string; full_name: string } }, string>({

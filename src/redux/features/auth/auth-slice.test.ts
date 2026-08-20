@@ -70,10 +70,10 @@ describe("updatePermissions", () => {
 
 describe("updateTenant", () => {
   it("returns the SAME state reference for an equal tenant (same slug + name)", () => {
-    const state = stateWith({ tenant: { slug: "greenfield", name: "Greenfield Academy" } });
+    const state = stateWith({ tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" } });
     const next = authSliceReducer(
       state,
-      updateTenant({ slug: "greenfield", name: "Greenfield Academy" }),
+      updateTenant({ slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" }),
     );
 
     expect(next).toBe(state);
@@ -85,25 +85,25 @@ describe("updateTenant", () => {
   });
 
   it("applies a changed slug or a changed name", () => {
-    const state = stateWith({ tenant: { slug: "greenfield", name: "Greenfield Academy" } });
+    const state = stateWith({ tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" } });
 
     const slugChanged = authSliceReducer(
       state,
-      updateTenant({ slug: "other-school", name: "Greenfield Academy" }),
+      updateTenant({ slug: "other-school", name: "Greenfield Academy", kind: "SCHOOL" }),
     );
     expect(slugChanged).not.toBe(state);
     expect(slugChanged.tenant?.slug).toBe("other-school");
 
     const nameChanged = authSliceReducer(
       state,
-      updateTenant({ slug: "greenfield", name: "Greenfield Academy (Renamed)" }),
+      updateTenant({ slug: "greenfield", name: "Greenfield Academy (Renamed)", kind: "SCHOOL" }),
     );
     expect(nameChanged).not.toBe(state);
     expect(nameChanged.tenant?.name).toBe("Greenfield Academy (Renamed)");
   });
 
   it("applies a transition to/from null", () => {
-    const withTenant = stateWith({ tenant: { slug: "greenfield", name: "Greenfield Academy" } });
+    const withTenant = stateWith({ tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" } });
     const cleared = authSliceReducer(withTenant, updateTenant(null));
     expect(cleared).not.toBe(withTenant);
     expect(cleared.tenant).toBeNull();
@@ -111,10 +111,10 @@ describe("updateTenant", () => {
     const withoutTenant = stateWith({ tenant: null });
     const set = authSliceReducer(
       withoutTenant,
-      updateTenant({ slug: "greenfield", name: "Greenfield Academy" }),
+      updateTenant({ slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" }),
     );
     expect(set).not.toBe(withoutTenant);
-    expect(set.tenant).toEqual({ slug: "greenfield", name: "Greenfield Academy" });
+    expect(set.tenant).toEqual({ slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" });
   });
 });
 
@@ -130,7 +130,6 @@ const aUser = (partial: Partial<User> = {}): User =>
     full_name: "Ada Obi",
     phone: "",
     gender: "",
-    user_type: "SCHOOL_ADMIN",
     role: "school_admin",
     status: "ACTIVE",
     school_id: 1,
@@ -150,7 +149,7 @@ describe("setAuthContext", () => {
     const state = stateWith({
       user,
       school: null,
-      tenant: { slug: "greenfield", name: "Greenfield Academy" },
+      tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
       permissions: ["school.dashboard.view"],
     });
     const next = authSliceReducer(
@@ -158,7 +157,7 @@ describe("setAuthContext", () => {
       setAuthContext({
         user: aUser(),
         school: null,
-        tenant: { slug: "greenfield", name: "Greenfield Academy" },
+        tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
         permissions: ["school.dashboard.view"],
       }),
     );
@@ -169,7 +168,7 @@ describe("setAuthContext", () => {
   it("swaps the whole identity when /me comes back as a different user", () => {
     const state = stateWith({
       user: aUser(),
-      tenant: { slug: "greenfield", name: "Greenfield Academy" },
+      tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
       permissions: ["school.dashboard.view", "school.impersonation.start"],
     });
     const next = authSliceReducer(
@@ -177,7 +176,7 @@ describe("setAuthContext", () => {
       setAuthContext({
         user: aUser({ id: 12, full_name: "Ben Musa", email: "ben@greenfield.test", role: "teacher" }),
         school: null,
-        tenant: { slug: "greenfield", name: "Greenfield Academy" },
+        tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
         permissions: ["academics.classes.view"],
       }),
     );
@@ -214,7 +213,7 @@ describe("selectActorPermissions", () => {
       id: 12,
       email: "ben@greenfield.test",
       full_name: "Ben Musa",
-      user_type: "TEACHER",
+      tenant_kind: "SCHOOL",
       role: "teacher",
       tenant_slug: "greenfield",
       tenant_name: "Greenfield Academy",
@@ -223,7 +222,7 @@ describe("selectActorPermissions", () => {
     actor: {
       user: aUser(),
       school: null,
-      tenant: { slug: "greenfield", name: "Greenfield Academy" },
+      tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
       permissions: ["school.impersonation.start", "school.impersonation.end"],
     },
   };

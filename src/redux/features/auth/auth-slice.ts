@@ -68,7 +68,6 @@ const sameUser = (a: User | null | undefined, b: User | null): boolean =>
     a.full_name === b.full_name &&
     a.email === b.email &&
     a.role === b.role &&
-    a.user_type === b.user_type &&
     a.branch_name === b.branch_name);
 
 const authSlice = createSlice({

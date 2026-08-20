@@ -31,7 +31,7 @@ export interface ProxyTargetIdentity {
   id: number
   email: string
   full_name: string
-  user_type: string
+  tenant_kind: string
   role: string
   tenant_slug: string
   tenant_name: string
@@ -51,6 +51,14 @@ export interface AuthContextSnapshot {
 export interface TenantInfo {
   slug: string
   name: string
+  /**
+   * PLATFORM or SCHOOL: which side of the platform boundary this tenant is.
+   *
+   * The only thing left that separates a Codex staff account from a school
+   * account, now that the `user_type` persona is gone from the API, and the
+   * more reliable of the two: a tenant cannot be wrong about itself.
+   */
+  kind: string
 }
 
 export interface User {
@@ -62,7 +70,6 @@ export interface User {
   full_name: string
   phone: string
   gender: string
-  user_type: string
   role: string
   status: string
   school_id: number | null

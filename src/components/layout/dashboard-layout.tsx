@@ -68,7 +68,7 @@ export default function DashboardLayout() {
   const fullName =
     user?.full_name ||
     [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
-  const roleLabel = humanizeRole(user?.user_type || user?.role);
+  const roleLabel = humanizeRole(user?.role);
   const avatarFallback = initials(fullName);
   const selectedBranch = user?.branch_name;
 
