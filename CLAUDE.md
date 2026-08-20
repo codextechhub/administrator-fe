@@ -63,9 +63,49 @@ How to write it:
 - Size things honestly in both directions - say when something feared turns out to
   be a one-line fix, and say when something small turns out to be load-bearing.
 - Put the worst finding where it cannot be missed, even if that breaks the order.
+- Never place resolved problems under a heading that suggests they remain broken.
+  When all reported defects were fixed, say so plainly and omit any unresolved-
+  findings section.
 - Keep file/line references out of the breakdown; they belong in the detail above
   it, not in the summary.
 - Don't re-explain what I already know from the conversation.
+
+## Asking, suggesting and disputing: use a real example
+
+When you need a decision from me, **ask the question directly**. Do not bury it in
+a paragraph, do not quietly answer it yourself and move on, and do not hand me a
+list of considerations in place of the question.
+
+Then **show me the consequence with a real example** - named people, a named
+school, a specific sequence of events. The example is what makes a choice
+obvious, so it is not decoration and it is not optional.
+
+This applies equally to three things:
+
+- **questions** - what you need me to decide;
+- **suggestions** - something you think we should do;
+- **disputes** - something you think is wrong, including something I decided.
+
+Write the example the way it would actually happen:
+
+> Bright Star School enrols Tunde and the admin mistypes his mother's address as
+> `adaokeye@gmail.com`. That address belongs to a stranger who already has an
+> account, because her own daughter attends Greenfield. If an attached link shows
+> the full record straight away, she opens her app and sees Tunde's class, his
+> fees, his home address and his father's phone number.
+
+Not:
+
+> Attached links may expose PII to an incorrect recipient where the email address
+> is mistyped.
+
+The second one is true and nobody can act on it. Abstractions hide the size of a
+thing in both directions - they make a small risk sound alarming and a serious one
+sound routine. A concrete case is the only way I can weigh it.
+
+Keep it short. One example, the shortest one that still shows the consequence.
+Where a choice has two sides, show the bad case **and** the good case, not only
+the side you favour.
 
 ## Fixing problems: root cause, not symptom
 
