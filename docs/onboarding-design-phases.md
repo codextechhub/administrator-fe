@@ -210,12 +210,44 @@ works (set the optional step aside). The card links to it.
 preview drawer, the bulk upload, and the invitation table. They belong to
 Module 4 and need its API, which is closed to a pending school by design.
 
-### Phase 5 - Data intake, validation and the import wizard
-Backend: open the `vs_import_data` batch and template surface to a pending
-school. Frontend: `isData`, `isValidation`, the 7-step `importOpen` wizard, the
-cancel-import and import-with-warnings modals.
-**Ships:** screens 9, 10 and the largest overlay. The engine already exists, so
-this is orchestration UI over a real API.
+### Phase 5 - Data intake - BACKEND DONE, SCREENS BLOCKED
+
+**Shipped, and correct the day the rest exists:**
+
+- Seven school-side import keys on `school_admin` - templates.view,
+  batches.view/create/run/import, validations.view, jobs.view - attached to the
+  prebuilt role and backfilled into every existing school. The role held **none**
+  before, so "Import your initial data" was a step a school could be asked for
+  and never do, on an engine it could not call.
+- The pending-tenant surface on the eleven import views a school needs while
+  onboarding. `ImportBatchDetailView` is opened for GET only: it also serves
+  PUT, PATCH and DELETE, and a surface flag that opens a verb the permission key
+  happens to close is one repair away from opening it for real.
+
+Verified: a PENDING school reads templates and batches (200) and is still
+refused template creation (403).
+
+**Blocked, and not on a surface this time.** The screens have nothing to import.
+
+| What the design needs | What exists |
+|---|---|
+| Students, Staff, Parents, Classes datasets | No `Student`, `Guardian` or `Parent` model anywhere in the backend. No students app. |
+| An import template per dataset | Four templates exist: Schools Master, Branches Master, CX Users Master, Bank Statement. All platform-facing. |
+| A handler that writes the rows | `execute_dataset_handler` supports `schools`, `branches` and `cx_users`, and raises `Unsupported dataset type` for anything else. |
+
+So a school opening the data screen today would be offered four templates, none
+of which are about its school, and a Students template could not be executed
+even if somebody wrote one.
+
+**This was a misclassification in section 2 and it is worth naming.** The import
+screens were filed as "exists but closed", which was true of the *engine* and
+false of the *data*. Closed and absent are the two buckets this plan insists on
+keeping apart, and this row was in the wrong one: the engine is closed, the
+school-side datasets are absent, and the second is a module.
+
+**Unblocks when:** a students/staff/parents domain exists with models, import
+templates and dataset handlers. That is not this module's work and has no FRD in
+`docs/frd/functional-requirements/` today.
 
 ### Phase 6 - Academic structure wizard (BLOCKED on M13)
 The academics module is M13's, designed and owned separately, so the backend
@@ -256,5 +288,9 @@ needs belongs to M13. That is also why it is safe to leave until the end:
 nothing in phases 1 to 5 depends on it, and the control room already handles its
 absence honestly. Phase 7's sweep can run without it, and re-run when it lands.
 
-**The critical path we control ends at Phase 5.** If M13 is late, everything
-except one screen is still finished.
+**The critical path we control ended at Phase 3, not Phase 5.** Phases 4, 5 and
+6 each turned out to belong to a module that does not exist or is not ours -
+roles to Module 4, the school-side datasets to a students domain nobody has
+built, academic structure to M13. What that leaves finished is the whole
+onboarding surface a school actually uses today, which is the part that was
+real; the three screens sitting on other people's modules wait for them.
