@@ -28,7 +28,14 @@ export default function OnboardingWelcome() {
   const logoUrl = useSchoolLogo();
 
   const schoolName = school?.name ?? user?.school_name ?? "your school";
-  const firstName = user?.first_name || user?.full_name || "there";
+  // The design greets the person by their full name, not their first. This is
+  // the one screen that is a greeting rather than a workspace, so the formality
+  // is the point.
+  const greetingName =
+    user?.full_name ||
+    [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim() ||
+    user?.first_name ||
+    "there";
 
   return (
     <main className="min-h-dvh bg-white-05 flex items-center justify-center px-4 py-10">
@@ -49,7 +56,7 @@ export default function OnboardingWelcome() {
             School Onboarding
           </p>
           <h1 className="mt-2.5 text-2xl font-semibold text-black-01 leading-snug text-balance">
-            Welcome, {firstName}
+            Welcome, {greetingName}
           </h1>
           <p className="mt-2.5 text-sm text-gray-01 max-w-[44ch] text-pretty">
             Let's get {schoolName} ready to go live. Onboarding is a short

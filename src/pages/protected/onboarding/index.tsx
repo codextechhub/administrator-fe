@@ -29,6 +29,7 @@ import { ReadinessChip } from "./components/onboarding-chips";
 import { OutlinedNotice } from "./components/outlined-notice";
 import { ProgressRing } from "./components/progress-ring";
 import { TaskCard } from "./components/task-card";
+import { taskMeta } from "./task-catalog";
 
 /**
  * The Onboarding Control Room - the home base for a school that is not live yet.
@@ -177,8 +178,13 @@ function ControlRoom({ state }: { state: OnboardingState }) {
             <p className="text-xs uppercase tracking-widest text-gray-05 font-mont">
               Go-live status
             </p>
-            <p className="mt-1 text-lg font-semibold font-mont text-black-01">
-              {readinessHeadline(state.readiness_state)}
+            <p
+              className={cn(
+                "mt-1 text-lg font-semibold font-mont",
+                blockers.length > 0 ? "text-destructive" : "text-black-01",
+              )}
+            >
+              {readinessHeadline(state.readiness_state, blockers.length)}
             </p>
             <p className="mt-1.5 text-[13px] text-gray-06 max-w-[34ch] text-pretty">
               {readinessDetail(state, titleOf)}
@@ -247,10 +253,28 @@ function ControlRoom({ state }: { state: OnboardingState }) {
                 {nextTask.title}
               </p>
               <p className="mt-1 text-[13px] text-gray-06 text-pretty">
-                {nextTask.is_required
-                  ? "Your school cannot go live until this one is done."
-                  : "Optional, but it is the next thing on your list."}
+                {nextTask.status === "IN_PROGRESS"
+                  ? "You started this one. Finishing it clears a go-live blocker."
+                  : nextTask.is_required
+                    ? "Your school cannot go live until this one is done."
+                    : "Optional, but it is the next thing on your list."}
               </p>
+              {/* Takes the reader to the screen behind the step where there is
+                  one, and to the step's own card where there is not. */}
+              <Button
+                className="mt-3.5 w-full"
+                onClick={() => {
+                  const route = taskMeta(nextTask.key).route;
+                  if (route) navigate(route);
+                  else
+                    document
+                      .getElementById(`task-${nextTask.key}`)
+                      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }}
+              >
+                Continue
+                <ArrowRight />
+              </Button>
             </section>
           )}
 
@@ -428,10 +452,15 @@ function StatTile({
 const plural = (count: number, word: string) =>
   count === 1 ? word : `${word}s`;
 
-function readinessHeadline(state: ReadinessState): string {
+function readinessHeadline(state: ReadinessState, blockers: number): string {
   if (state === "READY") return "Ready to go live";
   if (state === "PENDING_APPROVAL") return "Waiting on CodeX";
   if (state === "LIVE") return "Live";
+  // The count belongs in the headline, not only in a tile: "Not ready" alone
+  // does not say how far off the school is.
+  if (blockers > 0) {
+    return `Not ready - ${blockers} ${plural(blockers, "blocker")}`;
+  }
   return "Not ready";
 }
 
@@ -450,8 +479,10 @@ function readinessDetail(
   }
   const count = state.blocking_tasks.length;
   if (count === 0) return "Your required steps are not all done yet.";
-  if (count === 1) return `One required step to go: ${titleOf(state.blocking_tasks[0])}.`;
-  return `${count} required steps to go.`;
+  // Name the steps, and say the thing a school worries about: that setting an
+  // optional step aside has cost it nothing.
+  const named = state.blocking_tasks.map(titleOf).join(", ");
+  return `Go-live blocked: ${named}. Optional steps you skip don't block you.`;
 }
 
 /** Ghosts shaped like the summary and the checklist that are about to arrive. */

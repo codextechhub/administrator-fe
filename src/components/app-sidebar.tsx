@@ -235,12 +235,16 @@ export function AppSidebar({
   return (
     <>
       <Sidebar className="bg-white" collapsible="icon" {...props}>
-        <SidebarHeader className="bg-white border-b">
+        {/* h-15 with no padding, matching the page header exactly. The school
+            block and the page title sit on ONE line with one continuous rule
+            under both, which is how the design draws the top of the app; a
+            taller block here puts a step in that line. */}
+        <SidebarHeader className="h-15 justify-center border-b border-white-02 bg-white p-0 px-2">
           <SidebarMenu>
-            <SidebarMenuItem className="mt-2">
+            <SidebarMenuItem>
               <SidebarMenuButton
                 size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-transparent cursor-pointer mx-auto justify-center overflow-hidden"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground h-11 hover:bg-transparent cursor-pointer mx-auto justify-center overflow-hidden"
                 tooltip={schoolName}
               >
                 <div className={cn("size-fit ")}>
