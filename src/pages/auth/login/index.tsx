@@ -53,9 +53,22 @@ export default function Login() {
             );
             return;
           }
-          navigate(consumeReturnTo() ?? routesPath.PROTECTED.OVERVIEW.INDEX, {
-            replace: true,
-          });
+          // A school that has not gone live may reach onboarding and nothing
+          // else, so sending it to the dashboard would land it on the one
+          // screen it is not allowed to open. A captured deep link is honoured
+          // only when it points somewhere this school can actually go.
+          const returnTo = consumeReturnTo();
+          const isPending = res.data.tenant?.status === "PENDING";
+          const onboardingHome = isPending
+            ? routesPath.PROTECTED.ONBOARDING.WELCOME
+            : routesPath.PROTECTED.OVERVIEW.INDEX;
+          const target =
+            returnTo &&
+            (!isPending ||
+              returnTo.startsWith(routesPath.PROTECTED.ONBOARDING.INDEX))
+              ? returnTo
+              : onboardingHome;
+          navigate(target, { replace: true });
         })
         .catch((err) => {
           setApiError(

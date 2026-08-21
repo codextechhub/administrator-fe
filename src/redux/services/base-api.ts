@@ -154,6 +154,27 @@ const restoreActorAfterCollapse = async (
   toast.info("Your proxy session ended. You are back in your own account.");
 };
 
+/**
+ * Send the caller to the one "opens at go-live" screen.
+ *
+ * Lazily imported for the same reason `restoreActorAfterCollapse` does it: the
+ * route table imports pages that import this module, so a static import would
+ * be circular. Guarded on the current path so a screen that fires several
+ * closed requests at once navigates once, not once per request.
+ */
+const redirectToOnboardingNotLive = () => {
+  const target = routesPath.PROTECTED.ONBOARDING.NOT_LIVE;
+  if (window.location.pathname === target) return;
+  if (window.location.pathname.startsWith(routesPath.PROTECTED.ONBOARDING.INDEX)) {
+    // Already somewhere in onboarding. A closed call from here is a background
+    // request, not the user opening a door - do not yank them off the page.
+    return;
+  }
+  void import("@/routes").then(({ router }) =>
+    router.navigate(target, { replace: true }),
+  );
+};
+
 const extractFirstDetailError = (detail: unknown): string | null => {
   if (!detail) return null;
   if (typeof detail === "string") return detail;
@@ -300,6 +321,16 @@ export const baseQueryInterceptor: BaseQueryFn<
   }
 
   if (res?.status === 403) {
+    // TENANT_NOT_LIVE is not a permission failure and must not read as one: the
+    // school authenticated fine and owns the tenant it asserted, it simply has
+    // not gone live, so every surface but onboarding is closed to it. Handled
+    // here rather than per page because ANY screen can produce it - a bookmark,
+    // a stale link, a redirect - and the alternative is every page in the app
+    // learning that it might be closed.
+    if (res?.data?.error?.code === "TENANT_NOT_LIVE") {
+      redirectToOnboardingNotLive();
+      return result;
+    }
     if (!isAuthRoute(args)) {
       const msg =
         extractFirstDetailError(res?.data?.error?.detail) ||
@@ -358,5 +389,8 @@ export const baseApi = createApi({
     "Fees",
     "Roles",
     "ProxySessions",
+    "Onboarding",
+    "GoLiveRequests",
+    "SchoolProfile",
   ],
 });

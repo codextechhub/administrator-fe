@@ -17,5 +17,10 @@ import { selectSchool } from "@/redux/features/auth/auth-slice";
 export function useSchoolLogo(): string | undefined {
   const school = useAppSelector(selectSchool);
   const { data: blobUrl } = useFetchAuthMediaQuery(school?.logo ?? skipToken);
-  return blobUrl;
+  // Gated on the school's logo, not on the query result. A school that removes
+  // its logo goes from "fetch this URL" to `skipToken`, and the blob minted for
+  // the URL it used to have stays in the media cache for an hour - so returning
+  // the query's data alone left the old crest in the sidebar and the browser tab
+  // until the next reload, on the very screen where it had just been deleted.
+  return school?.logo ? blobUrl : undefined;
 }

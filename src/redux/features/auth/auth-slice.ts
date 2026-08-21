@@ -41,11 +41,23 @@ const initialState: Auth = {
 const samePermissions = (a: string[] | undefined, b: string[]): boolean =>
   !!a && a.length === b.length && a.every((perm, i) => perm === b[i]);
 
+// Every field the app reads off the tenant belongs in this comparison. It used
+// to test slug and name only, which was harmless while those were the only
+// fields that existed - and stopped being harmless the moment `status` started
+// deciding what a school may open: a /me sync carrying the school's move from
+// PENDING to ACTIVE would have been dropped here as "the same tenant", leaving
+// the app locked against a school the server had already let in.
 const sameTenant = (
   a: TenantInfo | null | undefined,
   b: TenantInfo | null
 ): boolean =>
-  a === b || (!!a && !!b && a.slug === b.slug && a.name === b.name);
+  a === b ||
+  (!!a &&
+    !!b &&
+    a.slug === b.slug &&
+    a.name === b.name &&
+    a.kind === b.kind &&
+    a.status === b.status);
 
 const sameSchool = (
   a: SchoolInfo | null | undefined,
@@ -94,6 +106,18 @@ const authSlice = createSlice({
       if (samePermissions(state.permissions, action.payload)) return;
       state.permissions = action.payload;
     },
+    /**
+     * Refresh the cached school identity.
+     *
+     * The sidebar and the favicon render `school.logo` from the session, which
+     * is written at login and refreshed by `/me`. A school that uploads its own
+     * logo would otherwise keep seeing the old one - or the bundled default -
+     * until its next sync, on the one screen where it just changed it.
+     */
+    updateSchool: (state, action: PayloadAction<SchoolInfo | null>) => {
+      if (sameSchool(state.school, action.payload)) return;
+      state.school = action.payload;
+    },
     updateTenant: (state, action: PayloadAction<TenantInfo | null>) => {
       if (sameTenant(state.tenant, action.payload)) return;
       state.tenant = action.payload;
@@ -126,6 +150,7 @@ export const {
   setToken,
   updateAuthUser,
   updatePermissions,
+  updateSchool,
   updateTenant,
   setAuthContext,
   setImpersonation,
@@ -143,6 +168,17 @@ export const selectPermissions = (state: RootStateType) =>
   state.auth.permissions ?? NO_PERMISSIONS;
 export const selectSchool = (state: RootStateType) => state.auth.school ?? null;
 export const selectTenant = (state: RootStateType) => state.auth.tenant ?? null;
+/**
+ * True when this school has not gone live.
+ *
+ * Read from the tenant the session was issued with, so it costs no request and
+ * is known before the first screen paints. An ABSENT status reads as live on
+ * purpose: a session persisted before the backend started sending the field
+ * must not lock a working school out of its own app, and a pending school that
+ * slips through is still refused by the server.
+ */
+export const selectTenantIsPending = (state: RootStateType) =>
+  state.auth.tenant?.status === "PENDING";
 export const selectImpersonation = (state: RootStateType) =>
   state.auth.impersonation ?? null;
 // While proxying, `permissions` holds the TARGET's grants - so a "can I proxy?"

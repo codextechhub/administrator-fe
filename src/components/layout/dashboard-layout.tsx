@@ -13,6 +13,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/store";
 import {
   selectActorPermissions,
   selectImpersonation,
+  selectTenantIsPending,
   selectUser,
 } from "@/redux/features/auth/auth-slice";
 import {
@@ -31,6 +32,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { NotLiveNotice } from "@/pages/protected/onboarding/components/not-live-notice";
+import { OnboardingStatusStrip } from "@/pages/protected/onboarding/components/onboarding-status-strip";
 import { ProxySessionBanner } from "@/components/proxy-session-banner";
 import { ProxyUserDialog } from "@/components/proxy-user-dialog";
 import { P, resolvePermissionKey } from "@/permissions";
@@ -46,6 +49,16 @@ export type DashboardHandle = {
   title?: string;
   /** Show the back affordance (defaults to history-back). */
   hasBack?: boolean;
+  /**
+   * Render the shell a school that has not gone live actually gets: the reduced
+   * sidebar, the pending status strip, and NO branch switcher.
+   *
+   * The switcher goes for a reason of its own, not because branches are missing.
+   * Onboarding belongs to the school as a whole rather than to one site, so
+   * there is nothing to switch and nothing to scope - the same recede rule the
+   * contract applies to branch, applied for a different reason.
+   */
+  onboarding?: boolean;
 };
 
 export default function DashboardLayout() {
@@ -54,11 +67,27 @@ export default function DashboardLayout() {
   // Deepest matched route wins, so a nested screen can override its parent's
   // header without the parent knowing about it.
   const matches = useMatches();
-  const { title, hasBack = false } = matches.reduce<DashboardHandle>(
+  const { title, hasBack = false, onboarding: onboardingRoute = false } = matches.reduce<DashboardHandle>(
     (acc, m) => ({ ...acc, ...((m.handle as DashboardHandle | undefined) ?? {}) }),
     {},
   );
   const dispatch = useAppDispatch();
+
+  // A school that has not gone live may reach onboarding and nothing else. The
+  // server enforces this and answers 403 TENANT_NOT_LIVE - but only to a screen
+  // that asks it something, and most of this app's pages do not yet make a
+  // request at all, so they would render as though they worked. The tenant
+  // status arrives with the session, so the question is answered here before
+  // the page paints and without a round trip.
+  const tenantIsPending = useAppSelector(selectTenantIsPending);
+
+  // The shell follows the school, not the route. A pending school gets the
+  // reduced sidebar everywhere - including on a page it is not allowed to open,
+  // where a full sidebar would offer it eleven more doors that are also shut.
+  // A LIVE school gets the whole app back even on the control room, which after
+  // go-live is a read-only record rather than home base.
+  const onboarding = tenantIsPending;
+  const pageIsClosed = tenantIsPending && !onboardingRoute;
 
   useTokenRefresh();
   const { open, secondsLeft, isExpired, onContinue, onLogout, goToLogin } =
@@ -108,7 +137,7 @@ export default function DashboardLayout() {
         goToLogin={goToLogin}
       />
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar onboarding={onboarding} />
         <SidebarInset className="bg-white-05 min-w-0 w-auto">
           {/* Banner + header pin together: two independently sticky bars at
               top-0 would overlap as soon as the page scrolls. */}
@@ -140,23 +169,25 @@ export default function DashboardLayout() {
               </h6>
             </div>
 
-            <Combobox items={branchOptions}>
-              <ComboboxInput
-                showTrigger={false}
-                placeholder={selectedBranch || "Switch branch"}
-                className="border-primary ring-0!"
-              />
-              <ComboboxContent>
-                <ComboboxEmpty>No items found.</ComboboxEmpty>
-                <ComboboxList>
-                  {(framework) => (
-                    <ComboboxItem key={framework.value} value={framework}>
-                      {framework.label}
-                    </ComboboxItem>
-                  )}
-                </ComboboxList>
-              </ComboboxContent>
-            </Combobox>
+            {!onboarding && (
+              <Combobox items={branchOptions}>
+                <ComboboxInput
+                  showTrigger={false}
+                  placeholder={selectedBranch || "Switch branch"}
+                  className="border-primary ring-0!"
+                />
+                <ComboboxContent>
+                  <ComboboxEmpty>No items found.</ComboboxEmpty>
+                  <ComboboxList>
+                    {(framework) => (
+                      <ComboboxItem key={framework.value} value={framework}>
+                        {framework.label}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
+            )}
 
             <div className="gap-x-3 inline-flex items-center">
               <button
@@ -233,6 +264,11 @@ export default function DashboardLayout() {
           </header>
           </div>
 
+          {/* Deliberately below the sticky block, not inside it: the strip plus
+              the expiry warning can run to three lines on a phone, and pinning
+              all of that would eat the fold on every onboarding screen. */}
+          {onboardingRoute && <OnboardingStatusStrip />}
+
           {canProxy && (
             <ProxyUserDialog
               open={proxyDialogOpen}
@@ -245,7 +281,7 @@ export default function DashboardLayout() {
               clips it. Ported from console-fe; do not remove (CLAUDE.md
               §Responsive). */}
           <div className="grid grid-cols-1 min-w-0 flex-1 pt-0">
-            <Outlet />
+            {pageIsClosed ? <NotLiveNotice /> : <Outlet />}
           </div>
         </SidebarInset>
       </SidebarProvider>

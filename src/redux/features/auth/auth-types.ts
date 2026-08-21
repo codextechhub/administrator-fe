@@ -59,6 +59,18 @@ export interface TenantInfo {
    * more reliable of the two: a tenant cannot be wrong about itself.
    */
   kind: string
+  /**
+   * PENDING, ACTIVE, INACTIVE or SUSPENDED.
+   *
+   * PENDING means the school has not gone live: the backend refuses it every
+   * surface but onboarding, and until this field existed the app could only
+   * find that out by being refused - so a screen that makes no request looked
+   * open, and a school still being set up could wander into a page it will
+   * never be allowed to use. Optional because a session persisted before the
+   * field shipped has no value for it; treat an absent status as live rather
+   * than locking a real school out of its own app.
+   */
+  status?: string
 }
 
 export interface User {

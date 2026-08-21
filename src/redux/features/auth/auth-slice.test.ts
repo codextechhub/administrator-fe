@@ -3,7 +3,9 @@ import type { ActiveImpersonation, Auth, User } from "./auth-types";
 import {
   authSliceReducer,
   selectActorPermissions,
+  selectTenantIsPending,
   setAuthContext,
+  updateSchool,
   setImpersonation,
   updatePermissions,
   updateTenant,
@@ -115,6 +117,102 @@ describe("updateTenant", () => {
     );
     expect(set).not.toBe(withoutTenant);
     expect(set.tenant).toEqual({ slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" });
+  });
+
+  it("applies a changed status - this is how a school learns it went live", () => {
+    // The guard used to compare slug and name only. That was harmless while
+    // those were the only fields, and stopped being harmless the moment status
+    // started deciding what a school may open: the /me sync carrying PENDING →
+    // ACTIVE would have been dropped here as "the same tenant", leaving the app
+    // locked against a school the server had already let in.
+    const state = stateWith({
+      tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL", status: "PENDING" },
+    });
+    const next = authSliceReducer(
+      state,
+      updateTenant({ slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL", status: "ACTIVE" }),
+    );
+
+    expect(next).not.toBe(state);
+    expect(next.tenant?.status).toBe("ACTIVE");
+  });
+
+  it("applies a changed kind", () => {
+    const state = stateWith({
+      tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
+    });
+    const next = authSliceReducer(
+      state,
+      updateTenant({ slug: "greenfield", name: "Greenfield Academy", kind: "PLATFORM" }),
+    );
+
+    expect(next).not.toBe(state);
+    expect(next.tenant?.kind).toBe("PLATFORM");
+  });
+});
+
+describe("updateSchool", () => {
+  const school = {
+    id: 2,
+    name: "Bright Star Academy",
+    slug: "bright-star",
+    logo: "https://api.test/media/school_logos/crest-abc123.png",
+  };
+
+  it("returns the SAME state reference for an unchanged school", () => {
+    const state = stateWith({ school });
+    expect(authSliceReducer(state, updateSchool({ ...school }))).toBe(state);
+  });
+
+  it("applies a new logo - this is how the shell picks one up", () => {
+    const state = stateWith({ school });
+    const next = authSliceReducer(
+      state,
+      updateSchool({ ...school, logo: "https://api.test/media/school_logos/new-def456.png" }),
+    );
+
+    expect(next).not.toBe(state);
+    expect(next.school?.logo).toContain("new-def456");
+  });
+
+  it("applies a cleared logo, so a removal reaches the sidebar", () => {
+    const state = stateWith({ school });
+    const next = authSliceReducer(state, updateSchool({ ...school, logo: null }));
+
+    expect(next).not.toBe(state);
+    expect(next.school?.logo).toBeNull();
+  });
+});
+
+describe("selectTenantIsPending", () => {
+  const rootWith = (tenant: Auth["tenant"]) =>
+    ({ auth: stateWith({ tenant }) }) as never;
+
+  it("is true only for a school that has not gone live", () => {
+    expect(
+      selectTenantIsPending(
+        rootWith({ slug: "greenfield", name: "Greenfield", kind: "SCHOOL", status: "PENDING" }),
+      ),
+    ).toBe(true);
+  });
+
+  it("is false for a live school", () => {
+    expect(
+      selectTenantIsPending(
+        rootWith({ slug: "greenfield", name: "Greenfield", kind: "SCHOOL", status: "ACTIVE" }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is false when the session predates the status field", () => {
+    // A persisted session from before the backend sent `status` must not lock a
+    // working school out of its own app. The server still refuses a pending one.
+    expect(
+      selectTenantIsPending(
+        rootWith({ slug: "greenfield", name: "Greenfield", kind: "SCHOOL" }),
+      ),
+    ).toBe(false);
+    expect(selectTenantIsPending(rootWith(null))).toBe(false);
   });
 });
 
