@@ -624,6 +624,13 @@ function FailedCard({ request }: { request: GoLiveRequest }) {
           <LifeBuoy />
           Report this to CodeX
         </Button>
+        {/* Activation rolled everything back and put readiness at READY, so the
+            form above is live and trying again is a real option - secondary to
+            telling CodeX, because the school did nothing wrong and a second
+            attempt may hit whatever broke the first. */}
+        <Button variant="outline" onClick={focusGoLiveForm}>
+          Try again
+        </Button>
       </div>
     </section>
   );

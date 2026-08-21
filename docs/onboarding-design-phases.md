@@ -269,10 +269,73 @@ against invented endpoint shapes and rebuilding them when the real ones arrive.
 
 **Ships when unblocked:** the largest screen in the design.
 
-### Phase 7 - Sweep
-Every remaining state from section 1 walked against the seeded cast, a
-side-by-side diff against the prototype, the responsive probe over every route,
-and a written list of anything we chose to leave different from the design.
+### Phase 7 - Sweep - DONE
+
+**Walked**, one school per state, driven in a real browser against the real API:
+brightfield-lekki (not ready, mid-progress, skipped chip, blocked gate),
+st-monicas (ready, form open), holy-cross (pending approval), grace-fields
+(rejected, reason verbatim), crescent-model (activation failed, reference),
+lagoon-view (live, read-only checklist, full sidebar restored), new-dawn (never
+provisioned), riverbank (expiry warning), plus the branch admin's read-only view
+and the closed-page gate. Zero console errors on every one. The single 404 in
+the sweep is `new-dawn` being told it has no checklist, which is the state.
+
+**Two defects found and fixed:**
+
+1. The failed-activation card had no "Try again". Activation rolls everything
+   back and puts readiness at READY, so the form above it is live and a second
+   attempt is a real option - the design says so and the card did not.
+2. `/onboarding` overflowed a 390px viewport by 53px. Phase 4 gave two cards a
+   second action ("Open profile" beside "Mark as done"), and the action row was
+   `shrink-0`, so it grew to fit both on one line however narrow the screen got.
+   Letting it shrink is what makes its own `flex-wrap` fire. **This was a
+   regression introduced by an earlier phase and only the sweep caught it.**
+
+**Responsive:** seven routes at 390px and 820px, no page-level overflow.
+
+---
+
+## 5. What we deliberately left different from the design
+
+Each of these is a decision, not an oversight.
+
+**Because the backend cannot serve it**
+
+1. **The header search navigates; it does not search the school.** No search
+   endpoint exists. The palette jumps to screens and its empty state says
+   "This searches screens, not records."
+2. **School name is read-only and there is no GBP.** The importer identifies a
+   school by name when a row carries no slug, so a rename turns a school's own
+   import file into a request to create a second school. Currency is NGN/USD.
+3. **No "Onboarding report" button.** No endpoint, no document.
+4. **No attachments on the escalation form.** Filing a ticket is open to a
+   pending school; attaching to it is not.
+5. **No secure intake link generator.** No such feature in the import engine.
+6. **The bell has a count and no tray.** The inbox endpoints exist and are open
+   to a pending school; the tray itself is unbuilt.
+
+**Because the screen belongs to another module**
+
+7. **The roles workshop** (`isRoles`) - Module 4. The design's own update
+   removed it from the pre-go-live app; `/onboarding/staff` is what replaced it.
+8. **Data intake, validation and the import wizard** (`isData`,
+   `isValidation`, `importOpen`) - no student domain to import into.
+9. **The academic structure wizard** (`isWizard`) - M13.
+
+**Because the design's own update supersedes the prototype**
+
+10. **No branch switcher** in the onboarding shell.
+11. **"Not started" is plain text, not a chip**, so the one gray chip on screen
+    means "you set this aside".
+12. **The Skipped tile is hidden at zero**, rather than sitting empty.
+
+**Because it is better and still true**
+
+13. **The sidebar and the welcome card show the school's logo** when it has
+    uploaded one, falling back to initials. The prototype always draws initials,
+    but the school can now set a logo and expects to see it.
+14. **The control room is read-only for anyone holding the view keys without the
+    write ones.** Not in the design at all - it is what a branch admin sees.
 
 ---
 

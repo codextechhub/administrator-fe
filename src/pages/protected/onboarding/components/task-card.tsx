@@ -147,8 +147,13 @@ export function TaskCard({
           )}
         </div>
 
+        {/* The action row is NOT shrink-0. A card can carry two actions -
+            "Open profile" beside "Mark as done" - and a shrink-0 row grows to
+            fit both on one line however narrow the screen is, which took the
+            page 53px past a 390px viewport. Letting it shrink is what makes its
+            own flex-wrap fire. */}
         {(openRoute || !readOnly) && (
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2 shrink-0">
+          <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
             {/* Outside the readOnly guard: a reader who may open the screen
                 behind a step should still be able to go and look at it. */}
             {openRoute && (
