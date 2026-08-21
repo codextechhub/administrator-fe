@@ -107,13 +107,39 @@ enumerates screens and states, audits the API for gaps both ways (screens with
 no endpoint, endpoints with no screen), and writes the phase plan.
 **Ships:** this file, the skill. **No app changes.**
 
-### Phase 2 - The scenario schools
-Extend `seed_test_school` into a scenario seeder so every state in section 1 is
-reachable with real data: Brightfield mid-progress with a skipped step,
-St. Monica's ready, one with a pending request, one rejected, one activated, one
-whose activation failed, one never provisioned, one inside the expiry warning.
-**Ships:** one command that builds the whole cast. Everything after this is
-verified against it.
+### Phase 2 - The scenario schools - DONE
+
+`python manage.py seed_onboarding_scenarios` builds eight schools, one per
+state, driven through the real services wherever a service exists. Every school
+signs in with `School@2025` as `admin@<slug>.example.com`, at
+`<slug>.localhost:5199`.
+
+| Slug | State it demonstrates |
+|---|---|
+| `brightfield-lekki` | Not ready, mid-progress, one step skipped, gate blocked |
+| `st-monicas` | Ready, the go-live form open |
+| `holy-cross` | Pending approval, waiting on CodeX |
+| `grace-fields` | Rejected, with a reason, ready to resubmit |
+| `crescent-model` | Activation failed, with a failure reference |
+| `lagoon-view` | Live, control room read-only, full app open |
+| `new-dawn` | Never provisioned - no checklist at all |
+| `riverbank` | Not ready, inside the 14-day expiry warning |
+
+Two notes on how it is built. **The failed activation is the only fixture**: a
+failure happens when something inside activation breaks, and there is no
+supported way to ask it to break, so the row is written the way the service
+writes it - status FAILED, a correlation reference, no reviewer and no reason,
+readiness back to READY. Everything else goes through `transition_task`,
+`submit_go_live`, `reject_go_live` and `approve_go_live`, so a state that cannot
+be reached honestly fails loudly rather than being faked.
+
+**The three terminal scenarios are guarded.** Live, failed and rejected cannot
+be driven twice - live refuses a second request outright, and the other two
+would stack another row onto the history on every run, slowly inventing a school
+that had been rejected nine times. Running the command three times in a row now
+produces byte-identical output.
+
+`reseed-dev.sh` calls it, so a reseed leaves the cast in place.
 
 ### Phase 3 - The shell and the four screens that exist
 Refit welcome, control room, go-live and escalate to match the prototype element
