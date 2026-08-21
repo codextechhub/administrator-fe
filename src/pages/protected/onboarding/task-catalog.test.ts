@@ -9,14 +9,27 @@ describe("taskMeta", () => {
 
   it("does not claim the platform-verified steps are self-attested", () => {
     for (const key of [
-      "FIRST_ADMIN",
-      "ROLE_BASELINE",
+      "DEFAULT_ROLES",
       "SCHOOL_METADATA",
-      "SET_OF_BOOKS",
       "INITIAL_DATA",
       "STAFF_INVITATIONS",
     ]) {
       expect(taskMeta(key).attested).toBeUndefined();
+    }
+  });
+
+  it("describes every key the catalogue ships, not the fallback", () => {
+    // Without this, a key removed from the backend keeps passing every other
+    // test in this file by quietly falling through to the generic card.
+    const fallback = taskMeta("SOME_KEY_THAT_WILL_NEVER_EXIST").description;
+    for (const key of [
+      "DEFAULT_ROLES",
+      "SCHOOL_METADATA",
+      "ACADEMIC_STRUCTURE",
+      "INITIAL_DATA",
+      "STAFF_INVITATIONS",
+    ]) {
+      expect(taskMeta(key).description).not.toBe(fallback);
     }
   });
 

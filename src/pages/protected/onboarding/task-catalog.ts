@@ -1,10 +1,8 @@
 import {
-  BookOpenCheck,
   GraduationCap,
-  ShieldCheck,
   School,
+  ShieldCheck,
   Upload,
-  UserRoundCheck,
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
@@ -58,35 +56,25 @@ export interface TaskMeta {
 }
 
 const CATALOG: Record<string, TaskMeta> = {
-  FIRST_ADMIN: {
-    icon: UserRoundCheck,
-    description:
-      "We check that your school has an active administrator who can sign in and holds the School Admin role.",
-  },
-  ROLE_BASELINE: {
+  DEFAULT_ROLES: {
     icon: ShieldCheck,
     description:
-      "We check that your School Admin role was created with its permissions attached.",
+      "Baseline role templates, custom roles and the people who can operate the system.",
+    closedNote:
+      "We check this for you: that an administrator has accepted their invitation, and that the School Admin role carries its permissions. Managing roles opens when your school goes live.",
   },
   SCHOOL_METADATA: {
     icon: School,
     description:
-      "Your school's name, code, ownership type, term structure and currency. CodeX fills most of this in when it creates the school.",
+      "Official identity details used across every module: ownership, term structure and currency.",
     route: routesPath.PROTECTED.ONBOARDING.PROFILE,
     openLabel: "Open profile",
     openPermission: P.VIEW_SCHOOL_PROFILE,
   },
-  SET_OF_BOOKS: {
-    icon: BookOpenCheck,
-    description:
-      "The finance ledger your school trades on. CodeX provisions it when the school is created.",
-    closedNote:
-      "There is no form for this one. If your books never arrived, it is a support matter.",
-  },
   ACADEMIC_STRUCTURE: {
     icon: GraduationCap,
     description:
-      "Your sessions and terms, your levels and programmes, and the classes under them.",
+      "Sessions, terms, departments, programmes, levels and classes for your school year.",
     attested: true,
     closedNote:
       "Academic structure has its own module, which opens when your school goes live.",
@@ -94,13 +82,14 @@ const CATALOG: Record<string, TaskMeta> = {
   INITIAL_DATA: {
     icon: Upload,
     description:
-      "Students, staff and parents, loaded through the data import engine. An import that finished with rejected rows does not complete this step.",
+      "Students, staff and parents, through the CodeX import system. Historical data is optional.",
     closedNote:
       "Data import opens when your school goes live. You can skip this step for now.",
   },
   STAFF_INVITATIONS: {
     icon: UsersRound,
-    description: "Anyone at your school with an account beyond you.",
+    description:
+      "Invite teachers and admin staff by email. Can be done after go-live.",
     closedNote:
       "Staff invitations open when your school goes live. You can skip this step for now.",
     route: routesPath.PROTECTED.ONBOARDING.STAFF,

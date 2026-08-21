@@ -29,10 +29,8 @@ export type GoLiveStatus =
  * render (with fallback copy) rather than crash a control room that predates it.
  */
 export type TaskKey =
-  | "FIRST_ADMIN"
-  | "ROLE_BASELINE"
+  | "DEFAULT_ROLES"
   | "SCHOOL_METADATA"
-  | "SET_OF_BOOKS"
   | "ACADEMIC_STRUCTURE"
   | "INITIAL_DATA"
   | "STAFF_INVITATIONS"

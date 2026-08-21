@@ -295,6 +295,42 @@ the sweep is `new-dawn` being told it has no checklist, which is the state.
 
 ---
 
+## 4b. The checklist is now the design's five (2026-08-22)
+
+The catalogue carried seven steps and the approved design draws five, so a
+school was reading a checklist its own design did not describe. Changed by
+decision, in the backend, with migration `vs_onboarding 0003`.
+
+| Design card | Was |
+|---|---|
+| Confirm Default Roles & RBAC | `FIRST_ADMIN` + `ROLE_BASELINE`, merged |
+| School Metadata Setup | `SCHOOL_METADATA`, retitled |
+| Academic Structure | `ACADEMIC_STRUCTURE`, retitled |
+| Upload Initial Datasets | `INITIAL_DATA`, retitled |
+| Add Staff & Invitations | `STAFF_INVITATIONS`, retitled |
+| - | `SET_OF_BOOKS`, **removed** |
+
+Two consequences worth keeping in view.
+
+**Merging the two role rows loses nothing checked and one thing shown.** The
+merged condition is still refused unless there is a working administrator AND
+the role they hold grants something, and the refusal still names which half
+failed. What is gone is the ability to be half done: a school whose
+administrator has accepted but whose role is empty shows one outstanding card
+rather than one done and one not.
+
+**Removing the books step is a real loss and should be recorded as one.** Books
+are provisioned at school creation on a best-effort basis, and that step was
+what surfaced a school whose books silently failed - blocking go-live until
+somebody looked. Without it, such a school now goes live and finds out in
+Finance. The check itself is untouched and still available; it is simply no
+longer asked before go-live.
+
+**FRD delta.** FR-006 documents `FIRST_ADMIN` and `ROLE_BASELINE` as separate
+conditions and the catalogue as seven steps. M09 v2.5 does not carry this
+change. Two entries for its next version: the five-step catalogue, and the
+removal of the books gate.
+
 ## 5. What we deliberately left different from the design
 
 Each of these is a decision, not an oversight.
