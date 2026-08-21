@@ -27,12 +27,20 @@ const handle = (title: string, hasBack = false): DashboardHandle => ({
   onboarding: true,
 });
 
+/**
+ * Welcome sits OUTSIDE the dashboard shell, which is why it is exported
+ * separately and mounted as a sibling of the layout route rather than a child.
+ *
+ * The design draws it as a full-page card on the canvas: no sidebar, no header,
+ * no status strip. It is the screen before you enter the control room, and a
+ * shell around it would answer questions the reader has not asked yet.
+ */
+export const onboardingWelcomeRoute = {
+  path: routesPath.PROTECTED.ONBOARDING.WELCOME,
+  Component: OnboardingWelcome,
+} as RouteObject;
+
 export const onboardingRoutes = [
-  {
-    path: routesPath.PROTECTED.ONBOARDING.WELCOME,
-    Component: OnboardingWelcome,
-    handle: handle("Welcome"),
-  },
   {
     path: routesPath.PROTECTED.ONBOARDING.INDEX,
     Component: OnboardingControlRoom,

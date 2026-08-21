@@ -1,9 +1,8 @@
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { AppSidebar } from "../app-sidebar";
 import { svgIcons } from "@/assets/svg";
-import { ChevronLeft, Loader2, Undo2, UsersRound } from "lucide-react";
+import { ChevronLeft, LifeBuoy, Loader2, Undo2, UsersRound } from "lucide-react";
 import { useState } from "react";
 import { Outlet, useMatches, useNavigate } from "react-router";
 import { useSessionTimeout } from "@/hooks/use-session-timeout";
@@ -17,14 +16,6 @@ import {
   selectUser,
 } from "@/redux/features/auth/auth-slice";
 import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "../ui/combobox";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -34,9 +25,12 @@ import {
 } from "../ui/dropdown-menu";
 import { NotLiveNotice } from "@/pages/protected/onboarding/components/not-live-notice";
 import { OnboardingStatusStrip } from "@/pages/protected/onboarding/components/onboarding-status-strip";
+import { AppSearch } from "./app-search";
+import { useGetUnreadNotificationCountQuery } from "@/redux/services/notifications/notifications-api";
 import { ProxySessionBanner } from "@/components/proxy-session-banner";
 import { ProxyUserDialog } from "@/components/proxy-user-dialog";
 import { P, resolvePermissionKey } from "@/permissions";
+import { routesPath } from "@/routes/routesPath";
 import { exitProxySession } from "@/utils/proxy-session";
 
 // Per-screen header config, declared on the route rather than passed as props.
@@ -99,7 +93,11 @@ export default function DashboardLayout() {
     [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
   const roleLabel = humanizeRole(user?.role);
   const avatarFallback = initials(fullName);
-  const selectedBranch = user?.branch_name;
+
+  // The bell badge. A failed count shows no badge, which is what zero shows
+  // anyway, so this never needs an error state of its own.
+  const { data: unread } = useGetUnreadNotificationCountQuery();
+  const unreadCount = unread?.data?.unread_count ?? 0;
 
   // Proxy ("view as another user"). The capability is checked against the
   // ORIGINAL actor's grants: while a session is active `permissions` holds the
@@ -120,12 +118,6 @@ export default function DashboardLayout() {
     setIsExitingProxy(false);
   };
 
-  const branchOptions = [
-    { label: "All Branches", value: "all" },
-    { label: "Primary - Ikeja", value: "primary-ikeja" },
-    { label: "Secondary - Ikeja", value: "secondary-ikeja" },
-    { label: "Secondary - Lekki", value: "secondary-lekki" },
-  ];
   return (
     <>
       <SessionTimeoutModal
@@ -143,20 +135,21 @@ export default function DashboardLayout() {
               top-0 would overlap as soon as the page scrolls. */}
           <div className="sticky top-0 z-10 shrink-0">
           <ProxySessionBanner />
-          <header className="flex justify-between h-15 px-3 lg:px-10 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 bg-white border border-l-0 border-white-02">
-            <div className="inline-flex items-center gap-2">
-              {/* Phone: the sidebar is offcanvas below md, so without a trigger
-                  the nav is unreachable on mobile. */}
-              <SidebarTrigger className="md:hidden size-8" />
+          <header className="flex h-15 shrink-0 items-center gap-3 px-3 lg:gap-4 lg:px-5 bg-white border border-l-0 border-white-02">
+            {/* Left: the toggle, the back affordance and the page title. flex-0
+                so the search takes the slack rather than the title. */}
+            <div className="inline-flex min-w-0 flex-[0_1_auto] items-center gap-2.5">
+              <SidebarTrigger className="size-7 rounded-full border border-white-02 text-gray-06 hover:text-primary" />
               {hasBack && (
                 <>
-                  <figure
+                  <button
+                    type="button"
                     onClick={() => navigate(-1)}
                     className="uppercase font-light text-gray-01 text-sm inline-flex items-center cursor-pointer"
                   >
                     <ChevronLeft className="text-inherit size-5 mr-1" />
                     Back
-                  </figure>
+                  </button>
                   <Separator
                     orientation="vertical"
                     className="rotate-10 w-[1.2px] bg-black-01 data-[orientation=vertical]:h-7"
@@ -164,42 +157,52 @@ export default function DashboardLayout() {
                 </>
               )}
 
-              <h6 className="text-base uppercase font-semibold text-black-01">
+              <h6 className="min-w-0 truncate text-base uppercase font-semibold text-black-01">
                 {title || "Welcome back!!"}
               </h6>
             </div>
 
-            {!onboarding && (
-              <Combobox items={branchOptions}>
-                <ComboboxInput
-                  showTrigger={false}
-                  placeholder={selectedBranch || "Switch branch"}
-                  className="border-primary ring-0!"
-                />
-                <ComboboxContent>
-                  <ComboboxEmpty>No items found.</ComboboxEmpty>
-                  <ComboboxList>
-                    {(framework) => (
-                      <ComboboxItem key={framework.value} value={framework}>
-                        {framework.label}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxList>
-                </ComboboxContent>
-              </Combobox>
-            )}
+            {/* Centre: navigate-only search. It jumps to a screen; there is no
+                search endpoint to find records with. See AppSearch. */}
+            <div className="flex flex-1 justify-end lg:justify-center min-w-0">
+              <AppSearch schoolIsPending={tenantIsPending} />
+            </div>
 
-            <div className="gap-x-3 inline-flex items-center">
+            <div className="inline-flex shrink-0 items-center gap-2.5">
               <button
                 type="button"
-                className="size-8.5 rounded-full relative bg-gray-04 grid place-content-center"
+                aria-label={
+                  unreadCount > 0
+                    ? `Notifications, ${unreadCount} unread`
+                    : "Notifications"
+                }
+                className="relative size-8.5 rounded-full bg-gray-04 grid place-content-center text-gray-01 hover:bg-gray-03"
               >
                 {svgIcons.notificationBell}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 grid h-4.5 min-w-4.5 place-content-center rounded-full bg-error px-1 font-mont text-[10px] font-semibold text-white">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </button>
+
+              {/* Support sits beside the bell in the design, and during
+                  onboarding it is the one route to CodeX a school actually has. */}
+              {onboardingRoute && (
+                <button
+                  type="button"
+                  aria-label="Get help"
+                  title="Raise an issue with CodeX"
+                  onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.HELP)}
+                  className="size-8.5 rounded-full bg-gray-04 grid place-content-center text-gray-01 hover:bg-pry-01 hover:text-primary"
+                >
+                  <LifeBuoy className="size-4.5" />
+                </button>
+              )}
 
               <Separator
                 orientation="vertical"
-                className=" data-[orientation=vertical]:h-7"
+                className="data-[orientation=vertical]:h-7"
               />
 
               <DropdownMenu>
@@ -207,24 +210,9 @@ export default function DashboardLayout() {
                   <button
                     type="button"
                     aria-label="Open account menu"
-                    // min-w-0 + the truncating spans keep a long name from
-                    // widening the header past a 390px viewport.
-                    className="inline-flex min-w-0 items-center gap-x-3 rounded-full py-1 pl-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    className="grid size-9 shrink-0 place-content-center rounded-full bg-pry-01 font-mont text-[13px] font-semibold text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                   >
-                    <Avatar className="shrink-0">
-                      <AvatarImage src={"/image/avatar2.png"} />
-                      <AvatarFallback>{avatarFallback}</AvatarFallback>
-                    </Avatar>
-
-                    {/* The identity block is desktop-only: on a phone the
-                        avatar alone opens the same menu, and the banner already
-                        names the proxied user. */}
-                    <div className="hidden min-w-0 sm:grid text-left text-sm leading-tight">
-                      <span className="truncate font-medium">{fullName}</span>
-                      <span className="text-muted-foreground truncate text-xs">
-                        {roleLabel}
-                      </span>
-                    </div>
+                    {avatarFallback}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">

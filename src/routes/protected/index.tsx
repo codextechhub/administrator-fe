@@ -12,9 +12,12 @@ import { teachersRoutes } from "./teachers-routes";
 import { administratorRoutes } from "./administrator-routes";
 import { academicRoutes } from "./academic-routes";
 import { classesRoutes } from "./classes-routes";
-import { onboardingRoutes } from "./onboarding-routes";
+import { onboardingRoutes, onboardingWelcomeRoute } from "./onboarding-routes";
 
 export const protectedRoutes = [
+  // Authenticated, but deliberately outside the shell - see the route's own
+  // comment for why the welcome screen has no sidebar or header.
+  onboardingWelcomeRoute,
   {
     Component: DashboardLayout,
     children: [

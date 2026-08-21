@@ -141,12 +141,41 @@ produces byte-identical output.
 
 `reseed-dev.sh` calls it, so a reseed leaves the cast in place.
 
-### Phase 3 - The shell and the four screens that exist
-Refit welcome, control room, go-live and escalate to match the prototype element
-for element, keeping the wiring. Header search and bell count get built as
-designed and reported as inert, or cut - your call at review. Fix the school
-profile against the design's name/currency question.
-**Ships:** the screens you look at most, on-design.
+### Phase 3 - The shell and the four screens that exist - DONE
+
+The shell now matches the prototype: a round sidebar toggle, the uppercase page
+title, the centred search box with its `⌘E` badge, the notification bell, the
+support button and the initials avatar. The welcome screen moved OUT of the
+shell, which is how the design draws it - a card centred on the canvas with no
+sidebar, header or status strip, because it is the screen before you enter the
+control room.
+
+Two rulings were taken here.
+
+**The header search navigates; it does not search the school.** There is no
+search endpoint in the backend - absent, not closed - so a box promising to find
+a student by name would be a lie in the most prominent place on the page.
+`⌘E` opens a palette over the screens this person can reach, gated on the same
+permission keys as the sidebar, so it never offers a door the nav has hidden. A
+pending school sees its four onboarding screens and nothing else. The empty
+state says so out loud: "This searches screens, not records." It is the shell a
+real search drops into when there is something to call.
+
+**The backend wins on school name and currency.** The design makes the name
+editable and offers GBP; the name is deliberately off the update serializer,
+because the spreadsheet importer identifies a school by name when a row carries
+no slug, so a rename silently turns a school's own import file into a request to
+create a second school. Currency stays Naira and US Dollar. The screen is off-
+design in those two places and correct in both.
+
+**The bell is real.** `GET /v1/notify/unread-count/` already exists, is already
+open to a pending school, and its docstring says it drives the bell badge. No
+count, no badge - which is what zero looks like anyway, so it needs no error
+state.
+
+Below `lg` the search box collapses to its icon: a 560px field cannot sit
+between a title and three controls on a 390px screen without one of them
+leaving.
 
 ### Phase 4 - Roles, permissions and invitations
 Backend: open a school-scoped subset of `vs_rbac` and user invitation to the
