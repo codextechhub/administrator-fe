@@ -15,6 +15,7 @@ const OnboardingControlRoom = lazy(
 const SchoolProfile = lazy(
   () => import("@/pages/protected/onboarding/school-profile"),
 );
+const OnboardingStaff = lazy(() => import("@/pages/protected/onboarding/staff"));
 const GoLive = lazy(() => import("@/pages/protected/onboarding/go-live"));
 const OnboardingHelp = lazy(() => import("@/pages/protected/onboarding/help"));
 const OnboardingNotLive = lazy(
@@ -50,6 +51,11 @@ export const onboardingRoutes = [
     path: routesPath.PROTECTED.ONBOARDING.PROFILE,
     Component: SchoolProfile,
     handle: handle("School Profile", true),
+  },
+  {
+    path: routesPath.PROTECTED.ONBOARDING.STAFF,
+    Component: OnboardingStaff,
+    handle: handle("Invite Your Staff", true),
   },
   {
     path: routesPath.PROTECTED.ONBOARDING.GO_LIVE,

@@ -19,6 +19,7 @@ export const routesPath = {
       INDEX: "/onboarding",
       WELCOME: "/onboarding/welcome",
       PROFILE: "/onboarding/profile",
+      STAFF: "/onboarding/staff",
       GO_LIVE: "/onboarding/go-live",
       HELP: "/onboarding/help",
       // Where every TENANT_NOT_LIVE refusal lands, whichever closed surface

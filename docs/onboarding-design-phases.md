@@ -177,12 +177,38 @@ Below `lg` the search box collapses to its icon: a 560px field cannot sit
 between a title and three controls on a 390px screen without one of them
 leaving.
 
-### Phase 4 - Roles, permissions and invitations
-Backend: open a school-scoped subset of `vs_rbac` and user invitation to the
-pending surface, with school-side permission keys. Frontend: `isRoles` with both
-tabs, the role preview drawer, create-custom-role, the bulk-upload notice, the
-invitation table with retry, and the `isStaff` stub.
-**Ships:** screen 4, screen 5, four overlays.
+### Phase 4 - Roles and invitations - MOSTLY NOT OURS
+
+**This phase was planned wrong and the FRD caught it.** What shipped is the
+`isStaff` explanation screen. The roles workshop is Module 4's and is not built
+here.
+
+Three sources agree, and only the raw prototype disagrees:
+
+- **The design's own update (B3)** removes custom role creation, the
+  module-grouped permission picker, the role preview drawer, the role-file
+  import and the staff invitation panel from the pre-go-live app, in those
+  words, because none of it is reachable by a school that has not gone live.
+- **The FRD (FR-006)** scopes M9's entire roles involvement to two verification
+  conditions - an active whole-tenant `school_admin` assignment, and that
+  template carrying at least one granted permission - and states the limit
+  plainly: "This module exposes the failure and never silently re-provisions."
+- **The FRD's dependency table** assigns roles and permissions to Module 4. M9
+  consumes its evaluator and scoping and owns none of it.
+
+The prototype still contains `isRoles` (16 KB: tabs, custom roles, a permission
+picker, an invitation table) because it was drawn from the original brief, and
+it also contains `isStaff` (1.5 KB), which is the update's replacement for it.
+Both are in the file. The phase list in this document was built from the screen
+inventory without weighting the update, which is how a Module 4 project ended up
+scheduled as M9's phase 4.
+
+**Shipped:** `/onboarding/staff` - the explanation, and the one action that
+works (set the optional step aside). The card links to it.
+
+**Moved out of this plan:** the roles workshop, the permission picker, the
+preview drawer, the bulk upload, and the invitation table. They belong to
+Module 4 and need its API, which is closed to a pending school by design.
 
 ### Phase 5 - Data intake, validation and the import wizard
 Backend: open the `vs_import_data` batch and template surface to a pending

@@ -103,6 +103,8 @@ const CATALOG: Record<string, TaskMeta> = {
     description: "Anyone at your school with an account beyond you.",
     closedNote:
       "Staff invitations open when your school goes live. You can skip this step for now.",
+    route: routesPath.PROTECTED.ONBOARDING.STAFF,
+    openLabel: "What happens here",
   },
 };
 
