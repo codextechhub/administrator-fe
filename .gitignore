@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local agent tooling. Skills are per-machine, and the backend repo ignores
+# all of .claude/ - keeping these untracked stops the two repos disagreeing.
+.claude/skills/
