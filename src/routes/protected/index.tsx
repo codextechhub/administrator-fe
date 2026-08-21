@@ -12,11 +12,13 @@ import { teachersRoutes } from "./teachers-routes";
 import { administratorRoutes } from "./administrator-routes";
 import { academicRoutes } from "./academic-routes";
 import { classesRoutes } from "./classes-routes";
+import { onboardingRoutes } from "./onboarding-routes";
 
 export const protectedRoutes = [
   {
     Component: DashboardLayout,
     children: [
+      ...onboardingRoutes,
       ...overviewRoutes,
       ...branchesRoutes,
       ...studentsRoutes,

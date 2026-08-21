@@ -20,6 +20,16 @@ interface CustomDateInputProps {
   className?: string;
   placeholder?: string;
   disabled?: boolean;
+  /**
+   * Earliest date the calendar will accept, inclusive.
+   *
+   * Optional and unset by default, so every existing caller keeps the full
+   * calendar. It exists for the fields where a past date is not a choice a user
+   * can mean - asking to go live last Tuesday, for one - and the check belongs
+   * on the picker rather than in each screen's validation, which only ever
+   * catches it after the fact.
+   */
+  minDate?: Date;
 }
 
 export const CustomDateInput = ({
@@ -32,6 +42,7 @@ export const CustomDateInput = ({
   className,
   placeholder,
   disabled,
+  minDate,
 }: CustomDateInputProps) => {
   const formatDateToLocalString = (date: Date): string => {
     const year = date.getFullYear();
@@ -75,6 +86,7 @@ export const CustomDateInput = ({
               mode="single"
               selected={value ? new Date(value) : undefined}
               captionLayout="dropdown"
+              disabled={minDate ? { before: minDate } : undefined}
               onSelect={(date) => {
                 if (date && onValueChange) {
                   onValueChange(formatDateToLocalString(date));

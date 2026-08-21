@@ -18,7 +18,7 @@ import { routesPath } from "@/routes/routesPath";
 import { useLocation } from "react-router";
 import PromptModal from "./modal/prompt-modal";
 import useToggleModal from "@/hooks/use-toggle";
-import { BookOpen, DollarSign, Settings } from "lucide-react";
+import { BookOpen, DollarSign, LifeBuoy, ListChecks, Rocket, Settings } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useLogout } from "@/hooks/use-logout";
 import { P, type PermissionCode } from "@/permissions";
@@ -42,7 +42,20 @@ interface NavItem {
   items?: { title: string; url: string; isActive: boolean }[];
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  onboarding = false,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  /**
+   * Reduce the nav to what a school that has not gone live can actually reach.
+   *
+   * Overview, People, Academics and Finance are ABSENT rather than greyed out
+   * or padlocked: the server refuses every one of those surfaces to a PENDING
+   * tenant, and a disabled row is a promise the school can see but not use. They
+   * appear at go-live, when the routes behind them start answering.
+   */
+  onboarding?: boolean;
+}) {
   const location = useLocation().pathname;
 
   const { hasPermission, hasAnyPermission, hasAllPermissions } =
@@ -73,6 +86,38 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ? hasAllPermissions(...codes)
       : hasAnyPermission(...codes);
   };
+
+  // The onboarding nav, gated like every other group. A branch admin holds
+  // `onboarding.progress.view` and nothing else, so they get the Control Room
+  // and no Go-Live: a nav item that answers 403 is a door drawn on a wall.
+  const onboardingNav: NavItem[] = [
+    {
+      title: "Control Room",
+      url: routesPath.PROTECTED.ONBOARDING.INDEX,
+      icon: ListChecks,
+      isActive: location === routesPath.PROTECTED.ONBOARDING.INDEX,
+      childActive: false,
+      permission: P.VIEW_ONBOARDING,
+    },
+    {
+      title: "Go-Live",
+      url: routesPath.PROTECTED.ONBOARDING.GO_LIVE,
+      icon: Rocket,
+      isActive: location.startsWith(routesPath.PROTECTED.ONBOARDING.GO_LIVE),
+      childActive: false,
+      permission: P.VIEW_GO_LIVE_REQUESTS,
+    },
+  ].filter(canSee);
+
+  const helpNav: NavItem[] = [
+    {
+      title: "Help",
+      url: routesPath.PROTECTED.ONBOARDING.HELP,
+      icon: LifeBuoy,
+      isActive: location.startsWith(routesPath.PROTECTED.ONBOARDING.HELP),
+      childActive: false,
+    },
+  ];
 
   const data: Record<string, NavItem[]> = {
     overview: [
@@ -220,17 +265,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent className="bg-white pt-3">
-          {overview.length > 0 && (
-            <NavMain items={overview} groupTitle="Overview" />
-          )}
-          {people.length > 0 && (
-            <NavMain items={people} groupTitle="People" />
-          )}
-          {academics.length > 0 && (
-            <NavMain items={academics} groupTitle="Academics" />
-          )}
-          {finance.length > 0 && (
-            <NavMain items={finance} groupTitle="Finance" />
+          {onboarding ? (
+            <>
+              {onboardingNav.length > 0 && (
+                <NavMain items={onboardingNav} groupTitle="Onboarding" />
+              )}
+              <NavMain items={helpNav} groupTitle="Help" />
+            </>
+          ) : (
+            <>
+              {overview.length > 0 && (
+                <NavMain items={overview} groupTitle="Overview" />
+              )}
+              {people.length > 0 && (
+                <NavMain items={people} groupTitle="People" />
+              )}
+              {academics.length > 0 && (
+                <NavMain items={academics} groupTitle="Academics" />
+              )}
+              {finance.length > 0 && (
+                <NavMain items={finance} groupTitle="Finance" />
+              )}
+            </>
           )}
         </SidebarContent>
         <SidebarFooter className="bg-white ">

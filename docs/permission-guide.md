@@ -358,8 +358,30 @@ User navigates to URL
 | school.fees.manage | 100608 | SENSITIVE | `MANAGE_FEES` |
 | school.settings.view | 100701 | NORMAL | `VIEW_SETTINGS` |
 | school.settings.manage | 100708 | SENSITIVE | `MANAGE_SETTINGS` |
+| school.profile.view | 101201 | NORMAL | `VIEW_SCHOOL_PROFILE` |
+| school.profile.update | 101203 | SENSITIVE | `UPDATE_SCHOOL_PROFILE` |
 | school.roles.view | 100801 | NORMAL | `VIEW_ROLES` |
 | school.roles.assign | 100811 | SENSITIVE | `ASSIGN_ROLE` |
+
+### `onboarding` module (MM=20) - the control room and the go-live gate
+
+Open to a school that has **not** gone live: these four are the only keys that
+work before go-live, alongside `school.profile.*` and filing a support ticket.
+
+`onboarding.progress.view` is the one key a **branch admin** holds by default:
+they read the control room and change nothing. Onboarding belongs to the school
+as a whole, so transitioning a step and asking CodeX to go live stay with the
+school administrator.
+Approve, reject and reinstate are CodeX's and are deliberately absent from this
+registry - the backend refuses them to any caller outside the platform tenant
+however the key was obtained, so a school app has no use for them.
+
+| Backend key | Code | Sensitivity | UI constant |
+|---|---|---|---|
+| onboarding.progress.view | 200101 | NORMAL | `VIEW_ONBOARDING` |
+| onboarding.task.update | 200203 | NORMAL | `UPDATE_ONBOARDING_TASK` |
+| onboarding.go_live.view | 200301 | NORMAL | `VIEW_GO_LIVE_REQUESTS` |
+| onboarding.go_live.submit | 200302 | SENSITIVE | `REQUEST_GO_LIVE` |
 
 ### `academics` module (MM=30) - sessions, calendar & classes
 

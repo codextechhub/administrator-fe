@@ -12,6 +12,19 @@ export const routesPath = {
   },
   PROTECTED: {
     OVERVIEW: { INDEX: "/overview" },
+    // The onboarding surface. Reachable before the school goes live, and the
+    // only part of the app that is - everything below answers 403 TENANT_NOT_LIVE
+    // to a school that is still being set up.
+    ONBOARDING: {
+      INDEX: "/onboarding",
+      WELCOME: "/onboarding/welcome",
+      PROFILE: "/onboarding/profile",
+      GO_LIVE: "/onboarding/go-live",
+      HELP: "/onboarding/help",
+      // Where every TENANT_NOT_LIVE refusal lands, whichever closed surface
+      // produced it. See the 403 branch in redux/services/base-api.ts.
+      NOT_LIVE: "/onboarding/not-live",
+    },
     BRANCHES: { INDEX: "/branches" },
     STUDENTS: { INDEX: "/students" },
     TEACHERS: { INDEX: "/teachers" },
