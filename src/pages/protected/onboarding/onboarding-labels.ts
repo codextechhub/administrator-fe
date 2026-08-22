@@ -30,3 +30,30 @@ export const GO_LIVE_LABEL: Record<GoLiveStatus, string> = {
   ACTIVATED: "Activated",
   FAILED: "Activation failed",
 };
+
+/**
+ * Permission module slugs, in the words a school uses.
+ *
+ * The catalogue groups by the registry's own module slug ("finance",
+ * "config"), which is a developer's name for the bucket. A school reading its
+ * own role sees the heading, so the heading has to be theirs. An unknown slug
+ * falls through to itself rather than being hidden: a module added on the
+ * backend must still show its permissions, even before this table knows what
+ * to call it.
+ */
+export const MODULE_LABEL: Record<string, string> = {
+  academics: "Academics",
+  communication: "Messages and notices",
+  config: "Settings",
+  exports: "Exports and reports",
+  finance: "Finance",
+  import: "Data import",
+  onboarding: "Onboarding",
+  payments: "Payments",
+  platform: "Accounts and audit",
+  procurement: "Procurement",
+  school: "School and people",
+  tickets: "Support tickets",
+  todo: "Tasks",
+  workflow: "Approvals",
+};

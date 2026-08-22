@@ -15,7 +15,7 @@ const OnboardingControlRoom = lazy(
 const SchoolProfile = lazy(
   () => import("@/pages/protected/onboarding/school-profile"),
 );
-const OnboardingStaff = lazy(() => import("@/pages/protected/onboarding/staff"));
+const OnboardingRoles = lazy(() => import("@/pages/protected/onboarding/roles"));
 const GoLive = lazy(() => import("@/pages/protected/onboarding/go-live"));
 const OnboardingHelp = lazy(() => import("@/pages/protected/onboarding/help"));
 const OnboardingNotLive = lazy(
@@ -53,9 +53,10 @@ export const onboardingRoutes = [
     handle: handle("School Profile", true),
   },
   {
-    path: routesPath.PROTECTED.ONBOARDING.STAFF,
-    Component: OnboardingStaff,
-    handle: handle("Add Staff & Invitations", true),
+    // Both checklist cards land here; ?tab= decides which half opens.
+    path: routesPath.PROTECTED.ONBOARDING.ROLES,
+    Component: OnboardingRoles,
+    handle: handle("Roles & Invitations", true),
   },
   {
     path: routesPath.PROTECTED.ONBOARDING.GO_LIVE,

@@ -19,7 +19,10 @@ export const routesPath = {
       INDEX: "/onboarding",
       WELCOME: "/onboarding/welcome",
       PROFILE: "/onboarding/profile",
-      STAFF: "/onboarding/staff",
+      // One screen, two tabs. The checklist opens it from two different cards,
+      // so the tab is in the URL rather than in component state.
+      ROLES: "/onboarding/roles",
+      STAFF: "/onboarding/roles?tab=invitations",
       GO_LIVE: "/onboarding/go-live",
       HELP: "/onboarding/help",
       // Where every TENANT_NOT_LIVE refusal lands, whichever closed surface

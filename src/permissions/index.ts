@@ -76,7 +76,13 @@ const REGISTRY: Record<string, string> = {
   "101203": "school.profile.update",
 
   // ── school / roles  (MM=10, RR=08) ─────────────────────────────────────────
+  // All five are seeded to school_admin and to NOBODY else - a branch admin
+  // holds none of them, which is why the onboarding roles card hides its own
+  // button rather than opening a screen that would 403.
   "100801": "school.roles.view",
+  "100802": "school.roles.create",
+  "100803": "school.roles.update",
+  "100804": "school.roles.delete",
   "100811": "school.roles.assign",
 
   // ── school / impersonation  (MM=10, RR=09) ─────────────────────────────────
@@ -173,6 +179,9 @@ export const P = {
 
   // ── Roles ──────────────────────────────────────────────────────────────────
   VIEW_ROLES:              "100801",  // view school roles and assignments
+  CREATE_ROLE:             "100802",  // add a custom role of the school's own
+  MODIFY_ROLE:             "100803",  // change what a role can reach
+  DELETE_ROLE:             "100804",  // remove a custom role
   ASSIGN_ROLE:             "100811",  // assign or revoke roles from school users
 
   // ── Proxy (view the app as another user in this school) ────────────────────

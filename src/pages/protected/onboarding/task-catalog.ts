@@ -60,8 +60,13 @@ const CATALOG: Record<string, TaskMeta> = {
     icon: ShieldCheck,
     description:
       "Baseline role templates, custom roles and the people who can operate the system.",
-    closedNote:
-      "We check this for you: that an administrator has accepted their invitation, and that the School Admin role carries its permissions. Managing roles opens when your school goes live.",
+    route: routesPath.PROTECTED.ONBOARDING.ROLES,
+    openLabel: "Review",
+    // Only school_admin holds this. A branch admin holds NONE of the
+    // school.roles.* keys, so for them the button is hidden rather than shown
+    // and refused - the card still explains the step, which is all they can
+    // act on anyway.
+    openPermission: P.VIEW_ROLES,
   },
   SCHOOL_METADATA: {
     icon: School,

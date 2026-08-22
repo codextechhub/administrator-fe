@@ -338,7 +338,7 @@ reasons are not the same size. Audited against the code, not from memory.
 
 | Card | Design action | What is actually missing | Size |
 |---|---|---|---|
-| Confirm Default Roles & RBAC | **Review** | `vs_rbac` declares `pending_tenant_surface` on **nothing**, so a school that has not gone live is refused all of it. The permission keys are already granted: school_admin holds `school.roles.view/create/update/delete/assign`. One further gap: the permission *catalogue* the picker needs (`/v1/rbac/vision/permission-*`) sits under the platform prefix, so a school can list its roles but has nothing to pick permissions from. | **Small**, plus one new read endpoint |
+| Confirm Default Roles & RBAC | **Review** | Nothing. Shipped 2026-08-22. See phase 9 below. | done |
 | School Metadata Setup | Open profile | Nothing. Shipped. | done |
 | Academic Structure | Open structure | No academics app exists at all. M13, owned elsewhere. | **External** |
 | Upload Initial Datasets | Open import | Surface already opened (7 keys, 11 views). The screen is portable from console-fe, which has a tested 7-step wizard and 22 wired endpoints. What is absent is the school datasets: `execute_dataset_handler` supports `schools`, `branches` and `cx_users` and raises on anything else, and there is no Student, Staff or Parent model to import into. | **Screen portable, data absent** |
@@ -394,6 +394,58 @@ will need.
 
 **Knowing differences from the prototype, all recorded in section 5.**
 
+### Phase 9 - Confirm Default Roles & RBAC - DONE (2026-08-22)
+
+The second dead "Open" button made real, and the tab strip the design draws
+finally has two live tabs to hold.
+
+**Backend.** Two changes, one of them smaller than 4c predicted and one of them
+new.
+
+- `pending_tenant_surface` on the tenant role views, per verb rather than
+  wholesale: `("get", "post")` on the list, `("get", "patch", "put")` on the
+  detail. **DELETE stays closed.** Onboarding asks a school to confirm and
+  extend the baseline CodeX seeded, and the gate that decides whether the step
+  can close reads those very rows - a school able to delete them during
+  onboarding could clear its own checklist by emptying the thing being checked.
+- `GET /v1/rbac/tenants/<slug>/permission-catalogue/` - new. The global
+  registry at `vision/permissions/` is gated on `platform.permissions.view` and
+  carries every key on the platform; a school editing its own roles needs the
+  opposite, the short list it may actually tick. Filtered on
+  `PermissionScope.TENANT`, which is the same column the grant guard and the
+  evaluator both read, so the picker cannot offer a box the save would refuse
+  and cannot leak the existence of the 40 platform-only keys.
+
+**Opening this was safe for a reason worth writing down.** A tenant role can
+only ever hold keys declared `TENANT`, enforced on the grant models themselves
+(`assert_tenant_may_hold`) and again in the evaluator. So a school admin editing
+her own roles cannot reach across the tenant boundary even if she crafts the
+request by hand - which is what makes "let a pending school edit its roles" a
+surface-flag decision rather than a security one. There is a test that says so.
+
+**A labelling gap found on the way.** 48 of the 343 keys a school can hold carry
+no `description` - all of `academics` and all of `school`, precisely the modules
+a school spends this screen in. Rather than print `school.administrators.view`
+beside a checkbox, the catalogue composes the label back out of the key's own
+resource and action ("View administrators"). Worth fixing properly in the
+registry seeder one day; the composed label is honest in the meantime.
+
+**Frontend.** `/onboarding/staff` became `/onboarding/roles`, one screen with
+the design's two tabs, and the tab lives in the URL so both checklist cards are
+ordinary links: the roles card lands on Roles, the staff card on
+`?tab=invitations`. The invitations work from phase 8 moved into
+`components/invitations-panel.tsx` unchanged.
+
+- Two tables split on `is_system_role`, which is the same distinction the design
+  draws between "Default role templates" and "Custom roles" - so a baseline role
+  added later lands in the right table with no frontend change.
+- A role preview drawer, module-grouped with "N of M granted" per module. A
+  locked role shows its permissions read-only and has no Save, because the
+  server would refuse the write.
+- `school.roles.create/update/delete` added to the permission registry; only
+  school_admin holds any of them, so a branch admin sees the card explaining the
+  step and no button to open it.
+
 ## 5. What we deliberately left different from the design
 
 Each of these is a decision, not an oversight.
@@ -415,9 +467,9 @@ Each of these is a decision, not an oversight.
 
 **Because the screen belongs to another module**
 
-7. **The roles half of the roles workshop** (`isRoles`, Roles & Permissions
-   tab) - still Module 4's engine, but the screen is ours and is next. The
-   invitations half of that same screen shipped in phase 8.
+7. ~~Item withdrawn.~~ **The roles workshop is built** (phase 9). Module 4 still
+   owns the RBAC engine; the screen was always M9's, and the only thing standing
+   between a school and its own roles was a surface flag plus one read endpoint.
 8. **Data intake, validation and the import wizard** (`isData`,
    `isValidation`, `importOpen`) - no student domain to import into.
 9. **The academic structure wizard** (`isWizard`) - M13.
@@ -455,9 +507,24 @@ Each of these is a decision, not an oversight.
     grants is reviewed by anybody. A bursar invited as Payout Approver during
     onboarding holds that grant the moment CodeX activates the school.
 
-17. **No tab strip yet.** The design draws Invitations beside Roles &
-    Permissions. A strip with one live tab and one empty one is worse than no
-    strip, so it arrives with the roles tab.
+17. ~~Item withdrawn.~~ **The tab strip is in** (phase 9), using the repo's own
+    `Tabs`, which is URL-driven - so a checklist card can deep-link to either
+    half.
+
+18. **No "Add custom role" split button, and no bulk upload.** The design offers
+    Single Upload / Bulk Upload behind one dropdown, and its own Bulk Upload
+    modal says role structures are imported through the CodeX import system.
+    That system has no role dataset handler, so the dropdown would have had one
+    live item and one that opens a modal explaining it cannot happen yet. The
+    button creates one role.
+
+19. **A new role starts empty rather than inheriting a base role.** The design's
+    modal asks for a base role and says custom roles "inherit the permissions of
+    a base role, then you narrow them down". The role endpoint has no
+    inherit-from parameter, and copying the baseline client-side would silently
+    hand a new role every permission School Admin holds if the person forgot to
+    narrow it. The modal says what actually happens: add it, then open it and
+    tick what it should reach.
 
 ---
 
