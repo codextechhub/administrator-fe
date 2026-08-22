@@ -3,7 +3,6 @@ import * as React from "react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -12,15 +11,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { HomeIcon, LogoutIcon, TeamMgtIcon } from "@/assets/navbar-svg";
+import { HomeIcon, TeamMgtIcon } from "@/assets/navbar-svg";
 import { NavMain } from "./nav-main";
 import { routesPath } from "@/routes/routesPath";
 import { useLocation } from "react-router";
-import PromptModal from "./modal/prompt-modal";
-import useToggleModal from "@/hooks/use-toggle";
 import { BookOpen, DollarSign, LifeBuoy, ListChecks, Rocket, Settings } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useLogout } from "@/hooks/use-logout";
 import { P, type PermissionCode } from "@/permissions";
 import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
@@ -60,7 +56,6 @@ export function AppSidebar({
 
   const { hasPermission, hasAnyPermission, hasAllPermissions } =
     usePermissions();
-  const { handleLogout, isLoggingOut } = useLogout();
 
   const school = useAppSelector(selectSchool);
   const user = useAppSelector(selectUser);
@@ -71,9 +66,6 @@ export function AppSidebar({
   // the hook fetches it with the token and returns a renderable blob: URL.
   const logoBlobUrl = useSchoolLogo();
   const roleLabel = humanizeRole(user?.role);
-
-  const { isOpen: openLogout, toggleClick: toggleLogout } =
-    useToggleModal(false); // logout modal
 
   // A nav item is visible when it declares no permission, or when the current
   // user satisfies the declared permission(s) per the item's mode.
@@ -95,7 +87,14 @@ export function AppSidebar({
       title: "Control Room",
       url: routesPath.PROTECTED.ONBOARDING.INDEX,
       icon: ListChecks,
-      isActive: location === routesPath.PROTECTED.ONBOARDING.INDEX,
+      // Every onboarding screen except Go-Live and Help is a step opened FROM
+      // the control room, so the control room is where the reader still is.
+      // An exact-path match unlit the item the moment they opened a step,
+      // leaving the whole sidebar dark and no answer to "where am I?".
+      isActive:
+        location.startsWith(routesPath.PROTECTED.ONBOARDING.INDEX) &&
+        !location.startsWith(routesPath.PROTECTED.ONBOARDING.GO_LIVE) &&
+        !location.startsWith(routesPath.PROTECTED.ONBOARDING.HELP),
       childActive: false,
       permission: P.VIEW_ONBOARDING,
     },
@@ -293,37 +292,9 @@ export function AppSidebar({
             </>
           )}
         </SidebarContent>
-        <SidebarFooter className="bg-white ">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                className="h-10 mx-auto mb-10 text-destructive hover:bg-destructive/5 hover:text-destructive"
-                tooltip="Logout"
-                onClick={toggleLogout}
-              >
-                <LogoutIcon />
-                <span>Logout</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
         <SidebarRail />
       </Sidebar>
 
-      <PromptModal
-        isOpen={openLogout}
-        onClose={toggleLogout}
-        onConfirm={handleLogout}
-        title="Log Out?"
-        description="Are you sure you want to log out of your account?"
-        containerClass="min-h-[320px] lg:w-[390px]"
-        srcClass="size-25"
-        src="/image/caution.png"
-        onConfirmText="Log Out"
-        canCancel
-        loading={isLoggingOut}
-        onConfirmClass="bg-error-01 text-white shadow-xs hover:bg-error-01/90 focus-visible:ring-error-01/20"
-      />
     </>
   );
 }

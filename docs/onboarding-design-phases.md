@@ -446,6 +446,44 @@ ordinary links: the roles card lands on Roles, the staff card on
   school_admin holds any of them, so a branch admin sees the card explaining the
   step and no button to open it.
 
+### Phase 9b - The round of polish after phase 9 (2026-08-22)
+
+Reviewed against the running app, not the source.
+
+**The shell**
+
+- The status strip shows the school's crest, not its name. The name is already
+  in the sidebar header directly above it, and printing it twice in the same
+  corner reads as two different things being named.
+- Its sentence is shorter: "Onboarding is the only part of the app open until
+  you go live."
+- Logout moved out of the sidebar and into the account menu, under the person's
+  own name, where console keeps it. "View as user" is now "Proxy user", which is
+  what the banner and the audit trail already call it.
+- **Control Room stays lit** on every screen it owns. An exact-path match unlit
+  it the moment a step was opened, leaving the whole sidebar dark and no answer
+  to "where am I?".
+- The bell got console's tray. See item 6 in section 5.
+
+**Root-cause fixes, not one-screen ones**
+
+- **Inputs had no border and a white background**, so a field on a white card
+  was invisible. Every auth form had been working around it by passing
+  `bg-gray-03` at the call site. Fixed on the base `Input`, `Textarea` (which
+  explicitly set `border-0`) and `NativeSelect`, so every form in the app gains
+  a visible field rather than this one.
+- **CustomTable rows showed a hover tint whether or not they did anything.**
+  The pointer cursor is now tied to `onRowClick`, so a row that promises an
+  action is a row that has one.
+
+**The roles screen**
+
+- The tab strip is a pill with a highlight that slides between tabs, as the
+  design draws it, rather than a background that switches off one and on
+  another. It respects `prefers-reduced-motion`.
+- Role rows are clickable and the "Action" column is gone. The row was already
+  the action; a column repeating it was a second button for the same thing.
+
 ## 5. What we deliberately left different from the design
 
 Each of these is a decision, not an oversight.
@@ -462,8 +500,13 @@ Each of these is a decision, not an oversight.
 4. **No attachments on the escalation form.** Filing a ticket is open to a
    pending school; attaching to it is not.
 5. **No secure intake link generator.** No such feature in the import engine.
-6. **The bell has a count and no tray.** The inbox endpoints exist and are open
-   to a pending school; the tray itself is unbuilt.
+6. ~~Item withdrawn.~~ **The bell has console's tray** (2026-08-22). Every
+   endpoint it needs was already open to a pending school. Two departures from
+   console's version: no "View all notifications" footer, because this app has
+   no inbox page to send anyone to; and an item whose `action_url` names a
+   screen this app has not built is marked read where it stands rather than
+   navigated to. That second one is not hypothetical - `user.invited` carries
+   `/team-management`, which is a console route.
 
 **Because the screen belongs to another module**
 

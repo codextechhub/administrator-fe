@@ -49,8 +49,10 @@ import { useOnboardingState } from "./use-onboarding-state";
  */
 
 const ROLES_KEY = "DEFAULT_ROLES";
-const DEFAULT_COLUMNS = ["Role", "People", "Permissions", "Status", "Action"];
-const CUSTOM_COLUMNS = ["Role", "People", "Permissions", "Action"];
+// No "Action" column: the row opens the role, so a column repeating that is a
+// second button for the same thing and a header the reader has to decode.
+const DEFAULT_COLUMNS = ["Role", "People", "Permissions", "Status"];
+const CUSTOM_COLUMNS = ["Role", "People", "Permissions"];
 
 const TABS = [
   { label: "Roles & Permissions", value: "roles" },
@@ -287,17 +289,16 @@ export default function OnboardingRoles() {
                     : "No default roles were set up for this school."
                 }
                 hidePagination
-                actionButton="View Details"
-                dropDown
-                actionButtonOnClick={(row) =>
+                onRowClick={(row) =>
                   setDrawerKey((row as { _slug: string })._slug)
                 }
               />
             </div>
             <p className="mt-2.5 flex items-start gap-1.5 text-xs text-gray-05">
               <Info className="size-3.5 shrink-0 mt-px text-gray-05" />
-              CodeX maintains these, so their permissions are read-only. To work
-              differently, add a role of your own.
+              Open a role to see what it can reach. CodeX maintains these, so their
+              permissions are read-only - to work differently, add a role of
+              your own.
             </p>
           </section>
 
@@ -317,9 +318,7 @@ export default function OnboardingRoles() {
                     : "You have not added any roles of your own."
                 }
                 hidePagination
-                actionButton="Permissions"
-                dropDown
-                actionButtonOnClick={(row) =>
+                onRowClick={(row) =>
                   setDrawerKey((row as { _slug: string })._slug)
                 }
               />

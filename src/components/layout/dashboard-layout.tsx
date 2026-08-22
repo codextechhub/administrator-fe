@@ -1,9 +1,11 @@
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "../app-sidebar";
-import { svgIcons } from "@/assets/svg";
-import { ChevronLeft, LifeBuoy, Loader2, Undo2, UsersRound } from "lucide-react";
+import { ChevronLeft, LifeBuoy, Loader2, LogOut, Undo2, UsersRound } from "lucide-react";
 import { useState } from "react";
+import { useLogout } from "@/hooks/use-logout";
+import useToggleModal from "@/hooks/use-toggle";
+import PromptModal from "@/components/modal/prompt-modal";
 import { Outlet, useMatches, useNavigate } from "react-router";
 import { useSessionTimeout } from "@/hooks/use-session-timeout";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
@@ -26,7 +28,7 @@ import {
 import { NotLiveNotice } from "@/pages/protected/onboarding/components/not-live-notice";
 import { OnboardingStatusStrip } from "@/pages/protected/onboarding/components/onboarding-status-strip";
 import { AppSearch } from "./app-search";
-import { useGetUnreadNotificationCountQuery } from "@/redux/services/notifications/notifications-api";
+import { NotificationsBell } from "@/components/custom/notifications-bell";
 import { ProxySessionBanner } from "@/components/proxy-session-banner";
 import { ProxyUserDialog } from "@/components/proxy-user-dialog";
 import { P, resolvePermissionKey } from "@/permissions";
@@ -84,6 +86,9 @@ export default function DashboardLayout() {
   const pageIsClosed = tenantIsPending && !onboardingRoute;
 
   useTokenRefresh();
+  const { handleLogout, isLoggingOut } = useLogout();
+  const { isOpen: openLogout, toggleClick: toggleLogout } = useToggleModal(false);
+
   const { open, secondsLeft, isExpired, onContinue, onLogout, goToLogin } =
     useSessionTimeout();
 
@@ -96,9 +101,6 @@ export default function DashboardLayout() {
 
   // The bell badge. A failed count shows no badge, which is what zero shows
   // anyway, so this never needs an error state of its own.
-  const { data: unread } = useGetUnreadNotificationCountQuery();
-  const unreadCount = unread?.data?.unread_count ?? 0;
-
   // Proxy ("view as another user"). The capability is checked against the
   // ORIGINAL actor's grants: while a session is active `permissions` holds the
   // TARGET's keys, so gating on those would hide the exit from the very admin
@@ -169,22 +171,7 @@ export default function DashboardLayout() {
             </div>
 
             <div className="inline-flex shrink-0 items-center gap-2.5">
-              <button
-                type="button"
-                aria-label={
-                  unreadCount > 0
-                    ? `Notifications, ${unreadCount} unread`
-                    : "Notifications"
-                }
-                className="relative size-8.5 rounded-full bg-gray-04 grid place-content-center text-gray-01 hover:bg-gray-03"
-              >
-                {svgIcons.notificationBell}
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 grid h-4.5 min-w-4.5 place-content-center rounded-full bg-error px-1 font-mont text-[10px] font-semibold text-white">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-              </button>
+              <NotificationsBell />
 
               {/* Support sits beside the bell in the design, and during
                   onboarding it is the one route to CodeX a school actually has. */}
@@ -229,7 +216,7 @@ export default function DashboardLayout() {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => setProxyDialogOpen(true)}>
                         <UsersRound className="size-4" />
-                        {impersonation ? "View as someone else" : "View as user"}
+                        {impersonation ? "Proxy as someone else" : "Proxy user"}
                       </DropdownMenuItem>
                       {impersonation && (
                         <DropdownMenuItem
@@ -246,6 +233,11 @@ export default function DashboardLayout() {
                       )}
                     </>
                   )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive" onClick={toggleLogout}>
+                    <LogOut className="size-4" />
+                    Logout
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -263,6 +255,21 @@ export default function DashboardLayout() {
               onOpenChange={setProxyDialogOpen}
             />
           )}
+
+          <PromptModal
+            isOpen={openLogout}
+            onClose={toggleLogout}
+            onConfirm={handleLogout}
+            title="Log Out?"
+            description="Are you sure you want to log out of your account?"
+            containerClass="min-h-[320px] lg:w-[390px]"
+            srcClass="size-25"
+            src="/image/caution.png"
+            onConfirmText="Log Out"
+            canCancel
+            loading={isLoggingOut}
+            onConfirmClass="bg-error-01 text-white shadow-xs hover:bg-error-01/90 focus-visible:ring-error-01/20"
+          />
           {/* grid-cols-1 (minmax(0,1fr)) zeroes the track's min-content floor so a
               page's <main> can never be stretched past the viewport by wide
               nowrap content (tables) - each page's own overflow-x-auto then

@@ -2,8 +2,9 @@ import { cn } from "@/lib/utils";
 import { TriangleAlert } from "lucide-react";
 import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
+import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { useOnboardingState } from "../use-onboarding-state";
-import { humanDate } from "../onboarding-format";
+import { humanDate, initialsOf } from "../onboarding-format";
 import { ReadinessChip } from "./onboarding-chips";
 
 /**
@@ -21,6 +22,7 @@ export function OnboardingStatusStrip() {
   const school = useAppSelector(selectSchool);
   const user = useAppSelector(selectUser);
   const schoolName = school?.name ?? user?.school_name ?? "Your school";
+  const logoUrl = useSchoolLogo();
 
   // Nothing useful to say until the state arrives, and nothing at all to say
   // when there is no checklist - that page carries its own explanation.
@@ -38,14 +40,25 @@ export function OnboardingStatusStrip() {
   return (
     <>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 bg-white border-b border-white-02 px-3 py-2 lg:px-10">
-        <span className="text-[13px] font-semibold font-mont text-black-01">
-          {schoolName}
+        {/* The crest, not the name. The name is already in the sidebar header
+            directly above this line, and printing it twice in the same corner
+            of the screen reads as two different things being named. The alt
+            text carries it for anyone who cannot see the image. */}
+        <span
+          className="size-6 shrink-0 overflow-hidden rounded bg-pry-01 text-primary grid place-content-center font-mont text-[10px] font-semibold"
+          title={schoolName}
+        >
+          {logoUrl ? (
+            <img src={logoUrl} alt={schoolName} className="size-full object-contain" />
+          ) : (
+            initialsOf(schoolName)
+          )}
         </span>
         <ReadinessChip state={state.readiness_state} />
         <p className="text-xs text-gray-06">
           {isLive
-            ? "Your school is live. Onboarding is closed and these steps are read-only."
-            : "Your school is not live yet. Only onboarding is available until it is."}
+            ? "Onboarding is closed. These steps are read-only."
+            : "Onboarding is the only part of the app open until you go live."}
         </p>
         {expiry.applies && !warning && expiry.expires_at && (
           <p className="text-xs text-gray-05 sm:ml-auto whitespace-nowrap">

@@ -112,7 +112,13 @@ const CustomTable = ({
     onClick: (val: any) => void;
   }) => (
     <TableRow
-      className="transition-all duration-300 hover:bg-primary/5"
+      className={cn(
+        "transition-all duration-300 hover:bg-primary/5",
+        // Only a row that actually does something on click says so. Without
+        // this the hover tint appears on every table and promises an action
+        // that most of them do not have.
+        onRowClick && "cursor-pointer",
+      )}
       key={row?.id}
     >
       {row?.map((cell: any, index: any) => (
