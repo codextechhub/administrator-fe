@@ -484,6 +484,43 @@ Reviewed against the running app, not the source.
 - Role rows are clickable and the "Action" column is gone. The row was already
   the action; a column repeating it was a second button for the same thing.
 
+### Phase 9c - What the roles screen exposed (2026-08-22)
+
+Not a design phase. The roles screen is the first surface that ever showed a
+school administrator the permission registry, and putting 343 permissions in
+front of a school turned up five that should never have been there. Recorded
+here because the screen is what found them; the durable account is in the
+backend, in `vs_rbac/migrations/0008` and the seeder comments.
+
+**One was live.** `communication.notification_templates.configure` was
+tenant-holdable, its ViewSet scoped nothing (`get_queryset` says so out loud:
+"global catalogue records, not school-scoped rows") and it had no platform
+guard. A school that granted itself the key could read and rewrite the message
+templates every other school receives. Reproduced on a live tenant before it was
+fixed: 55 templates listed, PATCH returned 200. Now platform-scoped.
+
+**Four more were the same shape.** `finance.currency.create`,
+`finance.fxrate.create` (both views call themselves "global reference data (no
+entity)") and `import.templates.create` / `.manage` (already refused by an
+`_is_platform` check, so this restates the rule where the picker reads it). All
+write tables with no tenant column. Now platform-scoped. The matching `.view`
+keys stay open: a school has to read the currency list and the template list.
+
+**Nineteen were misfiled as a group.** Every `config.*` key - capabilities,
+entitlements, security, integrations - is CodeX deciding what a school HAS.
+Migration 0007 swept every non-`platform` module to TENANT and these went with
+them. Now platform-scoped.
+
+**And one family was not a scope problem at all.** `platform.team.*` looked like
+the worst offender - a school was being offered "Invite new Vision team members"
+- but `vs_user/account_scope.py` documents schools holding those keys to manage
+their own leavers, and four tests grant them inside a school tenant. The defect
+was the caption, written from CodeX's side of the platform. Reworded, not
+reclassified. Worth remembering as the case where the obvious read was wrong.
+
+The catalogue went 343 -> 319. No school role held any of the twenty-four moved,
+so nothing was taken away from anyone.
+
 ## 5. What we deliberately left different from the design
 
 Each of these is a decision, not an oversight.
