@@ -331,6 +331,27 @@ conditions and the catalogue as seven steps. M09 v2.5 does not carry this
 change. Two entries for its next version: the five-step catalogue, and the
 removal of the books gate.
 
+## 4c. What each card's "Open" action still needs (2026-08-22)
+
+The design gives four of the five cards an inner screen. None opens yet, and the
+reasons are not the same size. Audited against the code, not from memory.
+
+| Card | Design action | What is actually missing | Size |
+|---|---|---|---|
+| Confirm Default Roles & RBAC | **Review** | `vs_rbac` declares `pending_tenant_surface` on **nothing**, so a school that has not gone live is refused all of it. The permission keys are already granted: school_admin holds `school.roles.view/create/update/delete/assign`. One further gap: the permission *catalogue* the picker needs (`/v1/rbac/vision/permission-*`) sits under the platform prefix, so a school can list its roles but has nothing to pick permissions from. | **Small**, plus one new read endpoint |
+| School Metadata Setup | Open profile | Nothing. Shipped. | done |
+| Academic Structure | Open structure | No academics app exists at all. M13, owned elsewhere. | **External** |
+| Upload Initial Datasets | Open import | Surface already opened (7 keys, 11 views). The screen is portable from console-fe, which has a tested 7-step wizard and 22 wired endpoints. What is absent is the school datasets: `execute_dataset_handler` supports `schools`, `branches` and `cx_users` and raises on anything else, and there is no Student, Staff or Parent model to import into. | **Screen portable, data absent** |
+| Add Staff & Invitations | Open invitations | `POST /v1/user/` and `POST /v1/user/<id>/invite/resend/` declare no pending surface. Keys already granted: school_admin holds `school.administrators.view/create/update/suspend/reactivate`. | **Small** |
+
+**Correcting phase 4.** That phase concluded the roles screen "belongs to Module
+4" and stopped. Module 4 owns the RBAC *engine*, which is true and unchanged -
+but the *screen* is M9's, the keys are already granted, and the only thing
+standing between a school and its own roles is a surface flag on four views.
+Phase 4 was parked on the design update's instruction to remove the screen, and
+that instruction was superseded when the checklist moved to the prototype's
+five. The blocker is small; the decision to park it was the large part.
+
 ## 5. What we deliberately left different from the design
 
 Each of these is a decision, not an oversight.
