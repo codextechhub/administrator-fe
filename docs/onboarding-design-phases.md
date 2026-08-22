@@ -566,8 +566,14 @@ Each of these is a decision, not an oversight.
     a base role, then you narrow them down". The role endpoint has no
     inherit-from parameter, and copying the baseline client-side would silently
     hand a new role every permission School Admin holds if the person forgot to
-    narrow it. The modal says what actually happens: add it, then open it and
-    tick what it should reach.
+    narrow it. The drawer names the role and picks its permissions in one go
+    instead, which is the same job in one screen rather than two.
+
+20. **Permissions a school's plan does not cover are shown greyed, not hidden.**
+    The design's own note says roles depend on the modules enabled for the
+    school and that disabled ones "become available once the module is switched
+    on" - so a school can see what it would gain. Nothing is enforced on save: a
+    permission a role already holds is never stripped because its module is off.
 
 ---
 

@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Lock } from "lucide-react";
+import { ChevronDown, Lock, Search, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -12,49 +14,85 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { CustomInput } from "@/components/custom/custom-input";
+import { CustomTextArea } from "@/components/custom/custom-textarea";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import {
+  useCreateSchoolRoleMutation,
   useGetPermissionCatalogueQuery,
   useGetSchoolRoleQuery,
-  useUpdateSchoolRolePermissionsMutation,
+  useUpdateSchoolRoleMutation,
 } from "@/redux/services/roles/roles-api";
-import { apiErrorMessage } from "@/utils/api-error";
+import type { CataloguePermission } from "@/redux/services/roles/roles-types";
+import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
 import { MODULE_LABEL } from "../onboarding-labels";
 
 /**
- * "Role preview" - what a role can reach, and changing it.
+ * One drawer for a role: what it is called, what it is for, and what it reaches.
  *
- * Two things about this are not cosmetic.
+ * It replaced two things - a create modal that could only name a role, and a
+ * preview drawer that could only tick boxes - because they were halves of one
+ * job. Naming a role and then hunting for it in a table to say what it does is
+ * two screens for one thought.
  *
- * **The save replaces rather than adds.** `permission_keys` on the role
- * endpoint is the role's whole grant list: anything it does not name is
- * dropped. So the drawer always sends every ticked box, and its state starts
- * from what the role actually holds rather than from empty.
+ * Four things about it are deliberate.
  *
- * **A locked role is read-only, and says so.** CodeX seeds and owns the
- * baseline roles; the server refuses to change a locked one, so the boxes are
- * disabled and there is no Save rather than a Save that fails.
+ * **The save replaces rather than adds.** `permission_keys` is the role's whole
+ * grant list: anything it does not name is dropped. So the drawer always sends
+ * every ticked box, including ones it has greyed out - a permission a school
+ * already holds is not removed just because the module it belongs to is not on
+ * the school's package today.
+ *
+ * **Modules start collapsed.** There are over three hundred permissions. An
+ * open list of all of them is not a picker, it is a scroll.
+ *
+ * **Search opens what it finds.** Typing "invoice" is a question about
+ * invoices, not about which module invoices live in, so matching groups open
+ * themselves and the rest drop away.
+ *
+ * **A locked role is read-only and says so.** CodeX owns the baseline roles;
+ * the server refuses to change one, so there is no Save rather than a Save that
+ * fails.
  */
 export function RoleDrawer({
+  open,
   roleKey,
   onClose,
 }: {
+  open: boolean;
+  /** The role being opened, or null when this is a new one. */
   roleKey: string | null;
   onClose: () => void;
 }) {
   const { hasPermission } = usePermissions();
-  const canEdit = hasPermission(P.MODIFY_ROLE);
+  const creating = roleKey === null;
+  const mayWrite = hasPermission(creating ? P.CREATE_ROLE : P.MODIFY_ROLE);
 
-  const role = useGetSchoolRoleQuery(roleKey as string, { skip: !roleKey });
-  const catalogue = useGetPermissionCatalogueQuery(undefined, { skip: !roleKey });
-  const [save, { isLoading: saving }] = useUpdateSchoolRolePermissionsMutation();
+  const role = useGetSchoolRoleQuery(roleKey as string, {
+    skip: !open || creating,
+  });
+  const catalogue = useGetPermissionCatalogueQuery(undefined, { skip: !open });
+  const [createRole, { isLoading: saving }] = useCreateSchoolRoleMutation();
+  const [updateRole, { isLoading: updating }] = useUpdateSchoolRoleMutation();
 
-  const detail = role.data?.data;
+  const detail = creating ? undefined : role.data?.data;
   const locked = detail?.is_locked ?? false;
-  const readOnly = locked || !canEdit;
+  const readOnly = locked || !mayWrite;
 
-  /** What the role holds on the server right now. */
+  const [search, setSearch] = useState("");
+  const [openModules, setOpenModules] = useState<Set<string>>(new Set());
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  // Edits carry the role they belong to, so opening a different role falls
+  // straight back to that role's own values. Resetting in an effect instead
+  // would render one frame of the previous role against the new role's name.
+  const [edits, setEdits] = useState<{
+    key: string | null;
+    ticked: Set<string>;
+    name: string;
+    description: string;
+  } | null>(null);
+
   const baseline = useMemo(
     () =>
       new Set(
@@ -65,73 +103,162 @@ export function RoleDrawer({
     [detail],
   );
 
-  // Edits carry the role they belong to, so opening a different role falls
-  // straight back to that role's own grants. The alternative - resetting in an
-  // effect when the key changes - renders one frame of the previous role's
-  // ticks against the new role's name, which is a lie about what is granted.
-  const [edits, setEdits] = useState<{ key: string; set: Set<string> } | null>(
-    null,
-  );
-  const ticked = edits && edits.key === roleKey ? edits.set : baseline;
-  const dirty = !!edits && edits.key === roleKey;
+  const mine = edits && edits.key === roleKey ? edits : null;
+  const ticked = mine ? mine.ticked : baseline;
+  const name = mine ? mine.name : (detail?.name ?? "");
+  const description = mine ? mine.description : (detail?.description ?? "");
+  const dirty = !!mine;
 
-  const modules = useMemo(() => catalogue.data?.data ?? [], [catalogue.data]);
+  /** The edit set to build the next one from - the current one, or the server's. */
+  const from = () =>
+    edits && edits.key === roleKey
+      ? edits
+      : {
+          key: roleKey,
+          ticked: baseline,
+          name: detail?.name ?? "",
+          description: detail?.description ?? "",
+        };
 
-  // Built from the PREVIOUS edit rather than from the render-time set. Two
-  // boxes ticked inside one render both read the same stale set otherwise, and
-  // the second silently discards the first - which on a list of 343 checkboxes
-  // is not a rare race, it is ordinary use.
-  const toggle = (key: string) => {
-    if (!roleKey) return;
+  const patch = (
+    change: Partial<{ ticked: Set<string>; name: string; description: string }>,
+  ) => setEdits({ ...from(), key: roleKey, ...change });
+
+  // Built from the PREVIOUS edit, not the render-time set: two boxes ticked
+  // inside one render both read the same stale set otherwise, and the second
+  // discards the first.
+  const toggle = (key: string) =>
     setEdits((current) => {
-      const from = current && current.key === roleKey ? current.set : baseline;
-      const next = new Set(from);
+      const base =
+        current && current.key === roleKey
+          ? current
+          : {
+              key: roleKey,
+              ticked: baseline,
+              name: detail?.name ?? "",
+              description: detail?.description ?? "",
+            };
+      const next = new Set(base.ticked);
       if (next.has(key)) next.delete(key);
       else next.add(key);
-      return { key: roleKey, set: next };
+      return { ...base, key: roleKey, ticked: next };
     });
-  };
+
+  /** Tick or untick every permission in one module that this school can use. */
+  const toggleGroup = (permissions: CataloguePermission[], on: boolean) =>
+    setEdits((current) => {
+      const base =
+        current && current.key === roleKey
+          ? current
+          : {
+              key: roleKey,
+              ticked: baseline,
+              name: detail?.name ?? "",
+              description: detail?.description ?? "",
+            };
+      const next = new Set(base.ticked);
+      for (const entry of permissions) {
+        // Never touch a permission the school cannot use: a "select all" that
+        // silently grants a module they have not bought is a lie on save.
+        if (!entry.available) continue;
+        if (on) next.add(entry.key);
+        else next.delete(entry.key);
+      }
+      return { ...base, key: roleKey, ticked: next };
+    });
+
+  const modules = useMemo(() => catalogue.data?.data ?? [], [catalogue.data]);
+  const searching = search.trim().length > 0;
+
+  /** Groups narrowed by the search box, with empty ones dropped. */
+  const shown = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    if (!needle) return modules;
+    return modules
+      .map((group) => ({
+        ...group,
+        permissions: group.permissions.filter(
+          (entry) =>
+            entry.label.toLowerCase().includes(needle) ||
+            entry.key.toLowerCase().includes(needle) ||
+            (MODULE_LABEL[group.module] ?? group.module)
+              .toLowerCase()
+              .includes(needle),
+        ),
+      }))
+      .filter((group) => group.permissions.length > 0);
+  }, [modules, search]);
 
   const close = () => {
     setEdits(null);
+    setSearch("");
+    setErrors({});
+    setOpenModules(new Set());
     onClose();
   };
 
   const commit = async () => {
-    if (!roleKey) return;
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setErrors({ name: "Give the role a name." });
+      return;
+    }
     try {
-      await save({ key: roleKey, permission_keys: [...ticked] }).unwrap();
-      toast.success(`Permissions updated for ${detail?.name ?? "the role"}.`);
+      if (creating) {
+        await createRole({
+          name: trimmed,
+          description: description.trim(),
+          permission_keys: [...ticked],
+        }).unwrap();
+        toast.success(`${trimmed} created.`);
+      } else {
+        await updateRole({
+          key: roleKey as string,
+          name: trimmed,
+          description: description.trim(),
+          permission_keys: [...ticked],
+        }).unwrap();
+        toast.success(`${trimmed} updated.`);
+      }
       close();
     } catch (error) {
+      const perField = fieldErrors(error);
+      if (Object.keys(perField).length) {
+        // `key` is derived from the name, so its complaint belongs on the name.
+        setErrors({
+          ...perField,
+          ...(perField.key ? { name: perField.key } : {}),
+        });
+        return;
+      }
       toast.error(
-        apiErrorMessage(error, "We could not save those permissions. Try again."),
+        apiErrorMessage(error, "We could not save that role. Try again."),
       );
     }
   };
 
-  const loading = role.isLoading || catalogue.isLoading;
+  const loading = (!creating && role.isLoading) || catalogue.isLoading;
 
   return (
-    <Sheet open={!!roleKey} onOpenChange={(open) => !open && close()}>
-      <SheetContent className="w-full sm:max-w-[440px] flex flex-col gap-0 p-0">
+    <Sheet open={open} onOpenChange={(next) => !next && close()}>
+      <SheetContent className="w-full sm:max-w-[560px] flex flex-col gap-0 p-0">
         <SheetHeader className="border-b border-border px-5 py-4">
           <p className="text-xs font-medium uppercase tracking-[0.08em] text-gray-05 font-mont">
-            Role preview
+            {creating ? "New role" : "Role"}
           </p>
           <SheetTitle className="mt-1 text-lg font-semibold font-mont text-black-01">
-            {detail?.name ?? roleKey ?? ""}
+            {creating ? "Create a custom role" : (detail?.name ?? roleKey ?? "")}
           </SheetTitle>
           <SheetDescription className="text-[13px] text-gray-06 text-pretty">
             {readOnly
               ? locked
-                ? "CodeX maintains this role, so its permissions cannot be changed here. This is what it can reach."
+                ? "CodeX maintains this role, so it cannot be changed here. This is what it can reach."
                 : "What a person with this role can reach. Your account can read this but not change it."
-              : "Tick to grant, untick to remove. Changes apply when you save."}
+              : "Name it, say what it is for, and tick what it should reach. It is all on this one screen."}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {locked && (
             <p className="flex items-start gap-2 rounded-md border border-border px-3 py-2.5 text-[13px] text-gray-06">
               <Lock className="size-3.5 shrink-0 mt-0.5 text-gray-05" />
@@ -140,53 +267,178 @@ export function RoleDrawer({
             </p>
           )}
 
+          {!readOnly && (
+            <div className="space-y-3.5">
+              <CustomInput
+                id="role-name"
+                label="Role name"
+                isRequired
+                value={name}
+                error={errors.name}
+                onChange={(event) => {
+                  patch({ name: event.target.value });
+                  setErrors({});
+                }}
+                placeholder="e.g. Assistant Bursar"
+              />
+              <CustomTextArea
+                id="role-description"
+                label="What is this role for?"
+                value={description}
+                error={errors.description}
+                onChange={(event) => patch({ description: event.target.value })}
+                placeholder="Optional. Helps whoever assigns it later."
+              />
+            </div>
+          )}
+
+          <div className="border-t border-border pt-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[13px] font-semibold font-mont text-black-01">
+                What it can reach
+              </p>
+              <span className="text-xs text-gray-05">{ticked.size} granted</span>
+            </div>
+
+            <div className="relative mt-2.5">
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search permissions"
+                aria-label="Search permissions"
+                className="h-9.5 pr-9 text-[13px]"
+              />
+              {searching ? (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2.5 top-2.5 text-gray-05 hover:text-black-01"
+                >
+                  <X className="size-4" />
+                </button>
+              ) : (
+                <Search className="pointer-events-none absolute right-3 top-2.5 size-4 text-gray-05" />
+              )}
+            </div>
+          </div>
+
           {loading &&
             [0, 1, 2].map((row) => (
               <div key={row} className="space-y-2">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-4/5" />
               </div>
             ))}
 
+          {!loading && searching && !shown.length && (
+            <p className="py-6 text-center text-[13px] text-gray-06">
+              Nothing matches "{search.trim()}".
+            </p>
+          )}
+
           {!loading &&
-            modules.map((group) => {
+            shown.map((group) => {
+              // Searching opens what it finds: a hit hidden inside a shut group
+              // is a search that answers "somewhere in there".
+              const isOpen = searching || openModules.has(group.module);
               const granted = group.permissions.filter((entry) =>
                 ticked.has(entry.key),
               ).length;
+              const selectable = group.permissions.filter(
+                (entry) => entry.available,
+              );
+              const allOn =
+                selectable.length > 0 &&
+                selectable.every((entry) => ticked.has(entry.key));
+
               return (
-                <div key={group.module}>
-                  <div className="flex items-center justify-between gap-2.5">
-                    <p className="text-[13px] font-semibold font-mont text-black-01">
+                <div
+                  key={group.module}
+                  className="rounded-md border border-border overflow-hidden"
+                >
+                  <button
+                    type="button"
+                    aria-expanded={isOpen}
+                    onClick={() =>
+                      setOpenModules((current) => {
+                        const next = new Set(current);
+                        if (next.has(group.module)) next.delete(group.module);
+                        else next.add(group.module);
+                        return next;
+                      })
+                    }
+                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-gray-03"
+                  >
+                    <ChevronDown
+                      className={cn(
+                        "size-4 shrink-0 text-gray-05 transition-transform",
+                        isOpen && "rotate-180",
+                      )}
+                    />
+                    <span className="min-w-0 flex-1 text-[13px] font-semibold font-mont text-black-01">
                       {MODULE_LABEL[group.module] ?? group.module}
-                    </p>
-                    <span className="text-xs text-gray-05 shrink-0">
-                      {granted} of {group.permissions.length} granted
                     </span>
-                  </div>
-                  <div className="mt-2.5 flex flex-col gap-2">
-                    {group.permissions.map((entry) => {
-                      const on = ticked.has(entry.key);
-                      return (
-                        <label
-                          key={entry.key}
-                          className={cn(
-                            "flex items-start gap-2.5 text-[13px] text-pretty",
-                            on ? "text-black-01" : "text-gray-05",
-                            readOnly ? "cursor-default" : "cursor-pointer",
-                          )}
+                    {!group.available && (
+                      <Badge variant="inactive" className="text-[10px]">
+                        Not on your plan
+                      </Badge>
+                    )}
+                    <span className="shrink-0 text-xs text-gray-05">
+                      {granted} of {group.permissions.length}
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="border-t border-border px-3 py-2.5">
+                      {!readOnly && selectable.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => toggleGroup(group.permissions, !allOn)}
+                          className="mb-2 text-xs font-medium text-primary hover:underline"
                         >
-                          <Checkbox
-                            checked={on}
-                            disabled={readOnly}
-                            onCheckedChange={() => toggle(entry.key)}
-                            className="mt-0.5 shrink-0"
-                          />
-                          <span className="min-w-0">{entry.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
+                          {allOn
+                            ? "Clear all in this group"
+                            : "Select all in this group"}
+                        </button>
+                      )}
+                      <div className="flex flex-col gap-2">
+                        {group.permissions.map((entry) => {
+                          const on = ticked.has(entry.key);
+                          // A permission the school's package does not cover is
+                          // shown rather than hidden - it is what they would
+                          // gain by switching the module on - but it cannot be
+                          // ticked. Ones already granted stay ticked and are
+                          // never stripped on save.
+                          const disabled = readOnly || !entry.available;
+                          return (
+                            <label
+                              key={entry.key}
+                              title={
+                                entry.available
+                                  ? entry.key
+                                  : "Available once this module is on your plan"
+                              }
+                              className={cn(
+                                "flex items-start gap-2.5 text-[13px] text-pretty",
+                                on ? "text-black-01" : "text-gray-05",
+                                disabled ? "cursor-default" : "cursor-pointer",
+                                !entry.available && "opacity-60",
+                              )}
+                            >
+                              <Checkbox
+                                checked={on}
+                                disabled={disabled}
+                                onCheckedChange={() => toggle(entry.key)}
+                                className="mt-0.5 shrink-0"
+                              />
+                              <span className="min-w-0">{entry.label}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -194,16 +446,16 @@ export function RoleDrawer({
 
         <div className="border-t border-border px-5 py-3.5 flex gap-2.5">
           <Button variant="outline" className="flex-1" onClick={close}>
-            Close
+            {readOnly ? "Close" : "Cancel"}
           </Button>
           {!readOnly && (
             <Button
               className="flex-1"
               onClick={commit}
-              loading={saving}
-              disabled={!dirty}
+              loading={saving || updating}
+              disabled={!creating && !dirty}
             >
-              Save permissions
+              {creating ? "Create role" : "Save changes"}
             </Button>
           )}
         </div>

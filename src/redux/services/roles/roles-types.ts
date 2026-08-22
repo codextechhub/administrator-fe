@@ -39,18 +39,41 @@ export interface CataloguePermission {
   sensitivity: string;
   /** Flows through an approval rather than taking effect on save. */
   is_restricted: boolean;
+  /**
+   * The product this permission belongs to, or null when it is core to every
+   * school. Set from the server's capability map, not guessed from the key.
+   */
+  capability: string | null;
+  /**
+   * Whether this school can use it today. False means the module is not on
+   * their plan: the box is shown but cannot be ticked, so a school can see what
+   * switching the module on would give them.
+   */
+  available: boolean;
 }
 
 /** The catalogue, grouped the way the drawer groups it. */
 export interface CatalogueModule {
   module: string;
+  /** True when anything in the group is usable by this school. */
+  available: boolean;
   permissions: CataloguePermission[];
 }
 
 /** What creating a role of the school's own needs. */
 export interface NewRole {
-  key: string;
+  /** Optional: the server derives one from the name when it is left out. */
+  key?: string;
   name: string;
   description?: string;
+  permission_keys?: string[];
+}
+
+/** A change to an existing role. Everything named is replaced. */
+export interface RoleUpdate {
+  key: string;
+  name?: string;
+  description?: string;
+  /** A REPLACEMENT list, not an addition. */
   permission_keys?: string[];
 }

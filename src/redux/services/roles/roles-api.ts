@@ -4,6 +4,7 @@ import { getTenantSlug } from "@/utils/tenant-context";
 import type {
   CatalogueModule,
   NewRole,
+  RoleUpdate,
   SchoolRole,
   SchoolRoleDetail,
 } from "./roles-types";
@@ -62,20 +63,17 @@ export const rolesApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * Replace what a role can reach.
+     * Change a role: its name, what it is for, and what it reaches.
      *
      * `permission_keys` is a REPLACEMENT, not an addition: the server drops
      * every grant the list does not name. The drawer therefore has to send the
      * full ticked set, never a delta.
      */
-    updateSchoolRolePermissions: builder.mutation<
-      Envelope<SchoolRoleDetail>,
-      { key: string; permission_keys: string[] }
-    >({
-      query: ({ key, permission_keys }) => ({
+    updateSchoolRole: builder.mutation<Envelope<SchoolRoleDetail>, RoleUpdate>({
+      query: ({ key, ...body }) => ({
         url: `${scope()}/roles/${key}/`,
         method: "PATCH",
-        body: { permission_keys },
+        body,
       }),
       extraOptions: { silent: true },
       invalidatesTags: (_result, _error, { key }) => [
@@ -92,5 +90,5 @@ export const {
   useGetSchoolRoleQuery,
   useGetPermissionCatalogueQuery,
   useCreateSchoolRoleMutation,
-  useUpdateSchoolRolePermissionsMutation,
+  useUpdateSchoolRoleMutation,
 } = rolesApi;

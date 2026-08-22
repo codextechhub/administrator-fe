@@ -4,30 +4,18 @@ import { toast } from "sonner";
 import { ArrowLeft, Info, Plus, Search, ShieldOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import CustomTable from "@/components/custom/custom-table";
-import { CustomInput } from "@/components/custom/custom-input";
-import { CustomTextArea } from "@/components/custom/custom-textarea";
 import PermissionGate from "@/components/custom/permission-gate";
 import Tabs from "@/components/custom/tab";
 import { P } from "@/permissions";
 import { routesPath } from "@/routes/routesPath";
-import {
-  useCreateSchoolRoleMutation,
-  useGetSchoolRolesQuery,
-} from "@/redux/services/roles/roles-api";
+import { useGetSchoolRolesQuery } from "@/redux/services/roles/roles-api";
 import { useTransitionOnboardingTaskMutation } from "@/redux/services/onboarding/onboarding-api";
 import { useAppSelector } from "@/redux/store";
 import { usePermissions } from "@/hooks/use-permissions";
 import { selectSchool } from "@/redux/features/auth/auth-slice";
-import { apiErrorMessage, fieldErrors, parseApiError } from "@/utils/api-error";
+import { apiErrorMessage, parseApiError } from "@/utils/api-error";
 import { OutlinedNotice } from "./components/outlined-notice";
 import { InvitationsPanel } from "./components/invitations-panel";
 import { RoleDrawer } from "./components/role-drawer";
@@ -59,15 +47,6 @@ const TABS = [
   { label: "Invitations", value: "invitations" },
 ];
 
-/** A key the API will accept, derived from what the person typed. */
-const keyFor = (name: string) =>
-  name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-
 export default function OnboardingRoles() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -87,15 +66,19 @@ export default function OnboardingRoles() {
   const roles = useGetSchoolRolesQuery(undefined, {
     skip: tab !== "roles" || !canSeeRoles,
   });
-  const [createRole, { isLoading: creating }] = useCreateSchoolRoleMutation();
   const [transition, { isLoading: confirming }] =
     useTransitionOnboardingTaskMutation();
 
   const [search, setSearch] = useState("");
+  // `drawerKey === null` while open means "a new role"; the drawer is the one
+  // surface for naming, describing and permissioning, whichever it is.
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerKey, setDrawerKey] = useState<string | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
-  const [draft, setDraft] = useState({ name: "", description: "" });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const openRole = (key: string | null) => {
+    setDrawerKey(key);
+    setDrawerOpen(true);
+  };
 
   // A refusal from the roles query only blocks the roles tab. The invitations
   // panel answers its own 403 with its own sentence.
@@ -173,38 +156,6 @@ export default function OnboardingRoles() {
     }
   };
 
-  const add = async () => {
-    const name = draft.name.trim();
-    if (!name) {
-      setErrors({ name: "Give the role a name." });
-      return;
-    }
-    try {
-      await createRole({
-        key: keyFor(name),
-        name,
-        description: draft.description.trim(),
-      }).unwrap();
-      toast.success(`${name} added. Open it to choose what it can reach.`);
-      setAddOpen(false);
-      setDraft({ name: "", description: "" });
-      setErrors({});
-    } catch (error) {
-      const perField = fieldErrors(error);
-      if (Object.keys(perField).length) {
-        // `key` is derived, not typed, so its complaint belongs on the name.
-        setErrors({
-          ...perField,
-          ...(perField.key ? { name: perField.key } : {}),
-        });
-        return;
-      }
-      toast.error(
-        apiErrorMessage(error, "We could not add that role. Try again."),
-      );
-    }
-  };
-
   return (
     <main className="px-3 py-6 lg:px-10 space-y-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -266,7 +217,7 @@ export default function OnboardingRoles() {
               <Search className="pointer-events-none absolute right-3 top-3 size-4 text-gray-05" />
             </div>
             <PermissionGate permission={P.CREATE_ROLE}>
-              <Button onClick={() => setAddOpen(true)}>
+              <Button onClick={() => openRole(null)}>
                 <Plus />
                 Add custom role
               </Button>
@@ -289,9 +240,7 @@ export default function OnboardingRoles() {
                     : "No default roles were set up for this school."
                 }
                 hidePagination
-                onRowClick={(row) =>
-                  setDrawerKey((row as { _slug: string })._slug)
-                }
+                onRowClick={(row) => openRole((row as { _slug: string })._slug)}
               />
             </div>
             <p className="mt-2.5 flex items-start gap-1.5 text-xs text-gray-05">
@@ -318,67 +267,19 @@ export default function OnboardingRoles() {
                     : "You have not added any roles of your own."
                 }
                 hidePagination
-                onRowClick={(row) =>
-                  setDrawerKey((row as { _slug: string })._slug)
-                }
+                onRowClick={(row) => openRole((row as { _slug: string })._slug)}
               />
             </div>
           </section>
         </div>
       )}
 
-      <RoleDrawer roleKey={drawerKey} onClose={() => setDrawerKey(null)} />
+      <RoleDrawer
+        open={drawerOpen}
+        roleKey={drawerKey}
+        onClose={() => setDrawerOpen(false)}
+      />
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="sm:max-w-110">
-          <DialogHeader>
-            <DialogTitle>Create a custom role</DialogTitle>
-            <DialogDescription>
-              A new role starts with no permissions. Add it, then open it and
-              tick what it should reach.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <CustomInput
-              id="role-name"
-              label="Role name"
-              isRequired
-              value={draft.name}
-              error={errors.name}
-              onChange={(event) => {
-                setDraft((current) => ({ ...current, name: event.target.value }));
-                setErrors({});
-              }}
-              placeholder="e.g. Assistant Bursar"
-            />
-            <CustomTextArea
-              id="role-description"
-              label="What is this role for?"
-              value={draft.description}
-              error={errors.description}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  description: event.target.value,
-                }))
-              }
-              placeholder="Helps the bursar with fees and invoices."
-            />
-          </div>
-          <div className="flex gap-2.5">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => setAddOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button className="flex-1" onClick={add} loading={creating}>
-              Create role
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </main>
   );
 }
