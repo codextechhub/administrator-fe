@@ -342,7 +342,7 @@ reasons are not the same size. Audited against the code, not from memory.
 | School Metadata Setup | Open profile | Nothing. Shipped. | done |
 | Academic Structure | Open structure | No academics app exists at all. M13, owned elsewhere. | **External** |
 | Upload Initial Datasets | Open import | Surface already opened (7 keys, 11 views). The screen is portable from console-fe, which has a tested 7-step wizard and 22 wired endpoints. What is absent is the school datasets: `execute_dataset_handler` supports `schools`, `branches` and `cx_users` and raises on anything else, and there is no Student, Staff or Parent model to import into. | **Screen portable, data absent** |
-| Add Staff & Invitations | Open invitations | `POST /v1/user/` and `POST /v1/user/<id>/invite/resend/` declare no pending surface. Keys already granted: school_admin holds `school.administrators.view/create/update/suspend/reactivate`. | **Small** |
+| Add Staff & Invitations | Open invitations | Nothing. Shipped 2026-08-22. See phase 8 below. | done |
 
 **Correcting phase 4.** That phase concluded the roles screen "belongs to Module
 4" and stopped. Module 4 owns the RBAC *engine*, which is true and unchanged -
@@ -351,6 +351,48 @@ standing between a school and its own roles is a surface flag on four views.
 Phase 4 was parked on the design update's instruction to remove the screen, and
 that instruction was superseded when the checklist moved to the prototype's
 five. The blocker is small; the decision to park it was the large part.
+
+### Phase 8 - Add Staff & Invitations - DONE (2026-08-22)
+
+The first of the four dead "Open" buttons made real.
+
+**The root of the block was not the flag it looked like.** 4c said the fix was a
+`pending_tenant_surface` flag on `POST /v1/user/`. That was wrong in a way worth
+recording: `UserAccountViewSet` is gated on `platform.team.*`, and a school
+administrator does not hold those keys and should not - opening the surface
+would have let a pending school reach an endpoint it is refused on permission
+grounds anyway. The real gap was that no *school-scoped* way to run a school's
+own staff existed. So the fix followed the `/v1/i/me/profile/` precedent rather
+than the flag: a school-scoped endpoint, no identifier in the URL, on the
+pending surface.
+
+**Backend** - `apps/schools/vs_schools/views/staff.py`:
+
+- `GET/POST /v1/i/me/staff/` - the school's own people, and inviting one.
+  Per-method keys (`school.administrators.view` / `.create`), so a branch admin
+  reads and cannot write. The list ships `role_options` alongside the page, so
+  the invite form offers this school's real role templates rather than
+  hard-coded keys.
+- `POST /v1/i/me/staff/<id>/resend/` - 404 for another school's id (never 403,
+  so ids cannot be probed), 422 for somebody already activated.
+- Creation reuses `UserCreateSerializer` + `UserCreationService`, which is what
+  the platform endpoint calls, with one guard the platform endpoint does not
+  need: the serializer resolves the owning tenant from the ACTOR, so a CodeX
+  staffer calling this would have created a colleague on the platform tenant
+  and skipped the approval workflow. The view refuses any resolved tenant that
+  is not the one in session.
+- 13 tests in `tests_staff_endpoint.py`: the pending-school gap, branch-admin
+  403, cross-tenant 404 both ways, the body-cannot-name-a-tenant case, resend
+  reuse, and the list/role-option shapes.
+
+**Frontend** - `/onboarding/staff` was an explanation of a screen; it is now the
+screen. Invite card (four fields), invitations table with a per-row resend, and
+the control-room card's action renamed to the design's "Open invitations".
+Per-field server errors land under the field that caused them, via a new
+`fieldErrors()` in `@/utils/api-error` - the choke point every form in the app
+will need.
+
+**Knowing differences from the prototype, all recorded in section 5.**
 
 ## 5. What we deliberately left different from the design
 
@@ -373,8 +415,9 @@ Each of these is a decision, not an oversight.
 
 **Because the screen belongs to another module**
 
-7. **The roles workshop** (`isRoles`) - Module 4. The design's own update
-   removed it from the pre-go-live app; `/onboarding/staff` is what replaced it.
+7. **The roles half of the roles workshop** (`isRoles`, Roles & Permissions
+   tab) - still Module 4's engine, but the screen is ours and is next. The
+   invitations half of that same screen shipped in phase 8.
 8. **Data intake, validation and the import wizard** (`isData`,
    `isValidation`, `importOpen`) - no student domain to import into.
 9. **The academic structure wizard** (`isWizard`) - M13.
@@ -393,6 +436,28 @@ Each of these is a decision, not an oversight.
     but the school can now set a logo and expects to see it.
 14. **The control room is read-only for anyone holding the view keys without the
     write ones.** Not in the design at all - it is what a branch admin sees.
+
+15. **The invite form asks for a first and last name**, where the design asks
+    only for an email and a role. The invitation email greets the person by
+    name and the staff list prints it, so the alternative is guessing: an
+    invitation to `bursar.fees@brightfield.edu.ng` would address a real person
+    as "Bursar Fees" in the first message the platform ever sends them.
+
+16. ~~Item withdrawn.~~ **"Only admins can be invited during onboarding" now
+    holds, and is enforced.** Decided 2026-08-22. While a tenant is PENDING,
+    `/v1/i/me/staff/` narrows `role_options` to `school_admin` and
+    `branch_admin`, AND refuses any other role on the POST - the narrowed
+    dropdown is a courtesy, the POST check is the rule, and both read the same
+    queryset so they cannot drift. The restriction lifts at go-live, when role
+    assignment is reviewable by the administrators the school then has.
+
+    Why it matters: onboarding has one administrator in it, so nothing she
+    grants is reviewed by anybody. A bursar invited as Payout Approver during
+    onboarding holds that grant the moment CodeX activates the school.
+
+17. **No tab strip yet.** The design draws Invitations beside Roles &
+    Permissions. A strip with one live tab and one empty one is worse than no
+    strip, so it arrives with the roles tab.
 
 ---
 

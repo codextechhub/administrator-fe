@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { apiErrorMessage, isApiCode, parseApiError } from "./api-error";
+import {
+  apiErrorMessage,
+  fieldErrors,
+  isApiCode,
+  parseApiError,
+} from "./api-error";
 
 // The shape RTK Query hands back for an HTTP failure carrying the platform
 // envelope: { status, data: { success, message, error: { code, detail } } }.
@@ -80,5 +85,38 @@ describe("apiErrorMessage", () => {
     expect(apiErrorMessage({ status: "TIMEOUT_ERROR" }, "Try again.")).toBe(
       "Try again.",
     );
+  });
+});
+
+describe("fieldErrors", () => {
+  it("flattens DRF's per-field lists to one sentence each", () => {
+    const error = rejection(400, "REQUEST_ERROR", "Check the details.", {
+      email: ["A user with this email already exists."],
+      role: ["This field is required."],
+    });
+    expect(fieldErrors(error)).toEqual({
+      email: "A user with this email already exists.",
+      role: "This field is required.",
+    });
+  });
+
+  it("joins a field that failed more than one rule", () => {
+    const error = rejection(400, "REQUEST_ERROR", "Check the details.", {
+      password: ["This is too short.", "This is too common."],
+    });
+    expect(fieldErrors(error).password).toBe(
+      "This is too short. This is too common.",
+    );
+  });
+
+  it("takes a bare string as readily as a list", () => {
+    const error = rejection(404, "REQUEST_ERROR", "Not found.", {
+      detail: "No such person at this school.",
+    });
+    expect(fieldErrors(error).detail).toBe("No such person at this school.");
+  });
+
+  it("is empty for a refusal that names no field", () => {
+    expect(fieldErrors({ status: "FETCH_ERROR" })).toEqual({});
   });
 });

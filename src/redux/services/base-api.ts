@@ -392,6 +392,7 @@ export const baseApi = createApi({
     "Onboarding",
     "GoLiveRequests",
     "SchoolProfile",
+    "SchoolStaff",
     "Notifications",
   ],
 });

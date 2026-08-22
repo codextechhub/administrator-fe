@@ -89,11 +89,10 @@ const CATALOG: Record<string, TaskMeta> = {
   STAFF_INVITATIONS: {
     icon: UsersRound,
     description:
-      "Invite teachers and admin staff by email. Can be done after go-live.",
-    closedNote:
-      "Staff invitations open when your school goes live. You can skip this step for now.",
+      "Invite the admin staff who will operate the system. Teachers can follow after go-live.",
     route: routesPath.PROTECTED.ONBOARDING.STAFF,
-    openLabel: "What happens here",
+    openLabel: "Open invitations",
+    openPermission: P.BROWSE_ADMINISTRATORS,
   },
 };
 

@@ -66,3 +66,24 @@ export function apiErrorMessage(error: unknown, fallback: string): string {
   if (/^[A-Z][A-Z0-9_]{3,}$/.test(message.trim())) return fallback;
   return message;
 }
+
+/**
+ * DRF's per-field validation errors, flattened to one sentence per field.
+ *
+ * A 400 from a serializer arrives as `detail: { email: ["…"], role: ["…"] }`.
+ * Every form in the app needs the same thing from it - the message that belongs
+ * under each input - and reading it by hand at each call site is how a form ends
+ * up showing "that address already has an account" as a page-level toast with
+ * no indication of which field to change.
+ */
+export function fieldErrors(error: unknown): Record<string, string> {
+  const { detail } = parseApiError(error);
+  const out: Record<string, string> = {};
+  for (const [field, value] of Object.entries(detail)) {
+    const text = Array.isArray(value)
+      ? value.map(asString).filter(Boolean).join(" ")
+      : asString(value);
+    if (text) out[field] = text;
+  }
+  return out;
+}

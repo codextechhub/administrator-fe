@@ -55,7 +55,7 @@ export const onboardingRoutes = [
   {
     path: routesPath.PROTECTED.ONBOARDING.STAFF,
     Component: OnboardingStaff,
-    handle: handle("Invite Your Staff", true),
+    handle: handle("Add Staff & Invitations", true),
   },
   {
     path: routesPath.PROTECTED.ONBOARDING.GO_LIVE,
