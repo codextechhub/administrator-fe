@@ -23,6 +23,7 @@ export const routesPath = {
       // so the tab is in the URL rather than in component state.
       ROLES: "/onboarding/roles",
       STAFF: "/onboarding/roles?tab=invitations",
+      IMPORT: "/onboarding/import",
       GO_LIVE: "/onboarding/go-live",
       HELP: "/onboarding/help",
       // Where every TENANT_NOT_LIVE refusal lands, whichever closed surface

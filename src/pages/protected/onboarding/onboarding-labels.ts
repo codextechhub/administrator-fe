@@ -57,3 +57,44 @@ export const MODULE_LABEL: Record<string, string> = {
   todo: "Tasks",
   workflow: "Approvals",
 };
+
+/**
+ * Import dataset slugs, in the words a school uses.
+ *
+ * The server names datasets for the engine that loads them ("branches",
+ * "bank_statements"). A school picking one reads this instead. Unknown slugs
+ * fall through to a tidied version of the slug rather than being hidden: the
+ * server decides what a school may upload, and a dataset added there must still
+ * be offered here before this table has heard of it.
+ */
+const DATASET_LABEL: Record<string, string> = {
+  branches: "Branches",
+  bank_statements: "Bank statements",
+};
+
+const DATASET_BLURB: Record<string, string> = {
+  branches: "Your campuses, and the administrator who runs each one.",
+  bank_statements: "Transactions from your bank, for reconciling payments.",
+};
+
+/**
+ * A dataset's name, or a readable fallback for one this build predates.
+ *
+ * Takes an optional slug on purpose. These helpers are handed server data, and
+ * a field the server does not send yet must render as a dash rather than crash
+ * the screen - which is exactly what happened the first time this ran against
+ * real uploads, because the batch list did not expose `dataset_type` at all.
+ */
+export function datasetLabel(slug?: string | null): string {
+  if (!slug) return "-";
+  return (
+    DATASET_LABEL[slug] ??
+    slug.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
+  );
+}
+
+/** One line on what a dataset holds, or "" when this build cannot say. */
+export function datasetBlurb(slug?: string | null): string {
+  if (!slug) return "";
+  return DATASET_BLURB[slug] ?? "";
+}

@@ -86,10 +86,14 @@ const CATALOG: Record<string, TaskMeta> = {
   },
   INITIAL_DATA: {
     icon: Upload,
+    // Deliberately not "students, staff and parents": there is no template for
+    // any of them yet, and a card promising them sends a school to a screen
+    // that cannot deliver. The screen itself says what is missing and why.
     description:
-      "Students, staff and parents, through the CodeX import system. Historical data is optional.",
-    closedNote:
-      "Data import opens when your school goes live. You can skip this step for now.",
+      "Load your school's own records from a spreadsheet. Branches now, the rest as they open.",
+    route: routesPath.PROTECTED.ONBOARDING.IMPORT,
+    openLabel: "Open import",
+    openPermission: P.BROWSE_IMPORT_TEMPLATES,
   },
   STAFF_INVITATIONS: {
     icon: UsersRound,

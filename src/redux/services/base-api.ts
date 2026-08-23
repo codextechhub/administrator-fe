@@ -395,5 +395,7 @@ export const baseApi = createApi({
     "SchoolStaff",
     "PermissionCatalogue",
     "Notifications",
+    "ImportTemplates",
+    "ImportBatches",
   ],
 });

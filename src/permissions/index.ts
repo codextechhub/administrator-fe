@@ -9,11 +9,11 @@
 // key format from the constant name alone.
 //
 // ── Code format: MM RR AA (6 digits) ─────────────────────────────────────────
-//   MM = module group   10=school  20=onboarding  30=academics
+//   MM = module group   10=school  20=onboarding  30=academics  40=import
 //   RR = resource       01 02 03 … (assigned sequentially per module)
 //   AA = action         01=view   02=create  03=update  04=delete
 //                       08=manage  09=suspend  10=reactivate  11=assign
-//                       12=start   13=end
+//                       12=start   13=end   14=run   15=execute
 //                       39=view_sensitive
 //
 // ── Adding a permission ───────────────────────────────────────────────────────
@@ -109,6 +109,26 @@ const REGISTRY: Record<string, string> = {
   "200301": "onboarding.go_live.view",
   "200302": "onboarding.go_live.submit",
 
+  // ── import / templates  (MM=40, RR=01) ─────────────────────────────────────
+  // A school reads the template list to choose one. It is NOT offered CodeX's
+  // own provisioning templates - the server withholds those, and a school that
+  // names one anyway is refused. See backend vs_import_data/datasets.py.
+  "400101": "import.templates.view",
+
+  // ── import / batches  (MM=40, RR=02) ───────────────────────────────────────
+  "400201": "import.batches.view",
+  "400202": "import.batches.create",
+  // Two separate verbs on purpose: checking a file is not importing it, and a
+  // reader allowed to check may not be the one allowed to commit.
+  "400214": "import.batches.run",
+  "400215": "import.batches.import",
+
+  // ── import / validations  (MM=40, RR=03) ───────────────────────────────────
+  "400301": "import.validations.view",
+
+  // ── import / jobs  (MM=40, RR=04) ──────────────────────────────────────────
+  "400401": "import.jobs.view",
+
   // ── academics / session  (MM=30, RR=01) ────────────────────────────────────
   "300101": "academics.session.view",
   "300102": "academics.session.create",
@@ -194,6 +214,15 @@ export const P = {
   UPDATE_ONBOARDING_TASK:  "200203",  // mark a step done, skip it, or reopen it
   VIEW_GO_LIVE_REQUESTS:   "200301",  // read this school's go-live request history
   REQUEST_GO_LIVE:         "200302",  // ask CodeX to take the school live
+
+  // ── Data Import ────────────────────────────────────────────────────────────
+  BROWSE_IMPORT_TEMPLATES: "400101",  // see which datasets this school may load
+  BROWSE_IMPORTS:          "400201",  // read this school's upload history
+  START_IMPORT:            "400202",  // upload a file against a template
+  CHECK_IMPORT_FILE:       "400214",  // validate an upload without committing it
+  COMMIT_IMPORT:           "400215",  // commit a checked upload into real rows
+  VIEW_IMPORT_PROBLEMS:    "400301",  // read the row-by-row problems in a file
+  VIEW_IMPORT_PROGRESS:    "400401",  // watch a running import finish
 
   // ── Academic Sessions ──────────────────────────────────────────────────────
   BROWSE_SESSIONS:         "300101",  // view academic sessions / terms

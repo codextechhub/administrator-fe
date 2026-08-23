@@ -16,6 +16,7 @@ const SchoolProfile = lazy(
   () => import("@/pages/protected/onboarding/school-profile"),
 );
 const OnboardingRoles = lazy(() => import("@/pages/protected/onboarding/roles"));
+const OnboardingImport = lazy(() => import("@/pages/protected/onboarding/import"));
 const GoLive = lazy(() => import("@/pages/protected/onboarding/go-live"));
 const OnboardingHelp = lazy(() => import("@/pages/protected/onboarding/help"));
 const OnboardingNotLive = lazy(
@@ -57,6 +58,11 @@ export const onboardingRoutes = [
     path: routesPath.PROTECTED.ONBOARDING.ROLES,
     Component: OnboardingRoles,
     handle: handle("Roles & Invitations", true),
+  },
+  {
+    path: routesPath.PROTECTED.ONBOARDING.IMPORT,
+    Component: OnboardingImport,
+    handle: handle("Upload Datasets", true),
   },
   {
     path: routesPath.PROTECTED.ONBOARDING.GO_LIVE,
