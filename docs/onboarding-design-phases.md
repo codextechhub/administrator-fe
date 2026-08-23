@@ -521,6 +521,44 @@ reclassified. Worth remembering as the case where the obvious read was wrong.
 The catalogue went 343 -> 319. No school role held any of the twenty-four moved,
 so nothing was taken away from anyone.
 
+### Phase 9d - The audit finished (2026-08-22)
+
+All 319 tenant-holdable keys, not the 31 authoring-shaped ones swept in 9c.
+
+**No new holes.** Nothing beyond the five fixed in 9c writes a table other
+schools share. The method is now a command, `manage.py audit_permission_scope
+--strict`, so the next one is caught on a run rather than by reading.
+
+**The tool was wrong twice before it was right, and both are worth knowing.**
+It first cleared everything by following foreign keys to find a tenant - but
+`created_by` points at a User, and every user has a tenant, so any table with an
+author column looked owned. `NotificationTemplate` has `created_by`: the check
+would have cleared the exact hole 9c started from. Authorship is not ownership,
+and the audit's own test is what caught it. It then flagged
+`onboarding.task.update` by resolving "task" to `vs_todo.Task` - a stranger's
+table - because the onboarding model is `OnboardingTask`. It now reports a key
+as unresolved rather than guessing across apps.
+
+**Ten approval keys gate nothing, and are now withheld from the picker.**
+`finance.journal.approve` and nine siblings are seeded and grantable, and no
+view checks any of them: approval is decided by `vs_workflow` matching the
+stage's `approver_role_key`. Adaeze ticking "Approve journals" changed nothing
+and told her it had. See `vs_rbac/unenforced.py`. They keep their scope and stay
+grantable, so wiring them up later is just deleting a line.
+
+**Two near-misses.** `procurement.vendor_invoice.attach` and
+`vendor_payment.attach` looked equally dead, because their view builds the key
+as `f"{permission_prefix}.{verb}"` and the literal appears nowhere. They are
+live, and hiding them would have removed two working permissions. Grep alone
+cannot answer this question.
+
+**Thirty-one keys are seeded ahead of their features** - 13 `academics.*`
+waiting on M13, 18 `school.students/teachers/branches/fees.*` waiting on models
+that do not exist yet. Expected, and listed by the command on every run so they
+are visible rather than assumed.
+
+The catalogue now offers 309.
+
 ## 5. What we deliberately left different from the design
 
 Each of these is a decision, not an oversight.
