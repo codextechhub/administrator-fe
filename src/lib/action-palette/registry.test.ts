@@ -144,10 +144,10 @@ describe("action registry destinations", () => {
     }
   });
 
-  it("runs only the two commands the header can carry out", () => {
+  it("runs only the commands the header can carry out", () => {
     for (const action of ACTIONS) {
       if ("to" in action.run) continue;
-      expect(["proxy", "logout"], action.id).toContain(action.run.command);
+      expect(["proxy", "logout", "help"], action.id).toContain(action.run.command);
     }
   });
 });

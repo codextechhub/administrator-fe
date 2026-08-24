@@ -58,7 +58,7 @@ export type ActionGate =
 // permission, so a gate could not hide the action the rest of the time.
 export type ActionRun =
   | { to: string }
-  | { command: "proxy" | "logout" };
+  | { command: "proxy" | "logout" | "help" };
 
 export interface ActionDef {
   // Stable id (kebab-case) - the key used by popularity storage, so it must not

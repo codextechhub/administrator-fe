@@ -187,6 +187,7 @@ export default function DashboardLayout() {
               <AppSearch
                 onProxy={() => setProxyDialogOpen(true)}
                 onLogout={toggleLogout}
+                onHelp={() => setSupportOpen(true)}
               />
 
               <NotificationsBell />

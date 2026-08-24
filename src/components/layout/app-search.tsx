@@ -59,12 +59,15 @@ type SearchVariant = "desktop" | "mobile";
 export function AppSearch({
   onProxy,
   onLogout,
+  onHelp,
   className,
 }: {
   /** Open the header's "view as another user" dialog. */
   onProxy: () => void;
   /** Open the header's logout confirmation. */
   onLogout: () => void;
+  /** Opens the header's support panel. */
+  onHelp: () => void;
   className?: string;
 }) {
   const navigate = useNavigate();
@@ -181,6 +184,7 @@ export function AppSearch({
       // logout confirmation (both mounted in DashboardLayout), so the palette
       // asks it rather than mounting a second copy of either.
       if (action.run.command === "proxy") onProxy();
+      else if (action.run.command === "help") onHelp();
       else onLogout();
       return;
     }

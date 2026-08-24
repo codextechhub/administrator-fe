@@ -64,6 +64,8 @@ export function SupportTicketForm({
   cancelLabel = "Cancel",
   onDone,
   doneLabel = "Back to control room",
+  submitLabel = "Create ticket",
+  compact = false,
   className,
 }: {
   prefill?: EscalationPrefill;
@@ -73,6 +75,12 @@ export function SupportTicketForm({
   /** Called by the confirmation's primary button. */
   onDone?: () => void;
   doneLabel?: string;
+  submitLabel?: string;
+  /**
+   * Tighter, for the header panel: less air between fields, and the actions
+   * right-aligned under them rather than left-aligned like a page form.
+   */
+  compact?: boolean;
   className?: string;
 }) {
   const user = useAppSelector(selectUser);
@@ -185,14 +193,13 @@ export function SupportTicketForm({
   return (
     <form
       onSubmit={formik.handleSubmit}
-      className={cn("space-y-4 min-w-0", className)}
+      className={cn(compact ? "space-y-3 min-w-0" : "space-y-4 min-w-0", className)}
     >
       <div>
         <CustomInput
           id="title"
           label="Title"
-          isRequired
-          placeholder="One line on what is wrong"
+          placeholder="Briefly describe the issue"
           maxLength={220}
           {...formik.getFieldProps("title")}
           error={formik.touched.title ? formik.errors.title : ""}
@@ -202,11 +209,19 @@ export function SupportTicketForm({
         </p>
       </div>
 
+      <CustomTextArea
+        id="description"
+        label="Description"
+        rows={5}
+        placeholder="What happened, what did you expect, and what have you tried?"
+        {...formik.getFieldProps("description")}
+        error={formik.touched.description ? formik.errors.description : ""}
+      />
+
       <div className="grid gap-4 sm:grid-cols-2">
         <CustomNativeSelect
           id="category"
           label="Category"
-          isRequired
           options={CATEGORY_OPTIONS}
           placeholder="Pick a category"
           {...formik.getFieldProps("category")}
@@ -216,7 +231,6 @@ export function SupportTicketForm({
         <CustomNativeSelect
           id="priority"
           label="Priority"
-          isRequired
           options={PRIORITY_OPTIONS}
           placeholder="Pick a priority"
           {...formik.getFieldProps("priority")}
@@ -224,31 +238,31 @@ export function SupportTicketForm({
         />
       </div>
 
-      <CustomTextArea
-        id="description"
-        label="Description"
-        isRequired
-        rows={5}
-        placeholder="What were you trying to do, and what happened instead?"
-        {...formik.getFieldProps("description")}
-        error={formik.touched.description ? formik.errors.description : ""}
-      />
-
       {submitError && (
         <p className="text-xs font-medium text-error-text text-pretty">
           {submitError}
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-2",
+          compact && "justify-end pt-1",
+        )}
+      >
+        {compact && onCancel && (
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            {cancelLabel}
+          </Button>
+        )}
         <Button
           type="submit"
           loading={isLoading}
           disabled={!formik.isValid || !formik.dirty || isLoading}
         >
-          File ticket
+          {submitLabel}
         </Button>
-        {onCancel && (
+        {!compact && onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>
             {cancelLabel}
           </Button>

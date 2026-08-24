@@ -217,10 +217,13 @@ export const ACTIONS: ActionDef[] = [
     section: "Onboarding",
     group: "Help",
     kind: "do",
-    // Open to everyone, like the sidebar's Help item: a person who cannot reach
-    // a single other screen is exactly the person who needs to say so.
+    // Open to everyone: a person who cannot reach a single other screen is
+    // exactly the person who needs to say so.
     gate: null,
-    run: { to: R.ONBOARDING.HELP },
+    // Opens the header's panel rather than navigating. Support is one surface
+    // now that the sidebar has no Help item, and the panel keeps the screen
+    // being reported on visible behind it.
+    run: { command: "help" },
   },
 
   // ── Account ────────────────────────────────────────────────────────────────

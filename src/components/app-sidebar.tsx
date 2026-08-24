@@ -15,7 +15,7 @@ import { HomeIcon, TeamMgtIcon } from "@/assets/navbar-svg";
 import { NavMain } from "./nav-main";
 import { routesPath } from "@/routes/routesPath";
 import { useLocation } from "react-router";
-import { BookOpen, DollarSign, Headset, ListChecks, Rocket, Settings } from "lucide-react";
+import { BookOpen, DollarSign, ListChecks, Rocket, Settings } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P, type PermissionCode } from "@/permissions";
 import { useAppSelector } from "@/redux/store";
@@ -107,16 +107,6 @@ export function AppSidebar({
       permission: P.VIEW_GO_LIVE_REQUESTS,
     },
   ].filter(canSee);
-
-  const helpNav: NavItem[] = [
-    {
-      title: "Help",
-      url: routesPath.PROTECTED.ONBOARDING.HELP,
-      icon: Headset,
-      isActive: location.startsWith(routesPath.PROTECTED.ONBOARDING.HELP),
-      childActive: false,
-    },
-  ];
 
   const data: Record<string, NavItem[]> = {
     overview: [
@@ -290,10 +280,6 @@ export function AppSidebar({
               )}
             </>
           )}
-          {/* Outside the branch on purpose. Help used to render only while a
-              school was onboarding, so the one route to support disappeared at
-              go-live - the exact moment a school is most likely to need it. */}
-          <NavMain items={helpNav} groupTitle="Help" />
         </SidebarContent>
         <SidebarRail />
       </Sidebar>
