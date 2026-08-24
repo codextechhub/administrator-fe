@@ -85,7 +85,7 @@ export const CustomNativeSelect = React.forwardRef<
           </NativeSelect>
         </div>
         {error && (
-          <p className="text-xs font-medium text-destructive/70">{error}</p>
+          <p className="text-xs font-medium text-error-text">{error}</p>
         )}
       </div>
     );

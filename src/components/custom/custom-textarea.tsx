@@ -52,7 +52,7 @@ export const CustomTextArea = React.forwardRef<
           </Button>
         )}
       </div>
-      {error && <p className="text-xs font-medium text-error/70">{error}</p>}
+      {error && <p className="text-xs font-medium text-error-text">{error}</p>}
     </div>
   );
 });

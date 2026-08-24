@@ -47,7 +47,7 @@ export const MultiSelectInput = ({
 
       <MultiSelect onValueChange={handleValueChange} {...props} />
       {showError ? (
-        <p className="text-xs font-medium text-error/70">{error}</p>
+        <p className="text-xs font-medium text-error-text">{error}</p>
       ) : null}
     </div>
   );

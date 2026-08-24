@@ -141,7 +141,7 @@ export function LogoField({
       />
 
       {localError && (
-        <p className="mt-3 text-xs font-medium text-destructive/70 text-pretty">
+        <p className="mt-3 text-xs font-medium text-error-text text-pretty">
           {localError}
         </p>
       )}

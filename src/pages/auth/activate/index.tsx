@@ -162,7 +162,7 @@ export default function ActivateAccount() {
             </div>
 
             {apiError && (
-              <p className="text-xs font-medium text-destructive/70 -mt-6 mb-2">
+              <p className="text-xs font-medium text-error-text -mt-6 mb-2">
                 {apiError}
               </p>
             )}

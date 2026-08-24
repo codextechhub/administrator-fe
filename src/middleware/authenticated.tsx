@@ -179,7 +179,7 @@ export default function Authenticated() {
       return (
         <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
           <div className="w-full max-w-sm rounded-md border border-gray-100 bg-white p-6 text-center shadow-sm">
-            <TriangleAlert className="mx-auto mb-3 size-8 text-destructive/70" />
+            <TriangleAlert className="mx-auto mb-3 size-8 text-error-text" />
             <p className="font-mont text-sm font-semibold text-black-01">
               We couldn’t prepare your workspace
             </p>

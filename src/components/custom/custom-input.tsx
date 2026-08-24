@@ -101,7 +101,7 @@ export const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
           )}
         </div>
         {error && (
-          <p className="text-xs font-medium text-destructive/70">{error}</p>
+          <p className="text-xs font-medium text-error-text">{error}</p>
         )}
       </div>
     );

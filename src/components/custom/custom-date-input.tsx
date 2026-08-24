@@ -96,7 +96,7 @@ export const CustomDateInput = ({
           </PopoverContent>
         </Popover>
       </div>
-      {error && <p className="text-xs font-medium text-error">{error}</p>}
+      {error && <p className="text-xs font-medium text-error-text">{error}</p>}
     </div>
   );
 };

@@ -424,7 +424,7 @@ function RequestForm() {
       </label>
 
       {error && (
-        <p className="text-xs font-medium text-destructive/70 text-pretty">
+        <p className="text-xs font-medium text-error-text text-pretty">
           {error}
         </p>
       )}

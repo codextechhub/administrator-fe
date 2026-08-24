@@ -144,7 +144,7 @@ export function TaskCard({
             </p>
           )}
           {refusal && (
-            <p className="mt-2 text-xs font-medium text-destructive/70 text-pretty">
+            <p className="mt-2 text-xs font-medium text-error-text text-pretty">
               {refusal}
             </p>
           )}

@@ -141,7 +141,7 @@ export default function Login() {
         </div>
 
         {apiError && (
-          <p className="text-xs font-medium text-destructive/70 -mt-1">
+          <p className="text-xs font-medium text-error-text -mt-1">
             {apiError}
           </p>
         )}
