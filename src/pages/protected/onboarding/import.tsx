@@ -5,7 +5,6 @@ import { ArrowLeft, Check, Download, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
 import { P } from "@/permissions";
@@ -20,7 +19,6 @@ import {
 } from "@/redux/services/import-data/import-api";
 import { useTransitionOnboardingTaskMutation } from "@/redux/services/onboarding/onboarding-api";
 import type { ImportTemplateSummary } from "@/redux/services/import-data/import-types";
-import { datasetLabel } from "./onboarding-labels";
 
 /**
  * "Upload Initial Datasets", drawn as the design draws it.
@@ -62,6 +60,8 @@ const REQUIRED_DATASETS = [
 ] as const;
 
 const TEMPLATE_COLUMNS = ["Template", "Dataset", "Columns", "Action"];
+/** Which datasets the step actually requires, for the Required/Optional chip. */
+const REQUIRED_SLUGS = new Set(REQUIRED_DATASETS.map((d) => d.slug as string));
 const BATCH_COLUMNS = ["Batch", "File", "Rows", "Status", "Action"];
 const DATA_KEY = "INITIAL_DATA";
 
@@ -169,35 +169,56 @@ export default function OnboardingImport() {
               {template.name}
             </p>
             <p className="mt-px font-mono text-[11px] text-gray-05 truncate">
-              {template.dataset_type}
+              {template.code ?? template.dataset_type}
             </p>
           </div>
         ),
-        Dataset: <Badge variant="pending">{datasetLabel(template.dataset_type)}</Badge>,
-        Columns: `${template.columns?.length ?? 0} columns`,
-        Action: (
-          <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-            <a
-              href={`/api/v1/import/system-import-templates/${template.id}/download/`}
-              className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs font-medium text-primary hover:underline"
-            >
-              <Download className="size-3" />
-              Template
-            </a>
-            {canImport && (
-              <Button
-                size="xs"
-                onClick={() => {
-                  setPending(template);
-                  fileInput.current?.click();
-                }}
-                disabled={uploadState.isLoading}
-              >
-                Import
-              </Button>
-            )}
-          </div>
+        // The design's chip says whether the STEP needs this dataset, not what
+        // the dataset is called - the name is already in the column beside it.
+        Dataset: REQUIRED_SLUGS.has(template.dataset_type) ? (
+          <Badge variant="blue">Required</Badge>
+        ) : (
+          <Badge variant="inactive">Optional</Badge>
         ),
+        Columns: (
+          <span className="text-gray-01">
+            {template.total_columns ?? template.columns?.length ?? 0} columns
+            {typeof template.required_columns === "number"
+              ? ` · ${template.required_columns} required`
+              : ""}
+          </span>
+        ),
+        Action:
+          // A row the school cannot act on gets ONE muted line, not two dead
+          // controls. Two disabled buttons crowd the cell and clip against the
+          // card edge while still saying nothing a reader can use.
+          template.can_import === false ? (
+            <span className="block text-center text-xs text-gray-05">
+              CodeX loads this
+            </span>
+          ) : (
+            <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+              <a
+                href={`/api/v1/import/system-import-templates/${template.id}/download/`}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+              >
+                <Download className="size-3" />
+                Template
+              </a>
+              {canImport && (
+                <Button
+                  size="xs"
+                  onClick={() => {
+                    setPending(template);
+                    fileInput.current?.click();
+                  }}
+                  disabled={uploadState.isLoading}
+                >
+                  Import
+                </Button>
+              )}
+            </div>
+          ),
       })),
     [visible, canImport, uploadState.isLoading],
   );
@@ -340,49 +361,51 @@ export default function OnboardingImport() {
         )}
       </section>
 
-      {/* Templates */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="relative w-full max-w-80">
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search templates"
-            className="h-10 pr-10"
-          />
-          <Search className="size-4 absolute right-3 top-3 text-gray-05 pointer-events-none" />
-        </div>
-        <span className="text-xs text-gray-05">
-          {visible.length} of {offered.length} templates
-        </span>
-      </div>
-
-      <section className="bg-white rounded-md min-w-0 overflow-hidden">
-        {templates.isLoading ? (
-          <div className="p-4 grid gap-2">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
+      {/* Templates. Card header owns the search, so the control belongs to the
+          table it filters rather than floating above it on the page ground. */}
+      <section className="bg-white rounded-md border border-border min-w-0 overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 pb-3 sm:px-5">
+          <p className="text-base font-semibold text-black-01 font-mont">
+            Templates
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs text-gray-05 tabular-nums">
+              {visible.length} of {offered.length}
+            </span>
+            <div className="relative w-full sm:w-64">
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search templates"
+                className="h-9 pr-9"
+              />
+              <Search className="size-4 absolute right-3 top-2.5 text-gray-05 pointer-events-none" />
+            </div>
           </div>
-        ) : (
+        </div>
+        <div className="border-t border-border min-w-0">
           <CustomTable
             tableHeaderList={TEMPLATE_COLUMNS}
             tableBodyList={templateRows}
+            loading={templates.isLoading}
+            loadingText="Loading templates…"
             emptyText={
-              query
-                ? "No template matches that."
-                : "No dataset is available for your school to upload yet."
+              query ? "No template matches that." : "No templates yet."
             }
             hidePagination
           />
-        )}
+        </div>
       </section>
 
       {/* Batches */}
       <PermissionGate permission={P.BROWSE_IMPORTS}>
-        <section className="min-w-0">
-          <p className="mb-2.5 text-base font-semibold text-black-01 font-mont">
-            Import batches
-          </p>
-          <div className="bg-white rounded-md overflow-hidden">
+        <section className="bg-white rounded-md border border-border min-w-0 overflow-hidden">
+          <div className="px-4 pt-4 pb-3 sm:px-5">
+            <p className="text-base font-semibold text-black-01 font-mont">
+              Import batches
+            </p>
+          </div>
+          <div className="border-t border-border min-w-0">
             <CustomTable
               tableHeaderList={BATCH_COLUMNS}
               tableBodyList={batchRows}

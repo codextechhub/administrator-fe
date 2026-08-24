@@ -8,6 +8,18 @@ export interface ImportTemplateSummary {
   instructions: string;
   /** `csv` or `xlsx`. What the upload has to be. */
   default_file_format: string;
+  /** The template's own reference, e.g. `branches_master_v1`. */
+  code?: string;
+  total_columns?: number;
+  required_columns?: number;
+  /**
+   * Whether THIS school may act on the template.
+   *
+   * The list shows the whole catalogue, including the datasets CodeX loads on
+   * a school's behalf, so the screen greys those rows rather than hiding them.
+   * A display hint: the server asks the same question again on upload.
+   */
+  can_import?: boolean;
   columns?: ImportTemplateColumn[];
 }
 
