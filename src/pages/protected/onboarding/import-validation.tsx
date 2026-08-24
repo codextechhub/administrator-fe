@@ -99,7 +99,7 @@ export default function OnboardingImportValidation() {
 
   if (batches.isLoading || issues.isLoading) {
     return (
-      <main className="px-3 pt-3 pb-8 lg:px-10 grid grid-cols-1 min-w-0 gap-4">
+      <main className="px-5 pt-3 pb-8 grid grid-cols-1 min-w-0 gap-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-64 w-full" />
@@ -108,7 +108,7 @@ export default function OnboardingImportValidation() {
   }
 
   return (
-    <main className="px-3 pt-3 pb-8 lg:px-10 grid grid-cols-1 min-w-0 gap-5">
+    <main className="px-5 pt-3 pb-8 grid grid-cols-1 min-w-0 gap-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-lg font-semibold text-black-01 font-mont text-balance">

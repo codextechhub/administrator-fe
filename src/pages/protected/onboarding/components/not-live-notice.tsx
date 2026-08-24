@@ -17,7 +17,7 @@ import { OutlinedNotice } from "./outlined-notice";
 export function NotLiveNotice() {
   const navigate = useNavigate();
   return (
-    <main className="px-3 py-6 lg:px-10">
+    <main className="px-5 pt-3 pb-8">
       <OutlinedNotice
         icon={Lock}
         title="This part of XVS opens when your school goes live"

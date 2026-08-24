@@ -334,7 +334,7 @@ export default function OnboardingImport() {
   );
 
   return (
-    <main className="px-3 pt-3 pb-8 lg:px-10 grid grid-cols-1 min-w-0 gap-5">
+    <main className="px-5 pt-3 pb-8 grid grid-cols-1 min-w-0 gap-5">
       <input
         ref={fileInput}
         type="file"

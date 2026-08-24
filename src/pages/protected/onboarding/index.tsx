@@ -59,7 +59,7 @@ export default function OnboardingControlRoom() {
   // else is worth retrying.
   if (notProvisioned) {
     return (
-      <main className="px-3 pt-3 pb-8 lg:px-10">
+      <main className="px-5 pt-3 pb-8">
         <OutlinedNotice
           icon={SearchX}
           title="We could not find your onboarding checklist"
@@ -73,7 +73,7 @@ export default function OnboardingControlRoom() {
 
   if (closedToYou) {
     return (
-      <main className="px-3 pt-3 pb-8 lg:px-10">
+      <main className="px-5 pt-3 pb-8">
         <OutlinedNotice
           icon={ShieldOff}
           title="You cannot open the onboarding checklist"
@@ -85,7 +85,7 @@ export default function OnboardingControlRoom() {
 
   if (unexpectedError || !state) {
     return (
-      <main className="px-3 pt-3 pb-8 lg:px-10">
+      <main className="px-5 pt-3 pb-8">
         <OutlinedNotice
           icon={CircleAlert}
           title="We could not load your checklist"
@@ -151,7 +151,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
   };
 
   return (
-    <main className="px-3 pt-3 pb-8 lg:px-10 space-y-5">
+    <main className="px-5 pt-3 pb-8 space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold font-mont text-black-01">
@@ -488,7 +488,7 @@ function readinessDetail(
 /** Ghosts shaped like the summary and the checklist that are about to arrive. */
 function ControlRoomSkeleton() {
   return (
-    <main className="px-3 pt-3 pb-8 lg:px-10 space-y-5" aria-busy>
+    <main className="px-5 pt-3 pb-8 space-y-5" aria-busy>
       <span className="sr-only">Loading your onboarding checklist…</span>
       <Skeleton className="h-6 w-64" aria-hidden />
       <div className="bg-white rounded-md px-4 py-5 sm:px-6" aria-hidden>

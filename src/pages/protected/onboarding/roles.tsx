@@ -157,7 +157,7 @@ export default function OnboardingRoles() {
   };
 
   return (
-    <main className="px-3 pt-3 pb-8 lg:px-10 space-y-5">
+    <main className="px-5 pt-3 pb-8 space-y-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0 max-w-[60ch]">
           <h2 className="text-lg font-semibold font-mont text-black-01">

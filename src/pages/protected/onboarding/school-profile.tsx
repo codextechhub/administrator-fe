@@ -44,7 +44,7 @@ export default function SchoolProfilePage() {
 
   if (isLoading) {
     return (
-      <main className="px-3 pt-3 pb-8 lg:px-10 space-y-5" aria-busy>
+      <main className="px-5 pt-3 pb-8 space-y-5" aria-busy>
         <span className="sr-only">Loading your school profile…</span>
         <Skeleton className="h-6 w-56" aria-hidden />
         <Skeleton className="h-96 w-full max-w-200 rounded-md" aria-hidden />
@@ -54,7 +54,7 @@ export default function SchoolProfilePage() {
 
   if (status === 403) {
     return (
-      <main className="px-3 pt-3 pb-8 lg:px-10">
+      <main className="px-5 pt-3 pb-8">
         <OutlinedNotice
           icon={ShieldOff}
           title="You cannot open your school's profile"
@@ -68,7 +68,7 @@ export default function SchoolProfilePage() {
 
   if (error || !profile) {
     return (
-      <main className="px-3 pt-3 pb-8 lg:px-10">
+      <main className="px-5 pt-3 pb-8">
         <OutlinedNotice
           icon={CircleAlert}
           title="We could not load your school profile"
@@ -140,7 +140,7 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
   );
 
   return (
-    <main className="px-3 pt-3 pb-8 lg:px-10 space-y-5">
+    <main className="px-5 pt-3 pb-8 space-y-5">
       <div>
         <h2 className="text-lg font-semibold font-mont text-black-01">
           Your school profile
