@@ -22,7 +22,37 @@ export const supportApi = baseApi.injectEndpoints({
       // onboarding-api.ts.
       extraOptions: { silent: true },
     }),
+
+    /**
+     * Attach one file to a ticket that already exists.
+     *
+     * Separate from creating the ticket because the endpoint is
+     * `POST /tickets/{id}/attachments/` and needs the id. So the form creates
+     * the ticket first, then uploads each file - which means a file can fail
+     * while the ticket itself succeeded, and the caller has to say so rather
+     * than pretending the whole thing failed.
+     *
+     * The server checks every file: 10 MB, an extension allowlist, and that the
+     * bytes match the extension. The accept attribute on the picker is a
+     * courtesy on top of that, not the rule.
+     */
+    addTicketAttachment: builder.mutation<
+      Envelope<{ id: string; original_filename: string }>,
+      { ticketId: string; file: File }
+    >({
+      query: ({ ticketId, file }) => {
+        const body = new FormData();
+        body.append("file", file);
+        return {
+          url: `/support/tickets/${ticketId}/attachments/`,
+          method: "POST",
+          body,
+        };
+      },
+      extraOptions: { silent: true },
+    }),
   }),
 });
 
-export const { useCreateTicketMutation } = supportApi;
+export const { useCreateTicketMutation, useAddTicketAttachmentMutation } =
+  supportApi;
