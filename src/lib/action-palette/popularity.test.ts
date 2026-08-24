@@ -129,3 +129,33 @@ describe("anonymous users", () => {
     expect(loadPopularity("u1", T0).scoreFor("view-home", "home")).toBe(0);
   });
 });
+
+describe("capAdaptive eviction", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("lets a brand new query into a full store", () => {
+    // The bug this guards: a new bucket enters with weight 1, every other
+    // bucket is at least 1, the sort is stable so ties hold insertion order,
+    // and a newly added key sorts last. It was evicted by the write that
+    // created it, so a full store stopped learning for good.
+    const user = "amaka";
+    for (let i = 0; i < 200; i += 1) {
+      recordPick(user, `action-${i}`, `query ${i}`);
+    }
+    recordPick(user, "the-new-one", "brand new query");
+
+    const raw = JSON.parse(
+      localStorage.getItem("action-palette:v1:amaka:adaptive") ?? "{}",
+    );
+    expect(raw["brand new query"]).toEqual({ "the-new-one": 1 });
+  });
+
+  it("still keeps the store bounded", () => {
+    const user = "amaka";
+    for (let i = 0; i < 260; i += 1) {
+      recordPick(user, `action-${i}`, `query ${i}`);
+    }
+    const raw = localStorage.getItem("action-palette:v1:amaka:adaptive");
+    expect(Object.keys(JSON.parse(raw ?? "{}"))).toHaveLength(200);
+  });
+});
