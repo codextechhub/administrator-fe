@@ -51,6 +51,8 @@ export interface ImportIssue {
   row: number | null;
   column: string;
   message: string;
+  /** The cell's contents, which the validation screen shows beside the issue. */
+  value?: string | null;
 }
 
 export interface ImportValidationResult {

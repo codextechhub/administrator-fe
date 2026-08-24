@@ -1,17 +1,10 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  CheckCircle2,
-  Download,
-  FileSpreadsheet,
-  Info,
-  Upload,
-} from "lucide-react";
+import { ArrowLeft, Check, Download, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
@@ -22,48 +15,55 @@ import { apiErrorMessage, parseApiError } from "@/utils/api-error";
 import {
   useGetImportBatchesQuery,
   useGetImportTemplatesQuery,
-  useStartImportMutation,
   useUploadImportFileMutation,
   useValidateImportBatchMutation,
 } from "@/redux/services/import-data/import-api";
-import type {
-  ImportIssue,
-  ImportTemplateSummary,
-  ImportValidationSummary,
-} from "@/redux/services/import-data/import-types";
-import { InlineNotice } from "./components/inline-notice";
-import { datasetLabel, datasetBlurb } from "./onboarding-labels";
+import { useTransitionOnboardingTaskMutation } from "@/redux/services/onboarding/onboarding-api";
+import type { ImportTemplateSummary } from "@/redux/services/import-data/import-types";
+import { datasetLabel } from "./onboarding-labels";
 
 /**
- * "Upload Initial Datasets" - load the school's own data from a file.
+ * "Upload Initial Datasets", drawn as the design draws it.
  *
- * Three things about this screen are deliberate.
+ * The design's shape, top to bottom: a Required datasets card with a progress
+ * bar over the three the step is really about, a searchable table of templates
+ * to download and import against, the school's own batches, and a short "Before
+ * you upload" note. That order is deliberate in the design and kept here - the
+ * progress card answers "am I done?" before the tables answer "what do I do?".
  *
- * **The dataset list is never filtered here.** Whatever the server offers is
- * what this school may load. CodeX's own provisioning templates are withheld
- * server-side, and a request naming one is refused - see the backend's
- * `vs_import_data/datasets.py`, which exists because a school administrator was
- * briefly able to provision a tenant through this very engine. A list
- * hard-coded in the client would drift from that rule and could only ever drift
- * in the dangerous direction.
+ * Two things it does that the design could assume and this cannot.
  *
- * **Uploading is not importing.** A file is uploaded, then checked, then
- * committed, and nothing becomes a real row until the third step. The screen
- * keeps those visibly separate because the checking step is the one that saves
- * a school from a bad spreadsheet, and a single "Import" button would let a
- * reader skip past it without noticing.
+ * **The templates table is whatever the server offers, never a hard-coded
+ * list.** CodeX's own templates are withheld server-side and a request naming
+ * one is refused - see the backend's `vs_import_data/datasets.py`, which exists
+ * because a school administrator could briefly provision a tenant, and create
+ * branches the branch API refuses them, through this engine. A list written
+ * here would drift from that rule in the dangerous direction.
  *
- * **It says what it cannot do.** Students, staff and parents are what a school
- * most expects to upload here, and there is no template for any of them yet.
- * The screen names that absence rather than presenting a short list as if it
- * were the whole story, because a school that uploads its branches and believes
- * it has finished has been misled by the silence.
+ * **Today that list is empty, and the design already has a state for it.** The
+ * three datasets this step exists for have no template and no model behind them
+ * yet. The empty ring is the design's own answer, and the Required datasets card
+ * above it still names all three, so a school sees what is coming rather than a
+ * blank screen that looks broken.
  */
 
-const HISTORY_COLUMNS = ["File", "Dataset", "Rows", "Status", "Uploaded"];
+/**
+ * The three datasets this step is about, in the design's order.
+ *
+ * Named here rather than read from the server because the server has no
+ * template for any of them yet - and the progress card has to show a school
+ * what the step wants regardless. Each maps to a dataset slug that will exist;
+ * until it does, `state` reads "Not available yet" from the absent template.
+ */
+const REQUIRED_DATASETS = [
+  { slug: "students", name: "Students" },
+  { slug: "staff", name: "Staff" },
+  { slug: "parents", name: "Parents" },
+] as const;
 
-/** What the reader is doing right now, which decides what the panel shows. */
-type Stage = "choose" | "checking" | "checked" | "committing" | "done";
+const TEMPLATE_COLUMNS = ["Template", "Dataset", "Columns", "Action"];
+const BATCH_COLUMNS = ["Batch", "File", "Rows", "Status", "Action"];
+const DATA_KEY = "INITIAL_DATA";
 
 export default function OnboardingImport() {
   const navigate = useNavigate();
@@ -74,85 +74,183 @@ export default function OnboardingImport() {
   const batches = useGetImportBatchesQuery();
 
   const [upload, uploadState] = useUploadImportFileMutation();
-  const [check, checkState] = useValidateImportBatchMutation();
-  const [commit, commitState] = useStartImportMutation();
+  const [check] = useValidateImportBatchMutation();
+  const [transition, transitionState] = useTransitionOnboardingTaskMutation();
 
-  const [chosen, setChosen] = useState<ImportTemplateSummary | null>(null);
-  const [batchId, setBatchId] = useState<number | null>(null);
-  const [summary, setSummary] = useState<ImportValidationSummary | null>(null);
-  const [issues, setIssues] = useState<ImportIssue[]>([]);
-  const [stage, setStage] = useState<Stage>("choose");
-
-  const canCommit = hasPermission(P.COMMIT_IMPORT);
-  const busy =
-    uploadState.isLoading || checkState.isLoading || commitState.isLoading;
+  const [query, setQuery] = useState("");
+  const [pending, setPending] = useState<ImportTemplateSummary | null>(null);
 
   const offered = templates.data ?? [];
+  const canImport = hasPermission(P.START_IMPORT);
 
-  /** Start over without losing which dataset the reader picked. */
-  function reset() {
-    setBatchId(null);
-    setSummary(null);
-    setIssues([]);
-    setStage("choose");
-    if (fileInput.current) fileInput.current.value = "";
-  }
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return offered;
+    return offered.filter(
+      (t) =>
+        t.name.toLowerCase().includes(needle) ||
+        t.dataset_type.toLowerCase().includes(needle),
+    );
+  }, [offered, query]);
+
+  /**
+   * How far the three required datasets have got.
+   *
+   * Only a fully succeeded import counts, which the design states outright: a
+   * partial import reads like success and leaves rows behind, so treating it as
+   * done would close the step on incomplete data.
+   */
+  const required = useMemo(() => {
+    const rows = batches.data ?? [];
+    return REQUIRED_DATASETS.map((entry) => {
+      const mine = rows.filter((b) => b.dataset_type === entry.slug);
+      const done = mine.some((b) => b.status === "import_succeeded");
+      const partial = mine.some((b) => b.status === "import_partial");
+      const available = offered.some((t) => t.dataset_type === entry.slug);
+      return {
+        ...entry,
+        done,
+        partial,
+        state: done
+          ? "Imported"
+          : partial
+            ? "Partly imported"
+            : available
+              ? "Not started"
+              : "Not available yet",
+      };
+    });
+  }, [batches.data, offered]);
+
+  const doneCount = required.filter((r) => r.done).length;
+  const allDone = doneCount === REQUIRED_DATASETS.length;
 
   async function onFile(file: File) {
-    if (!chosen) return;
+    if (!pending) return;
     const body = new FormData();
-    body.append("template_id", String(chosen.id));
+    body.append("template_id", String(pending.id));
     body.append("file", file);
     try {
       const created = await upload(body).unwrap();
       const id = created?.data?.id;
       if (!id) throw new Error("no batch");
-      setBatchId(id);
-      setStage("checking");
-      // Checked immediately rather than behind a second button. The reader has
-      // just handed over a file; the only useful next thing is what is wrong
-      // with it, and making them ask for that is a step with no decision in it.
-      const result = await check(id).unwrap();
-      setSummary(result?.data?.summary ?? null);
-      setIssues(result?.data?.issues ?? []);
-      setStage("checked");
+      // Checked straight away, then the reader is taken to the results. The
+      // design gives validation its own screen because the decision there -
+      // fix these rows, or proceed with warnings - is not a decision you can
+      // make from a summary line.
+      await check(id).unwrap();
+      navigate(routesPath.PROTECTED.ONBOARDING.IMPORT_VALIDATION(id));
     } catch (error) {
       const parsed = parseApiError(error);
       toast.error(apiErrorMessage(parsed, "We could not read that file."));
-      reset();
+    } finally {
+      setPending(null);
+      if (fileInput.current) fileInput.current.value = "";
     }
   }
 
-  async function onCommit() {
-    if (batchId == null) return;
-    setStage("committing");
+  async function finishDataSetup() {
     try {
-      await commit(batchId).unwrap();
-      setStage("done");
-      toast.success("Your file is being imported.");
+      await transition({ key: DATA_KEY, status: "DONE" }).unwrap();
+      toast.success("Data setup marked as done.");
+      navigate(routesPath.PROTECTED.ONBOARDING.INDEX);
     } catch (error) {
       const parsed = parseApiError(error);
-      toast.error(apiErrorMessage(parsed, "We could not start that import."));
-      setStage("checked");
+      toast.error(apiErrorMessage(parsed, "We could not close that step."));
     }
   }
 
-  const historyRows = useMemo(
+  const templateRows = useMemo(
     () =>
-      (batches.data ?? []).map((batch) => ({
-        File: batch.original_filename,
-        Dataset: datasetLabel(batch.dataset_type),
-        Rows: batch.total_rows ?? "-",
-        Status: <StatusChip status={batch.status} failed={batch.has_critical_errors} />,
-        Uploaded: new Date(batch.created_at).toLocaleDateString(),
+      visible.map((template) => ({
+        Template: (
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-black-01 font-mont truncate">
+              {template.name}
+            </p>
+            <p className="mt-px font-mono text-[11px] text-gray-05 truncate">
+              {template.dataset_type}
+            </p>
+          </div>
+        ),
+        Dataset: <Badge variant="pending">{datasetLabel(template.dataset_type)}</Badge>,
+        Columns: `${template.columns?.length ?? 0} columns`,
+        Action: (
+          <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+            <a
+              href={`/api/v1/import/system-import-templates/${template.id}/download/`}
+              className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs font-medium text-primary hover:underline"
+            >
+              <Download className="size-3" />
+              Template
+            </a>
+            {canImport && (
+              <Button
+                size="xs"
+                onClick={() => {
+                  setPending(template);
+                  fileInput.current?.click();
+                }}
+                disabled={uploadState.isLoading}
+              >
+                Import
+              </Button>
+            )}
+          </div>
+        ),
       })),
-    [batches.data],
+    [visible, canImport, uploadState.isLoading],
   );
 
-  const blocking = summary?.has_critical_errors ?? false;
+  const batchRows = useMemo(
+    () =>
+      (batches.data ?? []).map((batch) => ({
+        Batch: (
+          <span className="font-mono text-xs text-gray-05">#{batch.id}</span>
+        ),
+        File: (
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-black-01 truncate">
+              {batch.original_filename}
+            </p>
+            <p className="text-[11px] text-gray-05">
+              {new Date(batch.created_at).toLocaleString()}
+            </p>
+          </div>
+        ),
+        Rows: batch.total_rows ?? "-",
+        Status: <StatusChip status={batch.status} failed={batch.has_critical_errors} />,
+        Action: (
+          <div className="text-right whitespace-nowrap">
+            <Button
+              variant="ghost"
+              size="xs"
+              className="text-primary"
+              onClick={() =>
+                navigate(routesPath.PROTECTED.ONBOARDING.IMPORT_VALIDATION(batch.id))
+              }
+            >
+              {batch.has_critical_errors ? "Fix rows" : "View results"}
+            </Button>
+          </div>
+        ),
+      })),
+    [batches.data, navigate],
+  );
 
   return (
     <div className="grid grid-cols-1 min-w-0 gap-5">
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".csv,.xlsx,.xls"
+        className="sr-only"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void onFile(file);
+        }}
+      />
+
       <div className="flex flex-wrap items-center gap-3">
         <Button
           variant="ghost"
@@ -164,228 +262,130 @@ export default function OnboardingImport() {
         </Button>
       </div>
 
-      <header className="min-w-0">
-        <h1 className="text-xl font-semibold text-black-01 font-mont text-balance">
-          Upload Initial Datasets
-        </h1>
-        <p className="mt-1.5 text-sm text-gray-01 max-w-[70ch] text-pretty">
-          Load your school's own records from a spreadsheet. Download the
-          template for a dataset, fill it in, and upload it - we check the file
-          and tell you what is wrong before anything is saved.
-        </p>
-      </header>
-
-      {/* What this cannot do yet, said before the reader invests any effort. */}
-      <InlineNotice tone="info" icon={Info} title="Students, staff and parents are not ready yet">
-        There is no template for them, so they cannot be uploaded here today.
-        You can skip this step and load them once your school is live. Staff who
-        need to sign in can be invited from{" "}
-        <button
-          type="button"
-          className="underline underline-offset-2 font-medium"
-          onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.STAFF)}
-        >
-          Add Staff &amp; Invitations
-        </button>{" "}
-        in the meantime.
-      </InlineNotice>
-
-      <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
-        <h2 className="text-sm font-semibold text-black-01 font-mont">
-          Choose a dataset
-        </h2>
-
-        {templates.isLoading ? (
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </div>
-        ) : offered.length === 0 ? (
-          <p className="mt-3 text-sm text-gray-05">
-            No dataset is available for your school to upload right now.
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 max-w-[62ch]">
+          <h1 className="text-lg font-semibold text-black-01 font-mont text-balance">
+            Upload Initial Datasets
+          </h1>
+          <p className="mt-1 text-sm text-gray-01 text-pretty">
+            Pick the template that matches your file, download it if you need the
+            format, then run it through the import wizard.
           </p>
-        ) : (
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {offered.map((template) => {
-              const active = chosen?.id === template.id;
-              return (
-                <button
-                  key={template.id}
-                  type="button"
-                  onClick={() => {
-                    setChosen(template);
-                    reset();
-                  }}
-                  className={[
-                    "text-left rounded-md border p-4 transition-colors min-w-0",
-                    active
-                      ? "border-primary bg-pry-01"
-                      : "border-border hover:border-gray-04",
-                  ].join(" ")}
-                >
-                  <div className="flex items-start gap-2.5 min-w-0">
-                    <FileSpreadsheet className="size-4 shrink-0 mt-0.5 text-primary" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-black-01 truncate">
-                        {datasetLabel(template.dataset_type)}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-05 text-pretty">
-                        {datasetBlurb(template.dataset_type)}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+        </div>
+        <PermissionGate permission={P.UPDATE_ONBOARDING_TASK}>
+          <Button
+            className="h-10 shrink-0"
+            disabled={!allDone || transitionState.isLoading}
+            onClick={() => void finishDataSetup()}
+          >
+            Finish data setup
+          </Button>
+        </PermissionGate>
+      </div>
+
+      {/* Required datasets: the progress card, before either table. */}
+      <section className="bg-white rounded-md border border-border px-4 py-4 sm:px-5 min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-base font-semibold text-black-01 font-mont">
+            Required datasets
+          </p>
+          <span className="text-xs font-semibold text-gray-05 font-mont">
+            {doneCount} of {REQUIRED_DATASETS.length} fully imported
+          </span>
+        </div>
+
+        <div className="mt-3 h-1.5 rounded-full bg-gray-03 overflow-hidden">
+          <span
+            className="block h-full rounded-full bg-primary transition-[width] duration-500"
+            style={{ width: `${(doneCount / REQUIRED_DATASETS.length) * 100}%` }}
+          />
+        </div>
+
+        <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+          {required.map((entry) => (
+            <div
+              key={entry.slug}
+              className="flex items-start gap-2.5 rounded-md border border-border px-3 py-2.5 min-w-0"
+            >
+              <span
+                className={[
+                  "size-5.5 rounded-full grid place-content-center shrink-0 mt-px",
+                  entry.done
+                    ? "bg-green-01/10 text-green-01"
+                    : "bg-gray-03 text-gray-04",
+                ].join(" ")}
+              >
+                <Check className="size-3" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-black-01 font-mont truncate">
+                  {entry.name}
+                </p>
+                <p className="text-[11px] text-gray-05">{entry.state}</p>
+                {entry.partial && (
+                  <p className="mt-0.5 text-[11px] text-gray-06 text-pretty">
+                    Some rows did not land, so this does not satisfy the
+                    onboarding step yet.
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {!allDone && (
+          <p className="mt-3 text-[11px] text-gray-05">
+            Only a fully succeeded import counts towards this step.
+          </p>
         )}
       </section>
 
-      {chosen && (
-        <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-sm font-semibold text-black-01 font-mont">
-                {datasetLabel(chosen.dataset_type)}
-              </h2>
-              {chosen.instructions && (
-                <p className="mt-1 text-xs text-gray-05 max-w-[70ch] text-pretty">
-                  {chosen.instructions}
-                </p>
-              )}
-            </div>
-            <a
-              href={`/api/v1/import/system-import-templates/${chosen.id}/download/`}
-              className="shrink-0"
-            >
-              <Button variant="outline" className="h-9">
-                <Download className="size-4" />
-                Download template
-              </Button>
-            </a>
+      {/* Templates */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative w-full max-w-80">
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search templates"
+            className="h-10 pr-10"
+          />
+          <Search className="size-4 absolute right-3 top-3 text-gray-05 pointer-events-none" />
+        </div>
+        <span className="text-xs text-gray-05">
+          {visible.length} of {offered.length} templates
+        </span>
+      </div>
+
+      <section className="bg-white rounded-md min-w-0 overflow-hidden">
+        {templates.isLoading ? (
+          <div className="p-4 grid gap-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
+        ) : (
+          <CustomTable
+            tableHeaderList={TEMPLATE_COLUMNS}
+            tableBodyList={templateRows}
+            emptyText={
+              query
+                ? "No template matches that."
+                : "No dataset is available for your school to upload yet."
+            }
+            hidePagination
+          />
+        )}
+      </section>
 
-          <div className="mt-4 rounded-md border border-dashed border-gray-04 p-5 text-center">
-            <input
-              ref={fileInput}
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              className="sr-only"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void onFile(file);
-              }}
-            />
-            <Upload className="size-5 mx-auto text-gray-05" />
-            <p className="mt-2 text-sm text-black-01">
-              {stage === "checking"
-                ? "Checking your file…"
-                : `Upload your filled-in ${chosen.default_file_format.toUpperCase()} file`}
-            </p>
-            <Button
-              variant="outline"
-              className="mt-3 h-9"
-              disabled={busy}
-              onClick={() => fileInput.current?.click()}
-            >
-              Choose file
-            </Button>
-          </div>
-
-          {stage === "checked" && summary && (
-            <div className="mt-4">
-              {blocking ? (
-                <InlineNotice
-                  tone="danger"
-                  icon={AlertTriangle}
-                  title={`${summary.error_count} ${summary.error_count === 1 ? "problem" : "problems"} to fix first`}
-                >
-                  Nothing has been saved. Correct these in your file and upload
-                  it again.
-                </InlineNotice>
-              ) : (
-                <InlineNotice
-                  tone="success"
-                  icon={CheckCircle2}
-                  title="Your file looks good"
-                >
-                  Nothing has been saved yet. Import it when you are ready.
-                </InlineNotice>
-              )}
-
-              {issues.length > 0 && (
-                <ul className="mt-3 grid gap-1.5 max-h-64 overflow-y-auto">
-                  {issues.slice(0, 50).map((issue, index) => (
-                    <li
-                      key={issue.id ?? index}
-                      className="flex items-start gap-2 text-xs text-gray-01"
-                    >
-                      <Badge
-                        variant={issue.severity === "error" ? "rejected" : "pending"}
-                        className="shrink-0"
-                      >
-                        {issue.row == null ? "File" : `Row ${issue.row}`}
-                      </Badge>
-                      <span className="min-w-0 text-pretty">
-                        {issue.column ? `${issue.column}: ` : ""}
-                        {issue.message}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {issues.length > 50 && (
-                <p className="mt-2 text-xs text-gray-05">
-                  Showing the first 50 of {issues.length}. Fix these and upload
-                  again to see the rest.
-                </p>
-              )}
-
-              {!blocking && (
-                <PermissionGate permission={P.COMMIT_IMPORT}>
-                  <Button
-                    className="mt-4 h-10"
-                    disabled={busy || !canCommit}
-                    onClick={() => void onCommit()}
-                  >
-                    Import {summary.error_rows === 0 ? "this file" : "the good rows"}
-                  </Button>
-                </PermissionGate>
-              )}
-            </div>
-          )}
-
-          {stage === "committing" && (
-            <p className="mt-4 text-sm text-gray-01">Importing your file…</p>
-          )}
-
-          {stage === "done" && (
-            <div className="mt-4">
-              <InlineNotice
-                tone="success"
-                icon={CheckCircle2}
-                title="Import started"
-              >
-                Your rows are being created. This can take a moment for a large
-                file - the history below updates when it finishes.
-              </InlineNotice>
-              <Button variant="outline" className="mt-3 h-9" onClick={reset}>
-                Upload another file
-              </Button>
-            </div>
-          )}
-        </section>
-      )}
-
+      {/* Batches */}
       <PermissionGate permission={P.BROWSE_IMPORTS}>
-        <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
-          <h2 className="text-sm font-semibold text-black-01 font-mont">
-            Your uploads
-          </h2>
-          <div className="mt-3 min-w-0">
+        <section className="min-w-0">
+          <p className="mb-2.5 text-base font-semibold text-black-01 font-mont">
+            Import batches
+          </p>
+          <div className="bg-white rounded-md overflow-hidden">
             <CustomTable
-              tableHeaderList={HISTORY_COLUMNS}
-              tableBodyList={historyRows}
+              tableHeaderList={BATCH_COLUMNS}
+              tableBodyList={batchRows}
               loading={batches.isLoading}
               loadingText="Loading your uploads…"
               emptyText="You have not uploaded anything yet."
@@ -394,6 +394,32 @@ export default function OnboardingImport() {
           </div>
         </section>
       </PermissionGate>
+
+      {/* Before you upload */}
+      <section className="bg-white rounded-md border border-border px-4 py-4 sm:px-5 min-w-0">
+        <p className="text-sm font-semibold text-black-01 font-mont">
+          Before you upload
+        </p>
+        <div className="mt-2 grid gap-1.5 text-[13px] text-gray-01">
+          <p>Files must be CSV or XLSX and under 50 MB.</p>
+          <p>
+            A file uploaded against the wrong template is rejected - the column
+            signature has to match.
+          </p>
+          <p>
+            Students must reference classes that already exist, so finish
+            Academic Structure first.
+          </p>
+          <p>
+            Branches are opened by CodeX rather than uploaded. Ask the team if
+            you need another campus.
+          </p>
+        </div>
+        <p className="mt-3 text-[11px] text-gray-05">
+          Validation and import are handled by the CodeX Data Import Engine.
+        </p>
+      </section>
+
     </div>
   );
 }
@@ -401,33 +427,40 @@ export default function OnboardingImport() {
 /**
  * The batch's state, in the school's words, coloured by who has to act.
  *
- * The engine has fourteen states because it distinguishes things a school does
- * not care about - detecting a dataset from mapping its columns. What a reader
- * needs to know is only ever one of three things: it worked, it needs me, or it
- * is still going. An unmapped state tidies its slug rather than being hidden,
- * so a state added on the backend still reads as something.
+ * The engine has fourteen states because it separates things a school does not
+ * care about - detecting a dataset from mapping its columns. A reader needs one
+ * of three: it worked, it needs me, or it is still going.
  */
-const STATUS_LABEL: Record<string, { text: string; tone: "success" | "rejected" | "pending" }> = {
+const STATUS_LABEL: Record<
+  string,
+  { text: string; tone: "success" | "rejected" | "pending" }
+> = {
   import_succeeded: { text: "Imported", tone: "success" },
   import_partial: { text: "Partly imported", tone: "rejected" },
   import_failed: { text: "Import failed", tone: "rejected" },
   validation_failed: { text: "Needs fixing", tone: "rejected" },
   rolled_back: { text: "Rolled back", tone: "rejected" },
   cancelled: { text: "Cancelled", tone: "rejected" },
+  mapping_required: { text: "Needs fixing", tone: "rejected" },
   import_queued: { text: "Importing", tone: "pending" },
   import_running: { text: "Importing", tone: "pending" },
   ready_to_import: { text: "Ready to import", tone: "pending" },
   uploaded: { text: "Checking", tone: "pending" },
   validating: { text: "Checking", tone: "pending" },
   detecting: { text: "Checking", tone: "pending" },
-  mapping_required: { text: "Needs fixing", tone: "rejected" },
   draft: { text: "Not sent", tone: "pending" },
 };
 
-function StatusChip({ status, failed }: { status: string; failed: boolean }) {
-  // A file with blocking problems reads as needing the reader whatever stage
-  // the engine thinks it is at: the engine's state is about the pipeline, and
-  // this column is about whose turn it is.
+export function StatusChip({
+  status,
+  failed,
+}: {
+  status: string;
+  failed: boolean;
+}) {
+  // Blocking problems read as needing the reader whatever stage the engine
+  // thinks it is at: its state is about the pipeline, this column is about
+  // whose turn it is.
   if (failed) return <Badge variant="rejected">Needs fixing</Badge>;
   const known = STATUS_LABEL[status];
   if (known) return <Badge variant={known.tone}>{known.text}</Badge>;

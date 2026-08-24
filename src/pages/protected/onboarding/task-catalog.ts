@@ -86,11 +86,12 @@ const CATALOG: Record<string, TaskMeta> = {
   },
   INITIAL_DATA: {
     icon: Upload,
-    // Deliberately not "students, staff and parents": there is no template for
-    // any of them yet, and a card promising them sends a school to a screen
-    // that cannot deliver. The screen itself says what is missing and why.
+    // Names no dataset at all, deliberately. What a school may upload is the
+    // server's answer and it changes - branches were offered here until it
+    // turned out a school cannot create one through the API either. A card
+    // naming a dataset is a promise this file cannot keep.
     description:
-      "Load your school's own records from a spreadsheet. Branches now, the rest as they open.",
+      "Load your school's own records from a spreadsheet, as each dataset opens.",
     route: routesPath.PROTECTED.ONBOARDING.IMPORT,
     openLabel: "Open import",
     openPermission: P.BROWSE_IMPORT_TEMPLATES,

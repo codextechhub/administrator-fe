@@ -1,6 +1,7 @@
 import { baseApi } from "../base-api";
 import type {
   ImportBatch,
+  ImportIssue,
   ImportJob,
   ImportTemplateSummary,
   ImportValidationResult,
@@ -93,6 +94,24 @@ export const importApi = baseApi.injectEndpoints({
       invalidatesTags: ["ImportBatches", "Onboarding"],
     }),
 
+    /**
+     * Every problem found in one upload, row by row.
+     *
+     * Read separately from the validate mutation because the validation screen
+     * is reachable on its own - from the batch list, days later - and must not
+     * have to re-run a check to show what a check already found.
+     */
+    getImportIssues: builder.query<ImportIssue[], number>({
+      query: (batchId) => ({
+        url: `/import/batches/${batchId}/issues/`,
+        method: "GET",
+      }),
+      transformResponse: (response: { data?: ImportIssue[] }) =>
+        response?.data ?? [],
+      extraOptions: { silent: true },
+      providesTags: ["ImportBatches"],
+    }),
+
     /** How a commit is going, or how it ended. */
     getImportJobs: builder.query<ImportJob[], number>({
       query: (batchId) => ({
@@ -109,6 +128,7 @@ export const importApi = baseApi.injectEndpoints({
 export const {
   useGetImportTemplatesQuery,
   useGetImportBatchesQuery,
+  useGetImportIssuesQuery,
   useUploadImportFileMutation,
   useValidateImportBatchMutation,
   useStartImportMutation,

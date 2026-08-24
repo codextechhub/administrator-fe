@@ -24,6 +24,10 @@ export const routesPath = {
       ROLES: "/onboarding/roles",
       STAFF: "/onboarding/roles?tab=invitations",
       IMPORT: "/onboarding/import",
+      // Its own screen, as the design draws it: deciding between fixing rows
+      // and proceeding with warnings needs the rows on the page.
+      IMPORT_VALIDATION: (batchId: number | string) =>
+        `/onboarding/import/${batchId}/validation`,
       GO_LIVE: "/onboarding/go-live",
       HELP: "/onboarding/help",
       // Where every TENANT_NOT_LIVE refusal lands, whichever closed surface
