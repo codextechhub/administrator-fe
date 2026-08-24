@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Download, Search } from "lucide-react";
+import { Check, Download, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,27 @@ const REQUIRED_DATASETS = [
   { slug: "parents", name: "Parents" },
 ] as const;
 
+/**
+ * The templates this step is for, exactly as the design lists them.
+ *
+ * Written here because the backend has none of them yet - there is no Student,
+ * Staff or Parent model to import into. A school still needs to see what the
+ * step will ask for, so each is shown with its real column counts and its
+ * controls greyed out. When a template is seeded, the server's copy replaces
+ * the placeholder by dataset slug and its controls come alive.
+ *
+ * The datasets CodeX loads on a school's behalf - schools, branches, CX users,
+ * bank statements - are NOT here and are not offered by the server either.
+ * They are not a school's to load, so listing them would only be noise.
+ */
+const PLACEHOLDER_TEMPLATES = [
+  { slug: "students", name: "Students Import", code: "STU_V3", cols: 18, req: 11 },
+  { slug: "staff", name: "Staff Import", code: "STF_V2", cols: 14, req: 8 },
+  { slug: "parents", name: "Parents Import", code: "PAR_V2", cols: 11, req: 6 },
+  { slug: "structure", name: "Classes / Structure Import", code: "STR_V1", cols: 9, req: 5 },
+  { slug: "historical", name: "Historical Records Import", code: "HIS_V1", cols: 22, req: 7 },
+] as const;
+
 const TEMPLATE_COLUMNS = ["Template", "Dataset", "Columns", "Action"];
 /** Which datasets the step actually requires, for the Required/Optional chip. */
 const REQUIRED_SLUGS = new Set(REQUIRED_DATASETS.map((d) => d.slug as string));
@@ -83,15 +104,54 @@ export default function OnboardingImport() {
   const offered = templates.data ?? [];
   const canImport = hasPermission(P.START_IMPORT);
 
+  /**
+   * The rows the table shows: the design's five, with any real template the
+   * server offers taking the place of its placeholder.
+   *
+   * Merged by dataset slug rather than replacing the list wholesale, so a
+   * backend that seeds Students first shows four placeholders and one live row
+   * instead of dropping the other four out of sight.
+   */
+  const rows = useMemo(() => {
+    const live = new Map(offered.map((t) => [t.dataset_type, t]));
+    const merged = PLACEHOLDER_TEMPLATES.map((entry) => {
+      const real = live.get(entry.slug);
+      if (real) {
+        live.delete(entry.slug);
+        return { ...real, slug: entry.slug, placeholder: false as const };
+      }
+      return {
+        id: -1,
+        name: entry.name,
+        code: entry.code,
+        dataset_type: entry.slug,
+        total_columns: entry.cols,
+        required_columns: entry.req,
+        slug: entry.slug,
+        placeholder: true as const,
+      };
+    });
+    // Anything the server offers that the design never listed still belongs on
+    // the table - the server decides what a school may load, not this file.
+    for (const extra of live.values()) {
+      merged.push({
+        ...extra,
+        slug: extra.dataset_type as (typeof PLACEHOLDER_TEMPLATES)[number]["slug"],
+        placeholder: false as const,
+      });
+    }
+    return merged;
+  }, [offered]);
+
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return offered;
-    return offered.filter(
+    if (!needle) return rows;
+    return rows.filter(
       (t) =>
         t.name.toLowerCase().includes(needle) ||
         t.dataset_type.toLowerCase().includes(needle),
     );
-  }, [offered, query]);
+  }, [rows, query]);
 
   /**
    * How far the three required datasets have got.
@@ -162,7 +222,10 @@ export default function OnboardingImport() {
 
   const templateRows = useMemo(
     () =>
-      visible.map((template) => ({
+      visible.map((template: any) => {
+        const locked =
+          template.placeholder || template.can_import === false;
+        return {
         Template: (
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-black-01 font-mont truncate">
@@ -190,37 +253,47 @@ export default function OnboardingImport() {
         ),
         Action: (
           <div className="flex items-center justify-end gap-3 whitespace-nowrap">
-            {/* A template CodeX loads for the school keeps its place in the
-                table but not its controls - a disabled pair says less than one
-                line explaining who does load it. */}
-            {template.can_import === false ? (
-              <span className="text-xs text-gray-05">CodeX loads this</span>
-            ) : (
-              <>
-                <a
-                  href={`/api/v1/import/system-import-templates/${template.id}/download/`}
-                  className="inline-flex items-center gap-1.5 text-[13px] font-medium text-primary hover:underline"
-                >
-                  <Download className="size-3.5" />
-                  Template
-                </a>
-                {canImport && (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setPending(template);
-                      fileInput.current?.click();
-                    }}
-                    disabled={uploadState.isLoading}
-                  >
-                    Import
-                  </Button>
-                )}
-              </>
+            {/* Both controls stay on the row and are greyed out. A template
+                that is coming should look like the thing it will become, so
+                the row does not change shape the day it arrives. */}
+            <span
+              className={
+                locked
+                  ? "inline-flex items-center gap-1.5 text-[13px] font-medium text-gray-05 opacity-70 cursor-not-allowed"
+                  : "hidden"
+              }
+              title="This template is not available yet"
+            >
+              <Download className="size-3.5" />
+              Template
+            </span>
+            {!locked && (
+              <a
+                href={`/api/v1/import/system-import-templates/${template.id}/download/`}
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-primary hover:underline"
+              >
+                <Download className="size-3.5" />
+                Template
+              </a>
+            )}
+            {canImport && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (locked) return;
+                  setPending(template);
+                  fileInput.current?.click();
+                }}
+                disabled={locked || uploadState.isLoading}
+                title={locked ? "This template is not available yet" : undefined}
+              >
+                Import
+              </Button>
             )}
           </div>
         ),
-      })),
+        };
+      }),
     [visible, canImport, uploadState.isLoading],
   );
 
@@ -261,7 +334,7 @@ export default function OnboardingImport() {
   );
 
   return (
-    <div className="grid grid-cols-1 min-w-0 gap-5">
+    <main className="px-3 pt-3 pb-8 lg:px-10 grid grid-cols-1 min-w-0 gap-5">
       <input
         ref={fileInput}
         type="file"
@@ -272,17 +345,6 @@ export default function OnboardingImport() {
           if (file) void onFile(file);
         }}
       />
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant="ghost"
-          className="h-8 px-2 text-gray-01"
-          onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.INDEX)}
-        >
-          <ArrowLeft className="size-4" />
-          Control room
-        </Button>
-      </div>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 max-w-[62ch]">
@@ -375,7 +437,7 @@ export default function OnboardingImport() {
           <Search className="size-4 absolute right-3 top-3 text-gray-05 pointer-events-none" />
         </div>
         <span className="text-sm text-gray-05 tabular-nums">
-          {visible.length} of {offered.length} templates
+          {visible.length} of {rows.length} templates
         </span>
       </div>
 
@@ -436,7 +498,7 @@ export default function OnboardingImport() {
         </p>
       </section>
 
-    </div>
+    </main>
   );
 }
 

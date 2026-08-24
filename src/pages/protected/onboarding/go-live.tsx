@@ -91,7 +91,7 @@ export default function GoLivePage() {
 
   if (isLoading) {
     return (
-      <main className="px-3 py-6 lg:px-10 space-y-5" aria-busy>
+      <main className="px-3 pt-3 pb-8 lg:px-10 space-y-5" aria-busy>
         <span className="sr-only">Loading your go-live status…</span>
         <Skeleton className="h-6 w-40" aria-hidden />
         <Skeleton className="h-52 w-full rounded-md" aria-hidden />
@@ -102,7 +102,7 @@ export default function GoLivePage() {
 
   if (notProvisioned) {
     return (
-      <main className="px-3 py-6 lg:px-10">
+      <main className="px-3 pt-3 pb-8 lg:px-10">
         <OutlinedNotice
           icon={SearchX}
           title="We could not find your onboarding checklist"
@@ -116,7 +116,7 @@ export default function GoLivePage() {
 
   if (closedToYou) {
     return (
-      <main className="px-3 py-6 lg:px-10">
+      <main className="px-3 pt-3 pb-8 lg:px-10">
         <OutlinedNotice
           icon={ShieldOff}
           title="You cannot open the go-live request"
@@ -128,7 +128,7 @@ export default function GoLivePage() {
 
   if (unexpectedError || !state) {
     return (
-      <main className="px-3 py-6 lg:px-10">
+      <main className="px-3 pt-3 pb-8 lg:px-10">
         <OutlinedNotice
           icon={CircleAlert}
           title="We could not load your go-live status"
@@ -171,7 +171,7 @@ function GoLive({ state }: { state: OnboardingState }) {
   }));
 
   return (
-    <main className="px-3 py-6 lg:px-10 space-y-5">
+    <main className="px-3 pt-3 pb-8 lg:px-10 space-y-5">
       <div>
         <h2 className="text-lg font-semibold font-mont text-black-01">
           Going live

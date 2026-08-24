@@ -115,7 +115,7 @@ export default function OnboardingHelp() {
 
   if (reference) {
     return (
-      <main className="px-3 py-6 lg:px-10 flex justify-center">
+      <main className="px-3 pt-3 pb-8 lg:px-10 flex justify-center">
         <section className="w-full max-w-140 bg-white rounded-md px-6 py-9 flex flex-col items-center text-center gap-3">
           <span className="size-16 rounded-full bg-green-01/10 text-green-01 grid place-content-center">
             <CircleCheckBig className="size-8" strokeWidth={1.5} />
@@ -167,7 +167,7 @@ export default function OnboardingHelp() {
   }
 
   return (
-    <main className="px-3 py-6 lg:px-10 space-y-5">
+    <main className="px-3 pt-3 pb-8 lg:px-10 space-y-5">
       <div>
         <h2 className="text-lg font-semibold font-mont text-black-01">
           Get help

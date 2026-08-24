@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { ArrowLeft, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -99,27 +99,16 @@ export default function OnboardingImportValidation() {
 
   if (batches.isLoading || issues.isLoading) {
     return (
-      <div className="grid grid-cols-1 min-w-0 gap-4">
+      <main className="px-3 pt-3 pb-8 lg:px-10 grid grid-cols-1 min-w-0 gap-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-64 w-full" />
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 min-w-0 gap-5">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant="ghost"
-          className="h-8 px-2 text-gray-01"
-          onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.IMPORT)}
-        >
-          <ArrowLeft className="size-4" />
-          Upload datasets
-        </Button>
-      </div>
-
+    <main className="px-3 pt-3 pb-8 lg:px-10 grid grid-cols-1 min-w-0 gap-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-lg font-semibold text-black-01 font-mont text-balance">
@@ -198,7 +187,7 @@ export default function OnboardingImportValidation() {
             : "Nothing has been saved yet. Import it when you are ready."}
         </span>
       </section>
-    </div>
+    </main>
   );
 }
 
