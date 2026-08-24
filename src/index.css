@@ -108,8 +108,21 @@
   --color-teal-01: #0F6E56;
   --color-amber-01: #854F0B;
   --color-blue-01: #185FA5;
-  --color-green-01: #3B6D11;
   --color-red-01: #A32D2D;
+
+  /* Darkened siblings, for STATUS AND VALIDATION TEXT ONLY - never for fills,
+     borders or glyphs, which keep the raw hue above.
+     The raw hues work as backgrounds but fail WCAG AA as small text on their
+     own 10% tint over white: green 2.96:1, yellow 1.99:1, error 3.81:1,
+     gray-05 2.89:1 - all under 4.5:1, and none large enough for the 3:1
+     large-text exception at text-sm. These four measure 5.5-6.3:1 on the same
+     composited tint, so the hue still reads and the label stays legible.
+     --primary needs no sibling: it measures 5.05:1 on primary/10 unmodified.
+     Ported from console-fe, which had already solved this. */
+  --color-green-01-text: #0F6B32;  /* 5.94:1 on green-01/10  */
+  --color-yellow-01-text: #8A5A08; /* 5.48:1 on yellow-01/10 */
+  --color-error-text: #A81E1E;     /* 6.31:1 on error/10     */
+  --color-gray-06-text: #5C5D5C;   /* 6.01:1 on gray-05/10   */
 }
 
 .dark {
@@ -159,5 +172,129 @@
   }
   body {
     background-color: #F7F7F7;
+  }
+}
+/* Global notifications - centered over the active work area, not the viewport.
+   Dashboard toasts sit above the sticky header. Colours come from the app's
+   own palette tokens (@theme inline above) so a toast never introduces a
+   shade the rest of the app does not already use. */
+.workspace-toaster[data-sonner-toaster][data-x-position="center"] {
+  left: var(--workspace-toast-center) !important;
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] {
+  min-height: 50px;
+  padding: 11px 44px 11px 13px;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 98%);
+  color: var(--color-black-01);
+  box-shadow:
+    0 12px 30px rgb(15 23 42 / 12%),
+    0 2px 8px rgb(15 23 42 / 7%);
+  font-family: 'Outfit', system-ui, Helvetica, sans-serif;
+  font-size: 13px;
+}
+
+.app-toaster [data-sonner-toast] {
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    height 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms ease;
+}
+
+.app-toaster [data-sonner-toast][data-removed="true"] {
+  transition-duration: 160ms;
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] [data-icon] {
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.app-toaster [data-sonner-toast][data-type="success"] [data-icon] {
+  background: color-mix(in srgb, var(--color-green-01) 10%, transparent);
+  color: var(--color-green-01);
+}
+
+.app-toaster [data-sonner-toast][data-type="error"] [data-icon] {
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  color: var(--color-red-01);
+}
+
+.app-toaster [data-sonner-toast][data-type="warning"] [data-icon] {
+  background: color-mix(in srgb, var(--color-yellow-01) 12%, transparent);
+  color: var(--color-amber-01);
+}
+
+.app-toaster [data-sonner-toast][data-type="info"] [data-icon],
+.app-toaster [data-sonner-toast][data-type="loading"] [data-icon] {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] [data-title] {
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] [data-description] {
+  margin-top: 1px;
+  color: var(--color-gray-06);
+  line-height: 1.4;
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] [data-close-button] {
+  top: 50%;
+  right: 8px;
+  left: auto;
+  width: 28px;
+  height: 28px;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: var(--color-gray-05);
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] [data-close-button]:hover {
+  border: 0;
+  background: var(--color-gray-03);
+  color: var(--color-black-01);
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] [data-close-button]:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] [data-button] {
+  height: 28px;
+  border-radius: 7px;
+  background: var(--primary);
+  color: white;
+  font-family: inherit;
+  font-weight: 600;
+}
+
+/* Tablet: the sidebar is off-canvas, so the work area is the whole viewport. */
+@media (max-width: 767px) and (min-width: 601px) {
+  .workspace-toaster[data-sonner-toaster][data-x-position="center"] {
+    left: 50% !important;
+  }
+}
+
+/* Phone: sonner switches to the full-width mobile offsets. */
+@media (max-width: 600px) {
+  .workspace-toaster[data-sonner-toaster][data-x-position="center"] {
+    left: var(--mobile-offset-left) !important;
+  }
+
+  .app-toaster [data-sonner-toast][data-styled="true"] {
+    min-height: 48px;
+    padding-block: 10px;
   }
 }

@@ -5,7 +5,7 @@ import {
   Check,
   CircleAlert,
   Dot,
-  LifeBuoy,
+  Headset,
   RefreshCw,
   SearchX,
   ShieldOff,
@@ -292,7 +292,9 @@ function ControlRoom({ state }: { state: OnboardingState }) {
                       key={task.key}
                       className={cn(
                         "flex items-center gap-2 text-[13px]",
-                        done ? "text-green-01" : "text-gray-06",
+                        // The accessible sibling, not the raw hue: this is
+                        // 13px text, and #16A34A measures 3.30:1 on white.
+                        done ? "text-green-01-text" : "text-gray-06",
                       )}
                     >
                       {done ? (
@@ -320,7 +322,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
               className="mt-3.5 w-full border-primary text-primary"
               onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.HELP)}
             >
-              <LifeBuoy />
+              <Headset />
               Escalate an issue
             </Button>
           </section>

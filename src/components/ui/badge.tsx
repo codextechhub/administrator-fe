@@ -10,15 +10,15 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
-        success: "bg-green-01/10 text-green-01 ",
-        active: "bg-green-01/10 text-green-01 ",
-        inactive: "bg-gray-05/10 text-gray-05 ",
-        pending: "bg-yellow-01/10 text-yellow-01",
+        success: "bg-green-01/10 text-green-01-text",
+        active: "bg-green-01/10 text-green-01-text",
+        inactive: "bg-gray-05/10 text-gray-06-text",
+        pending: "bg-yellow-01/10 text-yellow-01-text",
         secondary:
           "bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
         destructive:
           "bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        rejected: "bg-destructive/10 text-destructive",
+        rejected: "bg-destructive/10 text-error-text",
         teal: "bg-[#E1F5EE] text-[#0F6E56]",
         amber: "bg-[#FAEEDA] text-[#854F0B]",
         blue: "bg-[#E6F1FB] text-[#185FA5]",
