@@ -273,7 +273,6 @@ export function AppSidebar({
               {onboardingNav.length > 0 && (
                 <NavMain items={onboardingNav} groupTitle="Onboarding" />
               )}
-              <NavMain items={helpNav} groupTitle="Help" />
             </>
           ) : (
             <>
@@ -291,6 +290,10 @@ export function AppSidebar({
               )}
             </>
           )}
+          {/* Outside the branch on purpose. Help used to render only while a
+              school was onboarding, so the one route to support disappeared at
+              go-live - the exact moment a school is most likely to need it. */}
+          <NavMain items={helpNav} groupTitle="Help" />
         </SidebarContent>
         <SidebarRail />
       </Sidebar>

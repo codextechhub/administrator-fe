@@ -1,5 +1,6 @@
 import { Separator } from "@/components/ui/separator";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { WorkspaceToaster } from "@/components/ui/sonner";
 import { AppSidebar } from "../app-sidebar";
 import { ChevronLeft, Headset, Loader2, LogOut, Undo2, UsersRound } from "lucide-react";
 import { useState } from "react";
@@ -29,10 +30,10 @@ import { NotLiveNotice } from "@/pages/protected/onboarding/components/not-live-
 import { OnboardingStatusStrip } from "@/pages/protected/onboarding/components/onboarding-status-strip";
 import { AppSearch } from "./app-search";
 import { NotificationsBell } from "@/components/custom/notifications-bell";
+import { SupportSheet } from "@/components/layout/support-sheet";
 import { ProxySessionBanner } from "@/components/proxy-session-banner";
 import { ProxyUserDialog } from "@/components/proxy-user-dialog";
 import { P, resolvePermissionKey } from "@/permissions";
-import { routesPath } from "@/routes/routesPath";
 import { exitProxySession } from "@/utils/proxy-session";
 
 // Per-screen header config, declared on the route rather than passed as props.
@@ -111,6 +112,7 @@ export default function DashboardLayout() {
     resolvePermissionKey(P.START_PROXY_SESSION)
   );
   const [proxyDialogOpen, setProxyDialogOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [isExitingProxy, setIsExitingProxy] = useState(false);
 
   const exitProxy = async () => {
@@ -131,16 +133,22 @@ export default function DashboardLayout() {
         goToLogin={goToLogin}
       />
       <SidebarProvider>
+        <DashboardToaster />
         <AppSidebar onboarding={onboarding} />
         <SidebarInset className="bg-white-05 min-w-0 w-auto">
           {/* Banner + header pin together: two independently sticky bars at
               top-0 would overlap as soon as the page scrolls. */}
           <div className="sticky top-0 z-10 shrink-0">
           <ProxySessionBanner />
-          <header className="flex h-15 shrink-0 items-center gap-3 px-3 lg:gap-4 lg:px-5 bg-white border border-l-0 border-white-02">
-            {/* Left: the toggle, the back affordance and the page title. flex-0
-                so the search takes the slack rather than the title. */}
-            <div className="inline-flex min-w-0 flex-[0_1_auto] items-center gap-2.5">
+          {/* `relative`: the search box is centred on the header itself rather
+              than laid out between its neighbours, and on a phone it expands
+              over the header. Both are absolute children of this element. */}
+          <header className="relative flex h-15 shrink-0 items-center gap-3 px-3 lg:gap-4 lg:px-5 bg-white border border-l-0 border-white-02">
+            {/* Left: the toggle, the back affordance and the page title. It
+                takes the slack so the controls stay pinned right, and stops
+                short of the centred search box on wide screens rather than
+                sliding under it. */}
+            <div className="inline-flex min-w-0 flex-1 items-center gap-2.5 lg:max-w-[calc(50%-15rem)]">
               <SidebarTrigger className="size-7 rounded-full border border-white-02 text-gray-06 hover:text-primary" />
               {hasBack && (
                 <>
@@ -164,28 +172,41 @@ export default function DashboardLayout() {
               </h6>
             </div>
 
-            {/* Centre: navigate-only search. It jumps to a screen; there is no
-                search endpoint to find records with. See AppSearch. */}
-            <div className="flex flex-1 justify-end lg:justify-center min-w-0">
-              <AppSearch schoolIsPending={tenantIsPending} />
-            </div>
+            {/* ml-auto, not a flex-1 spacer: the search box between these two
+                clusters is out of flow now, so nothing else absorbs the slack
+                and the controls would otherwise sit against the title. */}
+            <div className="ml-auto inline-flex shrink-0 items-center gap-2.5">
+              {/* The action palette. It launches actions and jumps to screens;
+                  there is no search endpoint to find records with. The field
+                  itself is centred on the header (absolute, so it is not a
+                  member of this row); what sits here in the flow is the phone
+                  icon that expands it. The two account actions it can run
+                  (proxy, logout) belong to this header, so it is handed the
+                  same openers the account menu uses rather than mounting a
+                  second dialog of its own. See AppSearch. */}
+              <AppSearch
+                onProxy={() => setProxyDialogOpen(true)}
+                onLogout={toggleLogout}
+              />
 
-            <div className="inline-flex shrink-0 items-center gap-2.5">
               <NotificationsBell />
 
-              {/* Support sits beside the bell in the design, and during
-                  onboarding it is the one route to CodeX a school actually has. */}
-              {onboardingRoute && (
-                <button
-                  type="button"
-                  aria-label="Get help"
-                  title="Raise an issue with CodeX"
-                  onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.HELP)}
-                  className="size-8.5 rounded-full bg-gray-04 grid place-content-center text-gray-01 hover:bg-pry-01 hover:text-primary"
-                >
-                  <Headset className="size-4.5 stroke-[2.15]" />
-                </button>
-              )}
+              {/* Support sits beside the bell in the design. It opens the
+                  ticket form IN PLACE rather than navigating, the way
+                  console-fe's does: somebody raises a ticket because a screen
+                  is misbehaving, and navigating away takes that screen off
+                  their display. No longer limited to onboarding routes - a
+                  school that has just gone live is exactly when something
+                  breaks. */}
+              <button
+                type="button"
+                aria-label="Get help"
+                title="Raise an issue with CodeX"
+                onClick={() => setSupportOpen(true)}
+                className="size-8.5 rounded-full bg-gray-04 grid place-content-center text-gray-01 hover:bg-pry-01 hover:text-primary"
+              >
+                <Headset className="size-4.5 stroke-[2.15]" />
+              </button>
 
               <Separator
                 orientation="vertical"
@@ -256,6 +277,8 @@ export default function DashboardLayout() {
             />
           )}
 
+          <SupportSheet open={supportOpen} onOpenChange={setSupportOpen} />
+
           <PromptModal
             isOpen={openLogout}
             onClose={toggleLogout}
@@ -282,6 +305,15 @@ export default function DashboardLayout() {
       </SidebarProvider>
     </>
   );
+}
+
+// The toasts have to know how wide the sidebar currently is to centre
+// themselves over the page content, and `useSidebar` only works inside the
+// provider - hence a child component rather than a hook call in DashboardLayout.
+function DashboardToaster() {
+  const { state } = useSidebar();
+
+  return <WorkspaceToaster sidebarState={state} />;
 }
 
 // Turn a backend role token ("SCHOOL_ADMIN", "branch_admin") into a display

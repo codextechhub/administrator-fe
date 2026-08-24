@@ -7,7 +7,7 @@ import {
   CircleAlert,
   CircleCheckBig,
   Copy,
-  LifeBuoy,
+  Headset,
   RefreshCw,
   SearchX,
   ShieldOff,
@@ -545,7 +545,7 @@ function RejectedCard({ request }: { request: GoLiveRequest }) {
           variant="outline"
           onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.HELP)}
         >
-          <LifeBuoy />
+          <Headset />
           Get help
         </Button>
       </div>
@@ -621,7 +621,7 @@ function FailedCard({ request }: { request: GoLiveRequest }) {
             })
           }
         >
-          <LifeBuoy />
+          <Headset />
           Report this to CodeX
         </Button>
         {/* Activation rolled everything back and put readiness at READY, so the
