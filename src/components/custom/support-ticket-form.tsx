@@ -16,7 +16,6 @@ import type {
 import { escalationSchema } from "@/schema/onboarding";
 import { apiErrorMessage } from "@/utils/api-error";
 import { useOnboardingState } from "@/pages/protected/onboarding/use-onboarding-state";
-import { READINESS_LABEL } from "@/pages/protected/onboarding/onboarding-labels";
 
 /**
  * The support ticket form, and the confirmation that follows it.
@@ -85,6 +84,10 @@ export function SupportTicketForm({
   // Which step the person was on. Taken from whoever opened the form, or the
   // first required step still outstanding - the one they are most likely stuck
   // on. It is a catalog key on a closed allowlist, never free text.
+  //
+  // Sent with the ticket but NOT shown. It is routing information for the
+  // people who pick the ticket up, and printing it back at a school made them
+  // read a paragraph about plumbing they had not asked about.
   const outstanding =
     state?.tasks.filter(
       (task) => task.status !== "DONE" && task.status !== "SKIPPED",
@@ -93,9 +96,6 @@ export function SupportTicketForm({
     prefill.taskKey ??
     outstanding.find((task) => task.is_required)?.key ??
     outstanding[0]?.key;
-  const contextTaskTitle = state?.tasks.find(
-    (task) => task.key === contextTaskKey,
-  )?.title;
 
   const formik = useFormik({
     initialValues: {
@@ -213,35 +213,15 @@ export function SupportTicketForm({
           error={formik.touched.category ? formik.errors.category : ""}
         />
 
-        <div className="grid gap-1.5 h-fit">
-          <span className="text-sm text-black-01 after:text-error after:content-['*'] after:pl-1.5">
-            Priority
-          </span>
-          {/* A four-way choice reads better as a segmented control than as a
-              second select beside the first. flex-wrap so it stacks rather
-              than overflowing a 390px screen. */}
-          <div className="flex flex-wrap gap-2">
-            {PRIORITY_OPTIONS.map((option) => {
-              const active = formik.values.priority === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => formik.setFieldValue("priority", option.value)}
-                  className={cn(
-                    "h-9 rounded-sm border px-3.5 text-sm font-mont font-medium cursor-pointer transition-colors",
-                    active
-                      ? "border-primary bg-pry-01 text-primary"
-                      : "border-border bg-white text-gray-01 hover:bg-gray-03",
-                  )}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <CustomNativeSelect
+          id="priority"
+          label="Priority"
+          isRequired
+          options={PRIORITY_OPTIONS}
+          placeholder="Pick a priority"
+          {...formik.getFieldProps("priority")}
+          error={formik.touched.priority ? formik.errors.priority : ""}
+        />
       </div>
 
       <CustomTextArea
@@ -253,28 +233,6 @@ export function SupportTicketForm({
         {...formik.getFieldProps("description")}
         error={formik.touched.description ? formik.errors.description : ""}
       />
-
-      <div className="rounded-md border border-border p-3.5">
-        <p className="text-xs text-gray-05">Sent with your ticket</p>
-        {/* A closed allowlist, and that is the point: a ticket is read by
-            staff outside this school, so nothing here is free text. */}
-        <div className="mt-2 flex flex-wrap gap-2">
-          <ContextChip label="Product area" value="Onboarding" />
-          {contextTaskTitle && (
-            <ContextChip label="Step" value={contextTaskTitle} />
-          )}
-          {state && (
-            <ContextChip
-              label="Readiness"
-              value={READINESS_LABEL[state.readiness_state]}
-            />
-          )}
-        </div>
-        <p className="mt-2.5 text-xs text-gray-05 text-pretty">
-          Reply to the confirmation email if you need to send us a screenshot or
-          a file.
-        </p>
-      </div>
 
       {submitError && (
         <p className="text-xs font-medium text-error-text text-pretty">
@@ -297,14 +255,5 @@ export function SupportTicketForm({
         )}
       </div>
     </form>
-  );
-}
-
-function ContextChip({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-03 px-2 py-1 text-xs text-gray-01">
-      <span className="text-gray-05">{label}:</span>
-      <span className="font-medium font-mont text-black-01">{value}</span>
-    </span>
   );
 }

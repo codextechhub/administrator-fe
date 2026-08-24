@@ -42,8 +42,7 @@ export function SupportSheet({
             Get help
           </SheetTitle>
           <SheetDescription className="text-[13px] text-gray-01 text-pretty">
-            Tell CodeX support what is blocking you. Your school and where you
-            are in onboarding travel with the ticket.
+            Tell us what went wrong and we will pick it up.
           </SheetDescription>
         </SheetHeader>
 

@@ -22,24 +22,26 @@ export default function OnboardingHelp() {
     navigate(routesPath.PROTECTED.ONBOARDING.INDEX);
 
   return (
-    <main className="px-5 pt-3 pb-8 space-y-5">
-      <div>
+    <main className="px-5 pt-3 pb-8 flex justify-center">
+      {/* A floating card rather than a full-width form, matching the sheet the
+          headset opens. A ticket is a short, self-contained thing to write;
+          stretching it across a desktop just makes the fields harder to scan. */}
+      <section className="w-full max-w-140 bg-white rounded-md px-5 py-6 sm:px-7">
         <h2 className="text-lg font-semibold font-mont text-black-01">
           Get help
         </h2>
-        <p className="mt-1 text-sm text-gray-01 max-w-[70ch] text-pretty">
-          Tell CodeX support what is blocking you. Your school and where you are
-          in onboarding travel with the ticket, so you do not have to explain the
-          setup.
+        <p className="mt-1 text-sm text-gray-01 text-pretty">
+          Tell us what went wrong and we will pick it up.
         </p>
-      </div>
 
-      <SupportTicketForm
-        prefill={prefill}
-        onCancel={toControlRoom}
-        onDone={toControlRoom}
-        className="bg-white rounded-md px-4 py-5 sm:px-6 max-w-200"
-      />
+        <div className="mt-5">
+          <SupportTicketForm
+            prefill={prefill}
+            onCancel={toControlRoom}
+            onDone={toControlRoom}
+          />
+        </div>
+      </section>
     </main>
   );
 }
