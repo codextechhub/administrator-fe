@@ -1,219 +1,452 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Search } from "lucide-react";
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { ChevronRight, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { usePermissions } from "@/hooks/use-permissions";
-import { P, type PermissionCode } from "@/permissions";
-import { routesPath } from "@/routes/routesPath";
+import { useAppSelector } from "@/redux/store";
+import {
+  selectActorPermissions,
+  selectPermissions,
+  selectTenantIsPending,
+  selectUser,
+} from "@/redux/features/auth/auth-slice";
+import {
+  ACTIONS,
+  loadFrecencyScores,
+  loadPopularity,
+  recordPick,
+  type ActionDef,
+  type ScoredAction,
+} from "@/lib/action-palette";
+import {
+  ACTION_PALETTE_OPEN_EVENT,
+  availableActions,
+  buildPaletteView,
+  COLLAPSED_COUNT,
+  rankActions,
+  rankDefaultActions,
+} from "./action-palette-model";
+
+/** The one wording for this box: placeholder, aria-label and mobile trigger. */
+const SEARCH_LABEL = "Search your workspace";
+
+/** The width at which the header has room for the full field (Tailwind `lg`). */
+const DESKTOP_QUERY = "(min-width: 1024px)";
+
+type SearchVariant = "desktop" | "mobile";
 
 /**
- * The header search: a command palette over the screens this person can reach.
+ * The header palette: type an action, press Enter, the app does it.
  *
- * **It navigates. It does not search the school.** There is no search endpoint
- * in the backend - not closed, absent - so a box that promised to find a student
- * by name would be a lie in the most prominent place on the page. Jumping to a
- * screen is the honest half of that promise, it is useful on day one, and it is
- * the shell a real search drops into when there is something to call.
+ * It is a real input sitting in the header with an attached dropdown, not a
+ * modal - the same shape console-fe uses. That matters beyond looks: a person
+ * can see what the box offers without committing to a full-screen takeover,
+ * and Escape puts them back on the page they were already reading.
  *
- * Entries are gated on the same permission keys as the sidebar, so the palette
- * never offers a door the nav has already hidden.
+ * **It launches actions. It does not search the school.** There is no search
+ * endpoint in the backend - not closed, absent - so a box that promised to find
+ * a student by name would be a lie in the most prominent place on the page.
+ * The placeholder is the broad "Search your workspace" that console uses, and
+ * the honesty is carried where it is actually needed: the empty state says out
+ * loud that this reaches actions and screens rather than records.
+ *
+ * What it can offer comes from three filters, each with its own owner:
+ * permissions (the registry's gate, same key the screen checks), tenant
+ * readiness (a pending school is offered only what a pending school can open),
+ * and the typed query (the engine in src/lib/action-palette). Ranking learns
+ * from what this user picks, but only ever within a match tier - see
+ * rankActions.
  */
-interface Destination {
-  label: string;
-  hint: string;
-  path: string;
-  permission?: PermissionCode;
-  /** Only reachable before go-live, or only after. */
-  when?: "pending" | "live";
-}
-
-const DESTINATIONS: Destination[] = [
-  {
-    label: "Control Room",
-    hint: "Your onboarding checklist",
-    path: routesPath.PROTECTED.ONBOARDING.INDEX,
-    permission: P.VIEW_ONBOARDING,
-    when: "pending",
-  },
-  {
-    label: "School Profile",
-    hint: "Ownership, term structure, currency, logo",
-    path: routesPath.PROTECTED.ONBOARDING.PROFILE,
-    permission: P.VIEW_SCHOOL_PROFILE,
-    when: "pending",
-  },
-  {
-    label: "Go-Live",
-    hint: "Request go-live and its history",
-    path: routesPath.PROTECTED.ONBOARDING.GO_LIVE,
-    permission: P.VIEW_GO_LIVE_REQUESTS,
-    when: "pending",
-  },
-  {
-    label: "Get Help",
-    hint: "Raise an issue with CodeX",
-    path: routesPath.PROTECTED.ONBOARDING.HELP,
-    when: "pending",
-  },
-  {
-    label: "Dashboard",
-    hint: "School overview",
-    path: routesPath.PROTECTED.OVERVIEW.INDEX,
-    permission: P.VIEW_SCHOOL_DASHBOARD,
-    when: "live",
-  },
-  {
-    label: "Branches",
-    hint: "Campuses and sites",
-    path: routesPath.PROTECTED.BRANCHES.INDEX,
-    permission: P.BROWSE_BRANCHES,
-    when: "live",
-  },
-  {
-    label: "Students",
-    hint: "The student roster",
-    path: routesPath.PROTECTED.STUDENTS.INDEX,
-    permission: P.BROWSE_STUDENTS,
-    when: "live",
-  },
-  {
-    label: "Teachers",
-    hint: "Teaching staff",
-    path: routesPath.PROTECTED.TEACHERS.INDEX,
-    permission: P.BROWSE_TEACHERS,
-    when: "live",
-  },
-  {
-    label: "Administrators",
-    hint: "School administrator accounts",
-    path: routesPath.PROTECTED.ADMINISTRATORS.INDEX,
-    permission: P.BROWSE_ADMINISTRATORS,
-    when: "live",
-  },
-  {
-    label: "Academic Session",
-    hint: "Sessions and terms",
-    path: routesPath.PROTECTED.ACADEMIC.SESSION,
-    permission: P.BROWSE_SESSIONS,
-    when: "live",
-  },
-  {
-    label: "Academic Calendar",
-    hint: "Calendar and events",
-    path: routesPath.PROTECTED.ACADEMIC.CALENDER,
-    permission: P.BROWSE_CALENDAR,
-    when: "live",
-  },
-  {
-    label: "Classes",
-    hint: "Classes and their rosters",
-    path: routesPath.PROTECTED.CLASSES.INDEX,
-    permission: P.BROWSE_CLASSES,
-    when: "live",
-  },
-];
-
-/** ⌘E on a Mac, Ctrl+E elsewhere - the shortcut the design prints in the box. */
-function useSearchShortcut(onOpen: () => void) {
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== "e") return;
-      if (!event.metaKey && !event.ctrlKey) return;
-      event.preventDefault();
-      onOpen();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onOpen]);
-}
-
 export function AppSearch({
-  schoolIsPending,
+  onProxy,
+  onLogout,
   className,
 }: {
-  schoolIsPending: boolean;
+  /** Open the header's "view as another user" dialog. */
+  onProxy: () => void;
+  /** Open the header's logout confirmation. */
+  onLogout: () => void;
   className?: string;
 }) {
   const navigate = useNavigate();
-  const { hasPermission } = usePermissions();
-  const [open, setOpen] = useState(false);
-  useSearchShortcut(() => setOpen(true));
+  const [query, setQuery] = useState("");
+  const [resultsOpen, setResultsOpen] = useState(false);
+  // A broad query ("v") can match most of the registry, so the list starts
+  // collapsed and the rest waits behind a keyboard-reachable "show all" row.
+  const [expanded, setExpanded] = useState(false);
+  const [activeRow, setActiveRow] = useState(0);
+  // Below lg the header has no room for a 430px field beside a title and four
+  // controls, so the box lives behind an icon and expands over the header.
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const desktopInputRef = useRef<HTMLInputElement>(null);
+  const mobileInputRef = useRef<HTMLInputElement>(null);
 
-  const destinations = useMemo(
-    () =>
-      DESTINATIONS.filter((entry) => {
-        // A pending school reaches onboarding and nothing else, so offering it
-        // Students here would send it straight to the "opens at go-live" wall.
-        if (entry.when === "pending" && !schoolIsPending) return false;
-        if (entry.when === "live" && schoolIsPending) return false;
-        return !entry.permission || hasPermission(entry.permission);
-      }),
-    [hasPermission, schoolIsPending],
+  const shortcutLabel = useMemo(
+    () => (/Mac|iPhone|iPad|iPod/i.test(navigator.userAgent) ? "⌘ E" : "Ctrl E"),
+    [],
   );
 
-  const go = (path: string) => {
-    setOpen(false);
-    navigate(path);
+  // The shortcut and the window event do the same thing: put the cursor in
+  // whichever field this width actually shows, selecting any text already
+  // there so the user can continue it or type straight over it.
+  const focusSearch = useCallback(() => {
+    if (window.matchMedia(DESKTOP_QUERY).matches) {
+      desktopInputRef.current?.focus();
+      desktopInputRef.current?.select();
+      return;
+    }
+    setMobileOpen(true);
+    requestAnimationFrame(() => {
+      mobileInputRef.current?.focus();
+      mobileInputRef.current?.select();
+    });
+  }, []);
+  useSearchFocusTriggers(focusSearch);
+
+  const tenantIsPending = useAppSelector(selectTenantIsPending);
+  const permissions = useAppSelector(selectPermissions);
+  const actorPermissions = useAppSelector(selectActorPermissions);
+  const user = useAppSelector(selectUser);
+  const userId = user?.id == null ? undefined : String(user.id);
+
+  const available = useMemo(
+    () => availableActions(ACTIONS, { permissions, actorPermissions }, tenantIsPending),
+    [permissions, actorPermissions, tenantIsPending],
+  );
+
+  // Popularity is re-read while the dropdown is open rather than held in
+  // state: it lives in localStorage, it is two small JSON blobs, and a second
+  // tab that learned something should be reflected the next time this list is
+  // opened.
+  const trimmed = query.trim();
+  const ranked = useMemo(
+    () => (resultsOpen ? rankActions(available, trimmed, loadPopularity(userId)) : []),
+    [available, trimmed, userId, resultsOpen],
+  );
+  const defaults = useMemo(
+    () => (resultsOpen ? rankDefaultActions(available, loadFrecencyScores(userId)) : []),
+    [available, userId, resultsOpen],
+  );
+
+  const results = trimmed ? ranked : defaults;
+  const view = useMemo(() => buildPaletteView(results, expanded), [results, expanded]);
+
+  // Where each action sits in the flat row order, so a rendered row can label
+  // itself with the index the arrow keys use.
+  const rowIndexByActionId = useMemo(() => {
+    const index = new Map<string, number>();
+    view.rows.forEach((row, position) => {
+      if (row.kind === "action") index.set(row.result.action.id, position);
+    });
+    return index;
+  }, [view.rows]);
+  const showAllIndex = view.truncated ? view.rows.length - 1 : -1;
+
+  // Before a character is typed the list is this user's own most-reached
+  // actions. With no history yet every score is zero and registry order stands
+  // in, so the heading should not claim to know anything about them.
+  const heading = trimmed
+    ? "Best matches"
+    : results.some((result) => result.popularity > 0)
+      ? "Most used"
+      : "Start here";
+
+  const closeSearch = () => {
+    setQuery("");
+    setResultsOpen(false);
+    setExpanded(false);
+    setActiveRow(0);
+    setMobileOpen(false);
   };
+
+  const updateQuery = (value: string) => {
+    setQuery(value);
+    setExpanded(false); // a new query collapses back to the top matches
+    setActiveRow(0);
+    setResultsOpen(true);
+  };
+
+  const expandResults = () => {
+    setExpanded(true);
+    setActiveRow(0);
+  };
+
+  const run = (action: ActionDef) => {
+    // Remember the pick FIRST, while `query` still holds what was typed: that
+    // pairing ("s" means View students to this person) is the whole adaptive
+    // signal, and clearing the box loses it.
+    recordPick(userId, action.id, query);
+    closeSearch();
+    if ("command" in action.run) {
+      // Two things only the header can do. It owns the proxy dialog and the
+      // logout confirmation (both mounted in DashboardLayout), so the palette
+      // asks it rather than mounting a second copy of either.
+      if (action.run.command === "proxy") onProxy();
+      else onLogout();
+      return;
+    }
+    navigate(action.run.to);
+  };
+
+  // Arrow keys move the highlight (wrapping over the "show all" row too), Enter
+  // activates it. preventDefault stops the browser scrolling the page instead.
+  // With the dropdown closed (after Escape), arrows reopen it and Enter is inert.
+  const handleResultNavigation = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+    variant: SearchVariant,
+  ) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!resultsOpen) {
+        setResultsOpen(true);
+        return;
+      }
+      const count = view.rows.length;
+      if (!count) return;
+      const step = event.key === "ArrowDown" ? 1 : -1;
+      setActiveRow((index) => (index + step + count) % count);
+      return;
+    }
+    if (event.key === "Enter" && resultsOpen) {
+      // Acting on a result is the whole point of this Enter, so cancel the
+      // key's default action. Without this, launching anything that mounts a
+      // focusable control in the same keystroke (the logout confirm, the proxy
+      // dialog) hands the browser a new focus target before it runs Enter's
+      // default, which then arrives as a click on whatever Radix just focused:
+      // the confirmation opened and its Cancel button was pressed by the same
+      // keypress, so it appeared to flash and vanish.
+      event.preventDefault();
+      const target = view.rows[activeRow] ?? view.rows[0];
+      if (!target) return;
+      if (target.kind === "show-all") expandResults();
+      else run(target.result.action);
+      return;
+    }
+    if (event.key === "Escape") {
+      setResultsOpen(false);
+      // On a phone the field itself is the overlay, so Escape has to give the
+      // header back rather than leaving an empty bar over the page title.
+      if (variant === "mobile") setMobileOpen(false);
+    }
+  };
+
+  const comboboxProps = (variant: SearchVariant) => ({
+    role: "combobox" as const,
+    "aria-expanded": resultsOpen,
+    "aria-controls": `app-search-listbox-${variant}`,
+    "aria-activedescendant":
+      resultsOpen && activeRow < view.rows.length
+        ? `app-search-option-${variant}-${activeRow}`
+        : undefined,
+    onFocus: () => setResultsOpen(true),
+    // Click-away keeps the typed query (the "resume later" path) but drops the
+    // highlight: the row it pointed at may not exist by the time the list is
+    // reopened, and a stale index would highlight a different action.
+    onBlur: () => {
+      setResultsOpen(false);
+      setActiveRow(0);
+    },
+    "aria-label": SEARCH_LABEL,
+    "aria-keyshortcuts": "Control+E Meta+E",
+    placeholder: SEARCH_LABEL,
+    value: query,
+    onChange: (event: React.ChangeEvent<HTMLInputElement>) => updateQuery(event.target.value),
+    onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) =>
+      handleResultNavigation(event, variant),
+  });
+
+  // One result row. The ref keeps the highlighted row in view as the arrows
+  // walk past the bottom of the scrollable box. onMouseDown is cancelled so
+  // the input's blur does not close the dropdown before the click lands.
+  const renderRow = (result: ScoredAction, index: number, variant: SearchVariant) => {
+    const { action } = result;
+    return (
+      <button
+        key={action.id}
+        id={`app-search-option-${variant}-${index}`}
+        ref={index === activeRow ? (el) => el?.scrollIntoView({ block: "nearest" }) : undefined}
+        type="button"
+        role="option"
+        aria-selected={index === activeRow}
+        onMouseDown={(event) => event.preventDefault()}
+        onMouseEnter={() => setActiveRow(index)}
+        onClick={() => run(action)}
+        className={cn(
+          "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left",
+          index === activeRow && "bg-gray-50",
+        )}
+      >
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-medium text-black-01">{action.label}</span>
+          <span className="block truncate text-[11px] text-gray-400">{action.group}</span>
+        </span>
+        {action.kind === "do" ? (
+          <span className="ml-2 shrink-0 rounded-md bg-primary/8 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+            Action
+          </span>
+        ) : (
+          <ChevronRight className="ml-2 size-4 shrink-0 text-gray-300" />
+        )}
+      </button>
+    );
+  };
+
+  const renderSectionHeader = (id: string, label: string) => (
+    <p id={id} className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+      {label}
+    </p>
+  );
+
+  const renderResults = (variant: SearchVariant) => (
+    <div
+      id={`app-search-listbox-${variant}`}
+      role="listbox"
+      aria-label={`${SEARCH_LABEL} results`}
+      className={cn(
+        "absolute left-0 z-50 w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl",
+        variant === "desktop" ? "top-11" : "top-12",
+      )}
+    >
+      <div className="max-h-[min(60vh,26rem)] overflow-y-auto">
+        {view.rows.length === 0 ? (
+          // Said out loud, because the box still looks like it should find
+          // people.
+          <p className="px-3 py-4 text-center text-xs text-gray-400">
+            Nothing matches. This launches actions and screens, not records.
+          </p>
+        ) : view.groups ? (
+          view.groups.map((group) => (
+            <section key={group.section} aria-labelledby={`app-search-${variant}-${group.section}`}>
+              {renderSectionHeader(`app-search-${variant}-${group.section}`, group.section)}
+              {group.items.map((result) =>
+                renderRow(result, rowIndexByActionId.get(result.action.id) ?? -1, variant),
+              )}
+            </section>
+          ))
+        ) : (
+          <section aria-labelledby={`app-search-${variant}-heading`}>
+            {renderSectionHeader(`app-search-${variant}-heading`, heading)}
+            {view.rows.map((row, index) =>
+              row.kind === "action" ? renderRow(row.result, index, variant) : null,
+            )}
+          </section>
+        )}
+
+        {view.truncated && (
+          <button
+            id={`app-search-option-${variant}-${showAllIndex}`}
+            type="button"
+            role="option"
+            aria-selected={activeRow === showAllIndex}
+            onMouseDown={(event) => event.preventDefault()}
+            onMouseEnter={() => setActiveRow(showAllIndex)}
+            onClick={expandResults}
+            className={cn(
+              "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-medium text-primary",
+              activeRow === showAllIndex && "bg-gray-50",
+            )}
+          >
+            <span>
+              Showing top {COLLAPSED_COUNT} of {view.total}
+            </span>
+            <span className="inline-flex items-center gap-0.5">
+              Show all <ChevronRight className="size-3.5" />
+            </span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <>
-      {/* The trigger is the design's search box. Below lg it collapses to the
-          icon alone: a 560px field cannot sit between a title and three
-          controls on a 390px screen without one of them leaving. */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Search"
+      {/* Absolutely centred in the header, so the box sits mid-screen however
+          long the page title is. Out of flow, so it is exempt from the
+          header's flex gaps and cannot push the account controls off. */}
+      <div
         className={cn(
-          "group relative flex h-9 items-center rounded-full border border-white-02 bg-white text-gray-05 transition-colors hover:border-primary/40 lg:h-11 lg:w-full lg:max-w-140",
-          "size-9 justify-center lg:justify-start lg:px-11",
+          "absolute left-1/2 top-1/2 hidden w-[min(38vw,430px)] -translate-x-1/2 -translate-y-1/2 lg:block",
           className,
         )}
       >
-        <Search className="size-4.5 lg:absolute lg:left-4" />
-        <span className="hidden lg:inline text-sm">Search the school</span>
-        <span className="hidden lg:inline-flex absolute right-2.5 h-6 items-center gap-0.5 rounded-sm border border-white-02 bg-gray-03 px-2 font-mont text-xs font-medium text-gray-05">
-          ⌘ E
-        </span>
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+        <input
+          ref={desktopInputRef}
+          {...comboboxProps("desktop")}
+          className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50/70 pl-9 pr-17 text-sm outline-none transition placeholder:text-gray-400 focus:border-primary/35 focus:bg-white focus:ring-3 focus:ring-primary/8"
+        />
+        <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-gray-200 bg-white px-1.5 py-0.5 font-sans text-[10px] font-semibold tracking-wide text-gray-400 shadow-sm">
+          {shortcutLabel}
+        </kbd>
+        {resultsOpen && renderResults("desktop")}
+      </div>
+
+      {/* The phone affordance: an icon beside the other header controls. */}
+      <button
+        type="button"
+        aria-label={SEARCH_LABEL}
+        aria-expanded={mobileOpen}
+        onClick={() => (mobileOpen ? closeSearch() : focusSearch())}
+        className="grid size-8.5 shrink-0 place-content-center rounded-full bg-gray-04 text-gray-01 hover:bg-pry-01 hover:text-primary lg:hidden"
+      >
+        <Search className="size-4.5 stroke-[2.15]" />
       </button>
 
-      <CommandDialog
-        open={open}
-        onOpenChange={setOpen}
-        title="Search"
-        description="Jump to a screen"
-      >
-        <CommandInput placeholder="Jump to a screen…" />
-        <CommandList>
-          {/* Said out loud, because the box looks like it should find people. */}
-          <CommandEmpty>
-            Nothing matches. This searches screens, not records.
-          </CommandEmpty>
-          <CommandGroup heading="Go to">
-            {destinations.map((entry) => (
-              <CommandItem
-                key={entry.path}
-                value={`${entry.label} ${entry.hint}`}
-                onSelect={() => go(entry.path)}
-              >
-                <span className="font-medium text-black-01">{entry.label}</span>
-                <span className="ml-auto text-xs text-gray-05">
-                  {entry.hint}
-                </span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+      {/* Expanded, the field covers the header rather than adding a row to it:
+          a taller header would shove every screen down the moment somebody
+          searches, and the title it hides is a line the searcher just left. */}
+      {mobileOpen && (
+        <div className="absolute inset-x-0 top-0 z-40 flex h-15 items-center gap-2 bg-white px-3 lg:hidden">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+            <input
+              ref={mobileInputRef}
+              autoFocus
+              {...comboboxProps("mobile")}
+              className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 text-sm outline-none transition placeholder:text-gray-400 focus:border-primary/35 focus:bg-white focus:ring-3 focus:ring-primary/8"
+            />
+            {resultsOpen && renderResults("mobile")}
+          </div>
+          <button
+            type="button"
+            aria-label="Close search"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={closeSearch}
+            className="grid size-8.5 shrink-0 place-content-center rounded-full bg-gray-04 text-gray-01 hover:bg-pry-01 hover:text-primary"
+          >
+            <X className="size-4.5" />
+          </button>
+        </div>
+      )}
     </>
   );
+}
+
+/**
+ * The two ways the box takes focus without being clicked: ⌘E / Ctrl+E (the
+ * shortcut printed inside it), and a window event any screen can fire so a
+ * "more actions" affordance elsewhere never has to reach into the header.
+ *
+ * Neither opens anything. The input is already on the page, so the shortcut's
+ * job is only to put the cursor in it.
+ */
+function useSearchFocusTriggers(onFocusRequested: () => void) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      // `code` rather than `key`, so the shortcut survives a layout where the
+      // E key types something else; `key` keeps it working where the browser
+      // reports no code.
+      const isE = event.code === "KeyE" || event.key.toLowerCase() === "e";
+      if (!isE) return;
+      if (!event.metaKey && !event.ctrlKey) return;
+      if (event.altKey || event.shiftKey) return;
+      event.preventDefault();
+      onFocusRequested();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    window.addEventListener(ACTION_PALETTE_OPEN_EVENT, onFocusRequested);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener(ACTION_PALETTE_OPEN_EVENT, onFocusRequested);
+    };
+  }, [onFocusRequested]);
 }
