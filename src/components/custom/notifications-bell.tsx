@@ -12,7 +12,8 @@ import {
   useMarkAllNotificationsReadMutation,
   useMarkNotificationsReadMutation,
 } from "@/redux/services/notifications/notifications-api";
-import { humanDateTime } from "@/pages/protected/onboarding/onboarding-format";
+import { routesPath } from "@/routes/routesPath";
+import { formatRelativeDate } from "@/utils/relative-date";
 
 /**
  * The header bell and its tray, in console's shape.
@@ -21,12 +22,10 @@ import { humanDateTime } from "@/pages/protected/onboarding/onboarding-format";
  * works during onboarding - which is when a school gets most of its post
  * (a step verified, a go-live decision, a reply on a ticket).
  *
- * Two deliberate departures from console's version. There is no "View all
- * notifications" footer, because this app has no inbox page to send anyone to
- * and a link to a route that does not exist is worse than no link. And an item
- * whose `action_url` names a screen this app has not built yet is marked read
- * where it stands rather than navigated to: the notification is the message,
- * and a school should not be dropped on a 404 for reading its own post.
+ * One deliberate departure from console's version: an item whose `action_url`
+ * names a screen this app has not built yet is marked read where it stands
+ * rather than navigated to. The notification IS the message, and a school
+ * should not be dropped on a 404 for reading its own post.
  */
 export function NotificationsBell() {
   const navigate = useNavigate();
@@ -125,7 +124,7 @@ export function NotificationsBell() {
                       {item.body}
                     </span>
                     <span className="mt-1 block text-[10px] text-gray-05">
-                      {item.event_type_label} · {humanDateTime(item.created_at)}
+                      {item.event_type_label} · {formatRelativeDate(item.created_at)}
                     </span>
                   </span>
                 </button>
@@ -143,6 +142,14 @@ export function NotificationsBell() {
             ))}
           </ul>
         )}
+
+        <button
+          type="button"
+          onClick={() => navigate(routesPath.PROTECTED.NOTIFICATIONS)}
+          className="w-full border-t border-border px-4 py-3 text-center text-xs font-semibold text-primary hover:bg-gray-03"
+        >
+          View all notifications
+        </button>
       </DropdownMenuContent>
     </DropdownMenu>
   );

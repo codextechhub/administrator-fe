@@ -39,7 +39,12 @@ export const notificationsApi = baseApi.injectEndpoints({
     /** The tray's contents. Unread only, newest first, a handful at a time. */
     getNotifications: builder.query<
       PaginatedEnvelope<NotificationItem>,
-      { page?: number; page_size?: number; is_read?: boolean } | void
+      {
+        page?: number;
+        page_size?: number;
+        is_read?: boolean;
+        search?: string;
+      } | void
     >({
       query: (args) => ({
         url: `/notify/`,
@@ -48,6 +53,9 @@ export const notificationsApi = baseApi.injectEndpoints({
           page: args?.page ?? 1,
           page_size: args?.page_size ?? 5,
           ...(args?.is_read === undefined ? {} : { is_read: args.is_read }),
+          // Searched on the SERVER. Filtering the fetched page here instead
+          // would leave the page count describing the unsearched feed.
+          ...(args?.search ? { search: args.search } : {}),
         },
       }),
       extraOptions: { silent: true },

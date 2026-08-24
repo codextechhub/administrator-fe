@@ -17,6 +17,7 @@ const SchoolProfile = lazy(
 );
 const OnboardingRoles = lazy(() => import("@/pages/protected/onboarding/roles"));
 const OnboardingImport = lazy(() => import("@/pages/protected/onboarding/import"));
+const Notifications = lazy(() => import("@/pages/protected/notifications"));
 const OnboardingImportValidation = lazy(
   () => import("@/pages/protected/onboarding/import-validation"),
 );
@@ -81,6 +82,12 @@ export const onboardingRoutes = [
     path: routesPath.PROTECTED.ONBOARDING.HELP,
     Component: OnboardingHelp,
     handle: handle("Get Help", true),
+  },
+  {
+    // Not under /onboarding: a school keeps its post after go-live too.
+    path: routesPath.PROTECTED.NOTIFICATIONS,
+    Component: Notifications,
+    handle: handle("Notifications", true),
   },
   {
     path: routesPath.PROTECTED.ONBOARDING.NOT_LIVE,

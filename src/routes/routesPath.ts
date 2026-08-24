@@ -34,6 +34,9 @@ export const routesPath = {
       // produced it. See the 403 branch in redux/services/base-api.ts.
       NOT_LIVE: "/onboarding/not-live",
     },
+    // The notification centre. Open during onboarding, which is when a school
+    // gets most of its post.
+    NOTIFICATIONS: "/notifications",
     BRANCHES: { INDEX: "/branches" },
     STUDENTS: { INDEX: "/students" },
     TEACHERS: { INDEX: "/teachers" },
