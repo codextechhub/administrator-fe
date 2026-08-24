@@ -152,9 +152,11 @@ export default function OnboardingImportValidation() {
         <Tile value={counts.clean} label="Clean rows" tone="success" />
       </section>
 
-      <section className="bg-white rounded-md min-w-0 overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 sm:px-5">
-          <p className="text-base font-semibold text-black-01 font-mont">
+      {/* Same wrapper as every other table in the app: white card, the same
+          insets, the table inside its own scroll container. */}
+      <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-black-01 font-mont">
             Rows needing attention
           </p>
           <label className="flex items-center gap-2 text-[13px] text-gray-01 cursor-pointer">
@@ -166,7 +168,7 @@ export default function OnboardingImportValidation() {
           </label>
         </div>
 
-        <div className="mt-3 min-w-0">
+        <div className="mt-3 overflow-x-auto">
           <CustomTable
             tableHeaderList={ISSUE_COLUMNS}
             tableBodyList={issueRows}
@@ -180,7 +182,7 @@ export default function OnboardingImportValidation() {
         </div>
       </section>
 
-      <section className="bg-white rounded-md border border-border px-4 py-4 sm:px-5 flex flex-wrap items-center gap-3">
+      <section className="bg-white rounded-md px-3 py-4 sm:px-5 flex flex-wrap items-center gap-3">
         <PermissionGate permission={P.COMMIT_IMPORT}>
           <Button
             className="h-10"
@@ -217,7 +219,7 @@ function Tile({
     success: "text-green-01",
   }[tone];
   return (
-    <div className="bg-white rounded-md border border-border px-4 py-3.5 min-w-0">
+    <div className="bg-white rounded-md px-4 py-3.5 min-w-0">
       <p className={`text-xl font-semibold font-mont tabular-nums ${colour}`}>
         {value.toLocaleString()}
       </p>

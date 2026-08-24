@@ -188,37 +188,38 @@ export default function OnboardingImport() {
               : ""}
           </span>
         ),
-        Action:
-          // A row the school cannot act on gets ONE muted line, not two dead
-          // controls. Two disabled buttons crowd the cell and clip against the
-          // card edge while still saying nothing a reader can use.
-          template.can_import === false ? (
-            <span className="block text-center text-xs text-gray-05">
-              CodeX loads this
-            </span>
-          ) : (
-            <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-              <a
-                href={`/api/v1/import/system-import-templates/${template.id}/download/`}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-              >
-                <Download className="size-3" />
-                Template
-              </a>
-              {canImport && (
-                <Button
-                  size="xs"
-                  onClick={() => {
-                    setPending(template);
-                    fileInput.current?.click();
-                  }}
-                  disabled={uploadState.isLoading}
+        Action: (
+          <div className="flex items-center justify-end gap-3 whitespace-nowrap">
+            {/* A template CodeX loads for the school keeps its place in the
+                table but not its controls - a disabled pair says less than one
+                line explaining who does load it. */}
+            {template.can_import === false ? (
+              <span className="text-xs text-gray-05">CodeX loads this</span>
+            ) : (
+              <>
+                <a
+                  href={`/api/v1/import/system-import-templates/${template.id}/download/`}
+                  className="inline-flex items-center gap-1.5 text-[13px] font-medium text-primary hover:underline"
                 >
-                  Import
-                </Button>
-              )}
-            </div>
-          ),
+                  <Download className="size-3.5" />
+                  Template
+                </a>
+                {canImport && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setPending(template);
+                      fileInput.current?.click();
+                    }}
+                    disabled={uploadState.isLoading}
+                  >
+                    Import
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        ),
       })),
     [visible, canImport, uploadState.isLoading],
   );
@@ -305,7 +306,7 @@ export default function OnboardingImport() {
       </div>
 
       {/* Required datasets: the progress card, before either table. */}
-      <section className="bg-white rounded-md border border-border px-4 py-4 sm:px-5 min-w-0">
+      <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-base font-semibold text-black-01 font-mont">
             Required datasets
@@ -361,37 +362,31 @@ export default function OnboardingImport() {
         )}
       </section>
 
-      {/* Templates. Card header owns the search, so the control belongs to the
-          table it filters rather than floating above it on the page ground. */}
-      <section className="bg-white rounded-md border border-border min-w-0 overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 pb-3 sm:px-5">
-          <p className="text-base font-semibold text-black-01 font-mont">
-            Templates
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-xs text-gray-05 tabular-nums">
-              {visible.length} of {offered.length}
-            </span>
-            <div className="relative w-full sm:w-64">
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search templates"
-                className="h-9 pr-9"
-              />
-              <Search className="size-4 absolute right-3 top-2.5 text-gray-05 pointer-events-none" />
-            </div>
-          </div>
+      {/* Templates. Search sits on the page ground above the table, as the
+          design has it, with the count opposite. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative w-full max-w-80">
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search templates"
+            className="h-10 pr-10"
+          />
+          <Search className="size-4 absolute right-3 top-3 text-gray-05 pointer-events-none" />
         </div>
-        <div className="border-t border-border min-w-0">
+        <span className="text-sm text-gray-05 tabular-nums">
+          {visible.length} of {offered.length} templates
+        </span>
+      </div>
+
+      <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
+        <div className="overflow-x-auto">
           <CustomTable
             tableHeaderList={TEMPLATE_COLUMNS}
             tableBodyList={templateRows}
             loading={templates.isLoading}
             loadingText="Loading templates…"
-            emptyText={
-              query ? "No template matches that." : "No templates yet."
-            }
+            emptyText={query ? "No template matches that." : "No templates yet."}
             hidePagination
           />
         </div>
@@ -399,13 +394,11 @@ export default function OnboardingImport() {
 
       {/* Batches */}
       <PermissionGate permission={P.BROWSE_IMPORTS}>
-        <section className="bg-white rounded-md border border-border min-w-0 overflow-hidden">
-          <div className="px-4 pt-4 pb-3 sm:px-5">
-            <p className="text-base font-semibold text-black-01 font-mont">
-              Import batches
-            </p>
-          </div>
-          <div className="border-t border-border min-w-0">
+        <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
+          <p className="mb-3 text-sm font-semibold font-mont text-black-01">
+            Import batches
+          </p>
+          <div className="overflow-x-auto">
             <CustomTable
               tableHeaderList={BATCH_COLUMNS}
               tableBodyList={batchRows}
@@ -419,7 +412,7 @@ export default function OnboardingImport() {
       </PermissionGate>
 
       {/* Before you upload */}
-      <section className="bg-white rounded-md border border-border px-4 py-4 sm:px-5 min-w-0">
+      <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
         <p className="text-sm font-semibold text-black-01 font-mont">
           Before you upload
         </p>
