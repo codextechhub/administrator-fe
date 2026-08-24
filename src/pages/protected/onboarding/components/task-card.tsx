@@ -175,7 +175,7 @@ export function TaskCard({
                 className="text-gray-05"
                 disabled={isLoading}
                 onClick={() =>
-                  run("SKIPPED", `"${task.title}" set aside for now.`)
+                  run("SKIPPED", `${task.title} set aside for now`)
                 }
               >
                 Skip for now
@@ -187,7 +187,7 @@ export function TaskCard({
                 size="sm"
                 disabled={isLoading}
                 onClick={() =>
-                  run("IN_PROGRESS", `"${task.title}" is back on your list.`)
+                  run("IN_PROGRESS", `${task.title} is back on your list`)
                 }
               >
                 Do this now
@@ -198,7 +198,7 @@ export function TaskCard({
                 size="sm"
                 loading={isLoading}
                 disabled={isLoading}
-                onClick={() => run("DONE", `"${task.title}" marked as done.`)}
+                onClick={() => run("DONE", `${task.title} marked as done`)}
               >
                 Mark as done
               </Button>
@@ -221,7 +221,7 @@ export function TaskCard({
                       this, set it aside" is not a thing a school means to say. */}
                   <DropdownMenuItem
                     onClick={() =>
-                      run("IN_PROGRESS", `"${task.title}" reopened.`)
+                      run("IN_PROGRESS", `${task.title} reopened`)
                     }
                   >
                     Reopen

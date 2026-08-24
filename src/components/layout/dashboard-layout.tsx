@@ -1,7 +1,7 @@
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "../app-sidebar";
-import { ChevronLeft, LifeBuoy, Loader2, LogOut, Undo2, UsersRound } from "lucide-react";
+import { ChevronLeft, Headset, Loader2, LogOut, Undo2, UsersRound } from "lucide-react";
 import { useState } from "react";
 import { useLogout } from "@/hooks/use-logout";
 import useToggleModal from "@/hooks/use-toggle";
@@ -183,7 +183,7 @@ export default function DashboardLayout() {
                   onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.HELP)}
                   className="size-8.5 rounded-full bg-gray-04 grid place-content-center text-gray-01 hover:bg-pry-01 hover:text-primary"
                 >
-                  <LifeBuoy className="size-4.5" />
+                  <Headset className="size-4.5 stroke-[2.15]" />
                 </button>
               )}
 

@@ -15,7 +15,7 @@ import { HomeIcon, TeamMgtIcon } from "@/assets/navbar-svg";
 import { NavMain } from "./nav-main";
 import { routesPath } from "@/routes/routesPath";
 import { useLocation } from "react-router";
-import { BookOpen, DollarSign, LifeBuoy, ListChecks, Rocket, Settings } from "lucide-react";
+import { BookOpen, DollarSign, Headset, ListChecks, Rocket, Settings } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P, type PermissionCode } from "@/permissions";
 import { useAppSelector } from "@/redux/store";
@@ -112,7 +112,7 @@ export function AppSidebar({
     {
       title: "Help",
       url: routesPath.PROTECTED.ONBOARDING.HELP,
-      icon: LifeBuoy,
+      icon: Headset,
       isActive: location.startsWith(routesPath.PROTECTED.ONBOARDING.HELP),
       childActive: false,
     },
