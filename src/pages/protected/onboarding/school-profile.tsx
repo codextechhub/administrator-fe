@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CustomInput } from "@/components/custom/custom-input";
 import { CustomNativeSelect } from "@/components/custom/custom-native-select";
 import { routesPath } from "@/routes/routesPath";
+import { requestSupportOpen } from "@/components/layout/support-open";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import {
@@ -176,7 +177,7 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
             variant="outline"
             size="sm"
             className="mt-3"
-            onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.HELP)}
+            onClick={() => requestSupportOpen()}
           >
             Tell CodeX
           </Button>

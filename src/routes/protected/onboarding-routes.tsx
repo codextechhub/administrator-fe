@@ -22,7 +22,6 @@ const OnboardingImportValidation = lazy(
   () => import("@/pages/protected/onboarding/import-validation"),
 );
 const GoLive = lazy(() => import("@/pages/protected/onboarding/go-live"));
-const OnboardingHelp = lazy(() => import("@/pages/protected/onboarding/help"));
 const OnboardingNotLive = lazy(
   () => import("@/pages/protected/onboarding/not-live"),
 );
@@ -77,11 +76,6 @@ export const onboardingRoutes = [
     path: routesPath.PROTECTED.ONBOARDING.GO_LIVE,
     Component: GoLive,
     handle: handle("Go-Live", true),
-  },
-  {
-    path: routesPath.PROTECTED.ONBOARDING.HELP,
-    Component: OnboardingHelp,
-    handle: handle("Get Help", true),
   },
   {
     // Not under /onboarding: a school keeps its post after go-live too.

@@ -3,7 +3,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from "@/com
 import { WorkspaceToaster } from "@/components/ui/sonner";
 import { AppSidebar } from "../app-sidebar";
 import { ChevronLeft, Headset, Loader2, LogOut, Undo2, UsersRound } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLogout } from "@/hooks/use-logout";
 import useToggleModal from "@/hooks/use-toggle";
 import PromptModal from "@/components/modal/prompt-modal";
@@ -31,6 +31,8 @@ import { OnboardingStatusStrip } from "@/pages/protected/onboarding/components/o
 import { AppSearch } from "./app-search";
 import { NotificationsBell } from "@/components/custom/notifications-bell";
 import { SupportSheet } from "@/components/layout/support-sheet";
+import { SUPPORT_OPEN_EVENT } from "@/components/layout/support-open";
+import type { EscalationPrefill } from "@/components/custom/support-ticket-form";
 import { ProxySessionBanner } from "@/components/proxy-session-banner";
 import { ProxyUserDialog } from "@/components/proxy-user-dialog";
 import { P, resolvePermissionKey } from "@/permissions";
@@ -113,6 +115,20 @@ export default function DashboardLayout() {
   );
   const [proxyDialogOpen, setProxyDialogOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [supportPrefill, setSupportPrefill] = useState<EscalationPrefill>({});
+
+  // Any screen can ask for the panel. See support-open.ts for why this is an
+  // event rather than a prop threaded through half the app.
+  useEffect(() => {
+    const open = (event: Event) => {
+      setSupportPrefill(
+        (event as CustomEvent<EscalationPrefill>).detail ?? {},
+      );
+      setSupportOpen(true);
+    };
+    window.addEventListener(SUPPORT_OPEN_EVENT, open);
+    return () => window.removeEventListener(SUPPORT_OPEN_EVENT, open);
+  }, []);
   const [isExitingProxy, setIsExitingProxy] = useState(false);
 
   const exitProxy = async () => {
@@ -187,7 +203,10 @@ export default function DashboardLayout() {
               <AppSearch
                 onProxy={() => setProxyDialogOpen(true)}
                 onLogout={toggleLogout}
-                onHelp={() => setSupportOpen(true)}
+                onHelp={() => {
+                  setSupportPrefill({});
+                  setSupportOpen(true);
+                }}
               />
 
               <NotificationsBell />
@@ -203,7 +222,10 @@ export default function DashboardLayout() {
                 type="button"
                 aria-label="Get help"
                 title="Raise an issue with CodeX"
-                onClick={() => setSupportOpen(true)}
+                onClick={() => {
+                  setSupportPrefill({});
+                  setSupportOpen(true);
+                }}
                 className="size-8.5 rounded-full bg-gray-04 grid place-content-center text-gray-01 hover:bg-pry-01 hover:text-primary"
               >
                 <Headset className="size-4.5 stroke-[2.15]" />
@@ -278,7 +300,11 @@ export default function DashboardLayout() {
             />
           )}
 
-          <SupportSheet open={supportOpen} onOpenChange={setSupportOpen} />
+          <SupportSheet
+            open={supportOpen}
+            onOpenChange={setSupportOpen}
+            prefill={supportPrefill}
+          />
 
           <PromptModal
             isOpen={openLogout}

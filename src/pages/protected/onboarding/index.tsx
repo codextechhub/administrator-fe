@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
+import { requestSupportOpen } from "@/components/layout/support-open";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import { useRevalidateOnboardingMutation } from "@/redux/services/onboarding/onboarding-api";
@@ -42,7 +43,6 @@ import { taskMeta } from "./task-catalog";
  * school will never have would have been.
  */
 export default function OnboardingControlRoom() {
-  const navigate = useNavigate();
   const {
     state,
     isLoading,
@@ -65,7 +65,7 @@ export default function OnboardingControlRoom() {
           title="We could not find your onboarding checklist"
           body="Your school exists, but its onboarding control room was never set up. CodeX needs to provision it before you can start."
           actionLabel="Contact CodeX"
-          onAction={() => navigate(routesPath.PROTECTED.ONBOARDING.HELP)}
+          onAction={() => requestSupportOpen()}
         />
       </main>
     );
@@ -314,13 +314,12 @@ function ControlRoom({ state }: { state: OnboardingState }) {
               Need a hand?
             </p>
             <p className="mt-1 text-[13px] text-gray-06 text-pretty">
-              Raise an issue with the CodeX team and we will pick it up with your
-              onboarding context attached.
+              Tell us what went wrong and we will pick it up.
             </p>
             <Button
               variant="outline"
               className="mt-3.5 w-full border-primary text-primary"
-              onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.HELP)}
+              onClick={() => requestSupportOpen()}
             >
               <Headset />
               Escalate an issue

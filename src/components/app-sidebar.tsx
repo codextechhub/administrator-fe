@@ -87,14 +87,13 @@ export function AppSidebar({
       title: "Control Room",
       url: routesPath.PROTECTED.ONBOARDING.INDEX,
       icon: ListChecks,
-      // Every onboarding screen except Go-Live and Help is a step opened FROM
-      // the control room, so the control room is where the reader still is.
-      // An exact-path match unlit the item the moment they opened a step,
-      // leaving the whole sidebar dark and no answer to "where am I?".
+      // Every onboarding screen except Go-Live is a step opened FROM the
+      // control room, so the control room is where the reader still is. An
+      // exact-path match unlit the item the moment they opened a step, leaving
+      // the whole sidebar dark and no answer to "where am I?".
       isActive:
         location.startsWith(routesPath.PROTECTED.ONBOARDING.INDEX) &&
-        !location.startsWith(routesPath.PROTECTED.ONBOARDING.GO_LIVE) &&
-        !location.startsWith(routesPath.PROTECTED.ONBOARDING.HELP),
+        !location.startsWith(routesPath.PROTECTED.ONBOARDING.GO_LIVE),
       childActive: false,
       permission: P.VIEW_ONBOARDING,
     },

@@ -29,7 +29,6 @@ export const routesPath = {
       IMPORT_VALIDATION: (batchId: number | string) =>
         `/onboarding/import/${batchId}/validation`,
       GO_LIVE: "/onboarding/go-live",
-      HELP: "/onboarding/help",
       // Where every TENANT_NOT_LIVE refusal lands, whichever closed surface
       // produced it. See the 403 branch in redux/services/base-api.ts.
       NOT_LIVE: "/onboarding/not-live",

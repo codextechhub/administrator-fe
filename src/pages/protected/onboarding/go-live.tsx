@@ -27,6 +27,7 @@ import { CustomDateInput } from "@/components/custom/custom-date-input";
 import { CustomTextArea } from "@/components/custom/custom-textarea";
 import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
+import { requestSupportOpen } from "@/components/layout/support-open";
 import {
   useGetGoLiveRequestsQuery,
   useRevalidateOnboardingMutation,
@@ -79,7 +80,6 @@ const HISTORY_COLUMNS = [
  * field exists anywhere in the product).
  */
 export default function GoLivePage() {
-  const navigate = useNavigate();
   const {
     state,
     isLoading,
@@ -108,7 +108,7 @@ export default function GoLivePage() {
           title="We could not find your onboarding checklist"
           body="Your school exists, but its onboarding control room was never set up. CodeX needs to provision it before you can ask to go live."
           actionLabel="Contact CodeX"
-          onAction={() => navigate(routesPath.PROTECTED.ONBOARDING.HELP)}
+          onAction={() => requestSupportOpen()}
         />
       </main>
     );
@@ -444,7 +444,6 @@ function RequestForm() {
 }
 
 function PendingBlock({ latest }: { latest: GoLiveRequest | null }) {
-  const navigate = useNavigate();
   return (
     <div className="rounded-md border border-border p-4">
       {latest && (
@@ -465,7 +464,7 @@ function PendingBlock({ latest }: { latest: GoLiveRequest | null }) {
         <button
           type="button"
           className="text-primary underline underline-offset-4 cursor-pointer"
-          onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.HELP)}
+          onClick={() => requestSupportOpen()}
         >
           tell us and we will reject it so you can resubmit
         </button>
@@ -510,7 +509,6 @@ function ActivatedCard({ state }: { state: OnboardingState }) {
  * screen with the reason verbatim - not a modal that is dismissed and lost.
  */
 function RejectedCard({ request }: { request: GoLiveRequest }) {
-  const navigate = useNavigate();
   return (
     <section className="bg-white rounded-md px-4 py-5 sm:px-6">
       <div className="flex flex-wrap items-center gap-2.5">
@@ -543,7 +541,7 @@ function RejectedCard({ request }: { request: GoLiveRequest }) {
         <Button onClick={focusGoLiveForm}>Submit a new request</Button>
         <Button
           variant="outline"
-          onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.HELP)}
+          onClick={() => requestSupportOpen()}
         >
           <Headset />
           Get help
@@ -563,7 +561,6 @@ function RejectedCard({ request }: { request: GoLiveRequest }) {
  * at the school was changed.
  */
 function FailedCard({ request }: { request: GoLiveRequest }) {
-  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
 
   const copyReference = async () => {
@@ -609,15 +606,13 @@ function FailedCard({ request }: { request: GoLiveRequest }) {
       <div className="mt-4 flex flex-wrap gap-2">
         <Button
           onClick={() =>
-            navigate(routesPath.PROTECTED.ONBOARDING.HELP, {
-              state: {
-                title: "Activation failed",
-                description: request.failure_reference
-                  ? `Our go-live activation failed. Failure reference: ${request.failure_reference}`
-                  : "Our go-live activation failed.",
-                category: "BUG",
-                priority: "HIGH",
-              },
+            requestSupportOpen({
+              title: "Activation failed",
+              description: request.failure_reference
+                ? `Our go-live activation failed. Failure reference: ${request.failure_reference}`
+                : "Our go-live activation failed.",
+              category: "BUG",
+              priority: "HIGH",
             })
           }
         >

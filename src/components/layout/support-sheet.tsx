@@ -6,7 +6,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SupportTicketForm } from "@/components/custom/support-ticket-form";
+import {
+  SupportTicketForm,
+  type EscalationPrefill,
+} from "@/components/custom/support-ticket-form";
 
 /**
  * The header's headset, as console-fe does it: a panel anchored under the
@@ -25,9 +28,12 @@ import { SupportTicketForm } from "@/components/custom/support-ticket-form";
 export function SupportSheet({
   open,
   onOpenChange,
+  prefill,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
+  /** What the screen that opened it already knows. */
+  prefill?: EscalationPrefill;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -49,6 +55,11 @@ export function SupportSheet({
 
         <div className="px-5 py-4 min-w-0">
           <SupportTicketForm
+            // Keyed on the prefill so opening it a second time with different
+            // context rebuilds the form rather than showing the last one's
+            // values. Formik only reads initialValues once.
+            key={JSON.stringify(prefill ?? {})}
+            prefill={prefill}
             compact
             onCancel={() => onOpenChange(false)}
             cancelLabel="Close"
