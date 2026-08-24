@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { EllipsisVertical } from "lucide-react";
 import {
+  SkeletonCard,
   SkeletonLoadingLabel,
   SkeletonRow,
 } from "@/components/custom/skeletons";
@@ -44,6 +45,16 @@ interface myComponentProps {
   disabledDropdown?: boolean;
   loadingText?: string;
   emptyText?: string;
+  /**
+   * How this table behaves below `md`.
+   *
+   * `cards` (the default) stacks each row into a label/value card, because a
+   * table that exists to be READ is unreadable when its right-hand columns sit
+   * off-screen behind a sideways scroll. `scroll` keeps the real table for
+   * dense grids where the column-to-column comparison IS the content and
+   * stacking would destroy it.
+   */
+  mobile?: "cards" | "scroll";
 }
 
 const CustomTable = ({
@@ -64,6 +75,7 @@ const CustomTable = ({
   hidePagination,
   loadingText,
   emptyText,
+  mobile = "cards",
 }: myComponentProps) => {
   //   pagination here ------
   // Function to generate page numbers with ellipsis
@@ -134,14 +146,160 @@ const CustomTable = ({
     </TableRow>
   );
 
+  /**
+   * The per-row "..." menu.
+   *
+   * Defined once and used by both renderings. The table had it inline; the
+   * phone card needs the same menu, and two copies of a menu is two places for
+   * an action to be added to only one of them.
+   */
+  const RowActionsMenu = ({ item }: { item: any }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        asChild
+        className={cn(
+          "cursor-pointer px-2",
+          disabledDropdown && "cursor-not-allowed",
+        )}
+        disabled={disabledDropdown}
+      >
+        <EllipsisVertical className="size-8" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        className="border rounded-sm"
+        align="end"
+        style={{ width: width ? width : "170px" }}
+      >
+        {dropDownList?.length > 0 &&
+          dropDownList?.map((child: any, idx: any) => (
+            <DropdownMenuItem
+              key={idx}
+              onClick={() => {
+                if (child?.onActionClick) {
+                  child.onActionClick(item);
+                }
+              }}
+              className={cn(
+                "font-light text-sm cursor-pointer text-custom-gray-scale-400",
+                child?.className,
+              )}
+            >
+              {child?.label}
+            </DropdownMenuItem>
+          ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   // Ghost geometry is derived from the real column definitions, so the loading
   // state previews the exact table that is about to render.
   const ghostColumns = Math.max(1, tableHeaderList?.length ?? 1);
 
+  // Cards own the phone viewport whenever the table would be card-shaped -
+  // including while loading, so a phone never flips from table to cards as the
+  // data lands. The empty state stays in the table, which reads fine at any
+  // width because it is one centred sentence rather than columns.
+  const showCards =
+    mobile === "cards" && (loading || tableBodyList?.length > 0);
+
+  /** The header labels a card shows, minus the ones a card has no room for. */
+  const cardLabels = tableHeaderList?.filter(
+    (header) => header.toLowerCase() !== "action",
+  );
+
   return (
     <div className="w-full flex flex-col ">
+      {/* Announced once for the surface, outside both the card and the table
+          renderings. Putting it inside each would leave two live regions in
+          the DOM saying the same thing - CSS hides one per viewport, but that
+          is a layout accident to rely on for an accessibility guarantee. */}
+      {loading && <SkeletonLoadingLabel text={loadingText || "Loading…"} />}
+
+      {showCards && loading && (
+        <div className="rounded-md bg-white md:hidden">
+          {Array.from({ length: GHOST_ROWS }).map((_, rowIndex) => (
+            <SkeletonCard
+              key={rowIndex}
+              rowIndex={rowIndex}
+              lines={Math.max(1, ghostColumns - 2)}
+            />
+          ))}
+        </div>
+      )}
+
+      {showCards && !loading && (
+        <div className="rounded-md bg-white md:hidden">
+          {tableBodyList?.map((item: any, rowIndex: any) => {
+            // Underscore keys are row metadata (_slug, _key) that the table
+            // never renders, and a card must not either.
+            const cells = Object.entries(item)
+              .filter(([key]) => !key.startsWith("_"))
+              .map(([, value]) => value as React.ReactNode);
+            // A serial column is noise on a phone: the card IS the row, so
+            // "1." above the name says nothing. Promote the next column to be
+            // the card's heading instead.
+            const serialColumn = cardLabels.findIndex((label) =>
+              ["s/n", "sn", "#"].includes(label.trim().toLowerCase()),
+            );
+            const primaryColumn = serialColumn === 0 && cells.length > 1 ? 1 : 0;
+            const rowKey =
+              item?._id ?? item?._slug ?? item?._code ?? item?._key ?? rowIndex;
+
+            return (
+              <div
+                key={rowKey}
+                onClick={() => {
+                  if (!onRowClick) return;
+                  if (defaultBodyList?.length > 0) {
+                    onRowClick(handlePickObjFromDefaultList(rowIndex));
+                  } else {
+                    onRowClick(item);
+                  }
+                }}
+                className={cn(
+                  "space-y-2 border-b border-gray-03 px-3.5 py-3 last:border-0",
+                  onRowClick &&
+                    "cursor-pointer transition-colors active:bg-primary/5",
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 font-mont text-sm font-semibold text-black-01">
+                    {cells[primaryColumn]}
+                  </div>
+                  {dropDown && (
+                    <div
+                      onClick={(event) => event.stopPropagation()}
+                      className="shrink-0"
+                    >
+                      <RowActionsMenu item={item} />
+                    </div>
+                  )}
+                </div>
+                {cells.map(
+                  (cell, index) =>
+                    index !== primaryColumn &&
+                    index !== serialColumn && (
+                      <div
+                        key={index}
+                        className="flex items-start justify-between gap-3"
+                      >
+                        <span className="shrink-0 font-mont text-[11px] capitalize text-gray-01">
+                          {cardLabels[index]}
+                        </span>
+                        <span className="min-w-0 text-right font-mont text-sm font-medium text-black-01">
+                          {cell}
+                        </span>
+                      </div>
+                    ),
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* table component start here ------ */}
-      <Table>
+      <Table containerClassName={cn(showCards && "max-md:hidden")}>
         {tableHeaderList?.length > 0 && (
           <TableHeader className="border-0">
             <TableRow>
@@ -166,14 +324,8 @@ const CustomTable = ({
         <TableBody className="bg-white">
           {loading ? (
             <>
-              {/* One announcement for the whole surface; the ghost rows
-                  themselves are aria-hidden decoration. `loadingText` keeps
-                  working - it is now what the screen reader hears. */}
-              <TableRow aria-hidden={false} className="hover:bg-transparent">
-                <TableCell colSpan={ghostColumns} className="h-0 border-0 p-0">
-                  <SkeletonLoadingLabel text={loadingText || "Loading…"} />
-                </TableCell>
-              </TableRow>
+              {/* The ghost rows are aria-hidden decoration; the announcement
+                  for them lives once at the top of the component. */}
               {Array.from({ length: GHOST_ROWS }).map((_, rowIndex) => (
                 <SkeletonRow
                   key={rowIndex}
@@ -243,45 +395,7 @@ const CustomTable = ({
                                   {actionButton}
                                 </button>
                               ) : (
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger
-                                    asChild
-                                    className={cn(
-                                      "cursor-pointer px-2",
-                                      disabledDropdown && "cursor-not-allowed",
-                                    )}
-                                    disabled={disabledDropdown}
-                                  >
-                                    <EllipsisVertical className="size-8" />
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent
-                                    className="border rounded-sm"
-                                    align="end"
-                                    style={{ width: width ? width : "170px" }}
-                                  >
-                                    {dropDownList?.length > 0 &&
-                                      dropDownList?.map(
-                                        (child: any, idx: any) => {
-                                          return (
-                                            <DropdownMenuItem
-                                              key={idx}
-                                              onClick={() => {
-                                                if (child?.onActionClick) {
-                                                  child.onActionClick(item);
-                                                }
-                                              }}
-                                              className={cn(
-                                                "font-light text-sm cursor-pointer text-custom-gray-scale-400",
-                                                child?.className,
-                                              )}
-                                            >
-                                              {child?.label}
-                                            </DropdownMenuItem>
-                                          );
-                                        },
-                                      )}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                                <RowActionsMenu item={item} />
                               )}
                             </div>
                           </TableCell>
