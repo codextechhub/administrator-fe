@@ -1,167 +1,183 @@
+import { useState } from "react";
+import { GraduationCap, MapPin } from "lucide-react";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { cn } from "@/lib/utils";
-import { Edit, GraduationCap, MapPin } from "lucide-react";
+import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
+import type { SchoolBranch } from "@/redux/services/branches/branches-types";
+import { BranchDrawer } from "./branch-drawer";
+import { locationOf, StatusChip } from "./branch-display";
 
+/**
+ * The campuses this school runs.
+ *
+ * Read-only, and that is the product decision rather than a gap. Opening and
+ * editing a branch is CodeX's: every write endpoint demands
+ * `platform.branches.*`, which no school role holds. So there is no Edit
+ * button. A card that offered one would be refused by the API behind it, and a
+ * school that needs a new campus or a corrected address asks the team.
+ *
+ * The three counts read as dashes because there is no Student, Teacher or Class
+ * model in the product yet. The server sends null rather than zero for exactly
+ * this reason: zero would claim a campus has no students, which is a different
+ * and false statement. The fields are already in the response shape, so the day
+ * those models land this screen needs no change.
+ */
 export default function Branches() {
+  const { data, isLoading, isError, refetch } = useGetMyBranchesQuery();
+  const [openCode, setOpenCode] = useState<number | null>(null);
+
+  const branches = data?.data ?? [];
+
+  if (isLoading) {
+    return (
+      <main className="px-5 pt-3 pb-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-56 w-full rounded-md" />
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  if (isError) {
+    return (
+      <main className="px-5 pt-3 pb-8">
+        <OutlinedNotice
+          icon={GraduationCap}
+          title="We could not load your campuses"
+          body="Something went wrong on our side. Try again in a moment."
+          actionLabel="Try again"
+          onAction={() => refetch()}
+        />
+      </main>
+    );
+  }
+
+  if (!branches.length) {
+    return (
+      <main className="px-5 pt-3 pb-8">
+        <OutlinedNotice
+          icon={GraduationCap}
+          title="No campuses yet"
+          body="CodeX sets up your campuses. Ask the team if one is missing."
+        />
+      </main>
+    );
+  }
+
   return (
-    <main className="px-4.5 py-6 space-y-5">
+    <main className="px-5 pt-3 pb-8">
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {dummyData.map((item, idx) => (
-          <div
-            className="h-fit bg-white rounded-md w-full px-4 py-3 cursor-pointer hover:scale-98 transition-all ease-linear"
-            key={idx}
-          >
-            <div className="flex justify-between gap-3">
-              <figure
-                className={cn(
-                  badgeVariants({ variant: "red" }),
-                  " size-8 rounded-md grid place-content-center",
-                )}
-              >
-                <GraduationCap className="size-5!" />
-              </figure>
-              <Badge
-                variant={
-                  item?.category?.toLocaleLowerCase() === "primary"
-                    ? "amber"
-                    : "green"
-                }
-                className="text-xs py-0.5 h-fit rounded-lg"
-              >
-                {item.category}
-              </Badge>
-            </div>
-
-            <div className="mt-3">
-              <h4 className="font-medium">{item.name}</h4>
-
-              <div className="flex gap-1.5 items-center mt-1.5 text-gray-05">
-                <MapPin className="size-3 text-[#854F0B]" />
-                <p className="text-xs">{item.location.address}</p>
-              </div>
-
-              <hr className="my-3 border-gray-0 border-1.5" />
-
-              <div className="flex items-center justify-between px-1 xl:px-3">
-                <div>
-                  <p className="text-xs text-gray-05">Students</p>
-                  <p className="text-lg font-semibold text-black-01">
-                    {item.stats.students}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-05">Teachers</p>
-                  <p className="text-lg font-semibold text-black-01">
-                    {item.stats.teachers}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-05">Classes</p>
-                  <p className="text-lg font-semibold text-black-01">
-                    {item.stats.classes}
-                  </p>
-                </div>
-              </div>
-
-              <div className="inline-flex items-center gap-3 mt-4">
-                <Button size="sm">View</Button>
-                <Button
-                  size="sm"
-                  variant={"outline"}
-                  className="border-primary text-primary"
-                >
-                  <Edit />
-                  Edit
-                </Button>
-              </div>
-            </div>
-          </div>
+        {branches.map((branch) => (
+          <BranchCard
+            key={branch.id}
+            branch={branch}
+            onView={() => setOpenCode(branch.code)}
+          />
         ))}
       </div>
+
+      <BranchDrawer
+        code={openCode}
+        onClose={() => setOpenCode(null)}
+      />
     </main>
   );
 }
 
-const dummyData = [
-  {
-    id: "sch_001",
-    name: "Caleb Primary - Magodo",
-    category: "Primary",
-    location: {
-      address: "12 Awolowo Rd, Ikeja, Lagos",
-      city: "Magodo",
-      state: "Lagos",
-      country: "Nigeria",
-    },
-    stats: {
-      students: 612,
-      teachers: 34,
-      classes: 6,
-    },
-  },
-  {
-    id: "sch_002",
-    name: "Caleb Secondary - Magodo",
-    category: "Secondary",
-    location: {
-      address: "14 Awolowo Rd, Ikeja, Lagos",
-      city: "Magodo",
-      state: "Lagos",
-      country: "Nigeria",
-    },
-    stats: {
-      students: 498,
-      teachers: 41,
-      classes: 6,
-    },
-  },
-  {
-    id: "sch_003",
-    name: "Caleb Primary - Lekki",
-    category: "Primary",
-    location: {
-      address: "5 Admiralty Way, Lekki, Lagos",
-      city: "Lekki",
-      state: "Lagos",
-      country: "Nigeria",
-    },
-    stats: {
-      students: 174,
-      teachers: 12,
-      classes: 10,
-    },
-  },
-  {
-    id: "sch_004",
-    name: "Caleb Secondary - Lekki",
-    category: "Secondary",
-    location: {
-      address: "5 Admiralty Way, Lekki, Lagos",
-      city: "Lekki",
-      state: "Lagos",
-      country: "Nigeria",
-    },
-    stats: {
-      students: 104,
-      teachers: 31,
-      classes: 6,
-    },
-  },
-  {
-    id: "sch_005",
-    name: "Caleb Secondary - Abuja",
-    category: "Secondary",
-    location: {
-      address: "5 Admiralty Way, Wasu, Abuja",
-      city: "Wasu",
-      state: "Abuja",
-      country: "Nigeria",
-    },
-    stats: {
-      students: 98,
-      teachers: 17,
-      classes: 8,
-    },
-  },
-];
+/** How a campus reads at a glance. */
+function BranchCard({
+  branch,
+  onView,
+}: {
+  branch: SchoolBranch;
+  onView: () => void;
+}) {
+  // Free text on the server, and empty for most schools. A chip saying nothing
+  // is worse than no chip, so the main/branch distinction leads instead - that
+  // one is always true and is what a school actually asks about.
+  const type = branch.branch_type?.trim();
+
+  return (
+    <div className="h-fit bg-white rounded-md w-full px-4 py-3 min-w-0">
+      <div className="flex justify-between gap-3">
+        <figure
+          className={cn(
+            badgeVariants({ variant: "red" }),
+            "size-8 rounded-md grid place-content-center shrink-0",
+          )}
+        >
+          <GraduationCap className="size-5!" />
+        </figure>
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          {type && (
+            <Badge variant="amber" className="text-xs py-0.5 h-fit rounded-lg">
+              {type}
+            </Badge>
+          )}
+          <Badge
+            variant={branch.is_main ? "blue" : "inactive"}
+            className="text-xs py-0.5 h-fit rounded-lg"
+          >
+            {branch.is_main ? "Main campus" : "Branch"}
+          </Badge>
+          <StatusChip status={branch.status} />
+        </div>
+      </div>
+
+      <div className="mt-3 min-w-0">
+        <h4 className="font-medium text-black-01 truncate" title={branch.name}>
+          {branch.name}
+        </h4>
+
+        <div className="flex gap-1.5 items-center mt-1.5 text-gray-05 min-w-0">
+          <MapPin className="size-3 shrink-0 text-amber-01" />
+          <p className="text-xs truncate">{locationOf(branch)}</p>
+        </div>
+
+        <hr className="my-3 border-gray-03 border-1.5" />
+
+        <div className="flex items-center justify-between px-1 xl:px-3">
+          <Stat label="Students" value={branch.students_count} />
+          <Stat label="Teachers" value={branch.teachers_count} />
+          <Stat label="Classes" value={branch.classes_count} />
+        </div>
+
+        {/* No Edit. Branch details are CodeX's to change, and a button the API
+            would refuse is worse than no button. */}
+        <div className="inline-flex items-center gap-3 mt-4">
+          <Button size="sm" onClick={onView}>
+            View
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One count, or a dash.
+ *
+ * A dash is the whole point: null means the product cannot answer yet, and a 0
+ * would answer wrongly.
+ */
+function Stat({ label, value }: { label: string; value: number | null }) {
+  return (
+    <div>
+      <p className="text-xs text-gray-05">{label}</p>
+      <p className="text-lg font-semibold text-black-01 tabular-nums">
+        {value == null ? (
+          <span className="text-gray-04" title="Not available yet">
+            &ndash;
+          </span>
+        ) : (
+          value.toLocaleString()
+        )}
+      </p>
+    </div>
+  );
+}
