@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Outlet } from "react-router";
 import ArrangingShapes from "@/components/auth/arranging-shapes";
+import { AuthToaster } from "@/components/ui/sonner";
 import { resetFavicon } from "@/utils/favicon";
 
 export default function AuthLayout() {
@@ -11,6 +12,9 @@ export default function AuthLayout() {
 
   return (
     <main className="w-screen h-screen flex bg-white">
+      {/* There is no sidebar here, so the toasts centre on the viewport and
+          clear only the top edge. */}
+      <AuthToaster />
       {/* Left 45% - the calm, premium blue panel (desktop only). */}
       <div className="w-[45%] hidden lg:block relative bg-[#0b1f4a] bg-[radial-gradient(120%_120%_at_50%_28%,#11264f_0%,#0b1f4a_45%,#081530_100%)]">
         {/* Subtle texture layered under the shapes. */}
