@@ -38,6 +38,7 @@ import type {
   Level,
   SchoolClass,
 } from "@/redux/services/academics/academics-types";
+import { ExportButton } from "@/pages/protected/academics/components/export-button";
 import { ClassDrawer } from "./class-drawer";
 import { GenerateArmsDrawer } from "./generate-arms-drawer";
 
@@ -195,6 +196,16 @@ export default function Classes() {
             label="Table"
           />
         </div>
+
+        <ExportButton
+          screen="academics.classes"
+          params={{
+            search,
+            is_active: status,
+            level: levelFilter === "all" ? undefined : levelFilter,
+            branch: branch === "all" ? undefined : branch,
+          }}
+        />
 
         <PermissionGate permission={P.CREATE_CLASS}>
           <Button

@@ -43,6 +43,7 @@ import type {
 } from "@/redux/services/academics/academics-types";
 import { BulkLevelsDrawer } from "./bulk-levels-drawer";
 import { EntityDrawer } from "../components/entity-drawer";
+import { ExportButton } from "../components/export-button";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 
@@ -213,6 +214,11 @@ export default function Programs() {
           <Rows3 className="size-3.5" />
           {allOpen ? "Collapse all" : "Expand all"}
         </Button>
+
+        <ExportButton
+          screen="academics.programs"
+          params={{ search, branch: branch === "all" ? undefined : branch }}
+        />
 
         <PermissionGate permission={P.CREATE_STRUCTURE}>
           <Button className="shrink-0 text-sm" onClick={() => setProgramDrawer("new")}>

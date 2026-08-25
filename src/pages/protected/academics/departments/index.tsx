@@ -38,6 +38,7 @@ import {
 } from "@/redux/services/academics/academics-api";
 import type { Department } from "@/redux/services/academics/academics-types";
 import { EntityDrawer } from "../components/entity-drawer";
+import { ExportButton } from "../components/export-button";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 
@@ -224,6 +225,15 @@ export default function Departments() {
             label="Table"
           />
         </div>
+
+        <ExportButton
+          screen="academics.departments"
+          params={{
+            search,
+            is_active: showArchived,
+            branch: branch === "all" ? undefined : branch,
+          }}
+        />
 
         <PermissionGate permission={P.CREATE_STRUCTURE}>
           <Button className="shrink-0 text-sm" onClick={openNew}>

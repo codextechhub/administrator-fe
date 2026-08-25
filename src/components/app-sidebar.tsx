@@ -232,6 +232,16 @@ export function AppSidebar({
               ),
               perm: P.BROWSE_SUBJECTS,
             },
+            {
+              title: "Assignments",
+              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.ASSIGNMENTS,
+              isActive: location.startsWith(
+                routesPath.PROTECTED.ACADEMIC_STRUCTURE.ASSIGNMENTS,
+              ),
+              // Gated on classes, not structure: this screen is about who
+              // teaches a class and who is in it.
+              perm: P.BROWSE_CLASSES,
+            },
           ] as { title: string; url: string; isActive: boolean; perm: PermissionCode }[]
         )
           .filter((sub) => hasPermission(sub.perm))

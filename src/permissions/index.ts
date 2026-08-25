@@ -10,6 +10,7 @@
 //
 // ── Code format: MM RR AA (6 digits) ─────────────────────────────────────────
 //   MM = module group   10=school  20=onboarding  30=academics  40=import
+//                       92=exports (the Export Centre, shared with console-fe)
 //   RR = resource       01 02 03 … (assigned sequentially per module)
 //   AA = action         01=view   02=create  03=update  04=delete
 //                       05=approve 08=manage  09=suspend  10=reactivate
@@ -160,6 +161,16 @@ const REGISTRY: Record<string, string> = {
   "300308": "academics.classes.manage",
   "300311": "academics.classes.assign",
 
+  // ── Export Centre  (MM=92) - vs_exports.constants.ExportPermission ─────────
+  // The same codes console-fe uses, because it is the same module and the same
+  // keys. NOT held by any school role today: seed_exports_permissions grants
+  // these to platform roles on the codex tenant only, so every export surface
+  // here is absent rather than refused until that changes. Registered so the
+  // gate can be written once and start working the day the key is granted.
+  "920101": "exports.catalogue.view",
+  "920302": "exports.run.create",
+  "920446": "exports.file.download",
+
   // ── academics / structure  (MM=30, RR=04) ──────────────────────────────────
   // Departments, programs and levels. One resource because they are one screen
   // group and one mental object to a school - see the backend's
@@ -291,6 +302,12 @@ export const P = {
   CREATE_SUBJECT:          "300502",  // add a subject
   MODIFY_SUBJECT:          "300503",  // edit a subject, incl. the levels it is offered at
   MANAGE_SUBJECTS:         "300508",  // delete a subject
+
+  // ── Export Centre ──────────────────────────────────────────────────────────
+  // No school role holds these yet - see the registry note.
+  BROWSE_EXPORT_CATALOGUE: "920101",  // see what this school may export
+  RUN_EXPORT:              "920302",  // run an export of a filtered screen
+  DOWNLOAD_EXPORT:         "920446",  // download a produced file
 
 } as const;
 

@@ -347,6 +347,7 @@ function SpineList({
       body: "Class teachers and class lists, once staff and students exist.",
       count: "Not yet available",
       icon: GraduationCap,
+      to: P.ASSIGNMENTS,
     },
   ];
 

@@ -39,6 +39,7 @@ import type {
   AcademicSession,
   SessionStatus,
 } from "@/redux/services/academics/academics-types";
+import { ExportButton } from "../components/export-button";
 import { SessionDrawer } from "./session-drawer";
 import { SessionStatusChip } from "./session-chips";
 import { scopeOf, statusOf, TERM_TONE, termState } from "./session-format";
@@ -173,6 +174,11 @@ export default function AcademicSessions() {
             label="Table"
           />
         </div>
+
+        <ExportButton
+          screen="academics.sessions"
+          params={{ search, status, branch: branch === "all" ? undefined : branch }}
+        />
 
         <PermissionGate permission={P.CREATE_SESSION}>
           <Button className="shrink-0 text-sm" onClick={openNew}>

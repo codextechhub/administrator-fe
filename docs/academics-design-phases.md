@@ -742,13 +742,45 @@ to whichever row was opened FIRST - every drawer after that started dirty. It is
 re-baselined whenever the drawer is pointed somewhere new, and a test pins the
 rule.
 
-### Phase 7 - Assignments, and the Export buttons
+### Phase 7 - Assignments, and the Export buttons - **SHIPPED (one decision open)**
 
-The Assignments submenu exactly as designed - two empty panels that explain why
-they are empty. Then wire the six Export buttons to
-`POST /v1/exports/from-screen/`, translating each screen's live filters.
+**Assignments** ships exactly as designed: two panels that say what they will
+do, what has to exist first, and what opens them. No buttons, because both
+halves depend on staff and student records that live outside this module and do
+not exist yet - a control that answers 403, or a form with an empty picker, is a
+promise the platform breaks. The class count is real, so the panel reads
+"There are 8 classes ready, but no staff records to assign to them" rather than
+a flat "nothing here".
 
-Small, and it closes the module.
+**The export bindings ship; the buttons are gated.** The audit had this in the
+wrong bucket. `from-screen` and `quick` exist and the academics DATASETS were
+already published - but there were no screen BINDINGS, so `from-screen` answered
+"not a screen that can start an export", and more to the point
+`seed_exports_permissions` grants every `exports.*` key to PLATFORM roles on the
+codex tenant and to no school role at all. That is bucket 3, exists-but-closed,
+not bucket 2.
+
+So what landed is everything that does not need that decision taken:
+
+- Six screen bindings in `vs_academics/export_datasets.py`, with the translation
+  living in the module that owns the screens, as the contract requires. Tested.
+- The two-call frontend flow, because exporting "what this table is showing" is
+  two calls and the gap between them is the feature: `from-screen` translates
+  and reports what it could not carry, and only then does `quick` run anything.
+- An `ExportButton` on all five list screens that is ABSENT rather than broken:
+  hidden while the school is still being set up (the Export Centre declares no
+  `pending_tenant_surface`, deliberately), and hidden until the school actually
+  holds `exports.catalogue.view` and `exports.run.create`. The day those are
+  granted the buttons appear with no further work.
+
+**The branch lens is reported, not carried, and that is the honest answer.** The
+lens means "school-wide rows PLUS this branch's" - an OR across a nullable
+column no single `FilterDef` expresses. Carrying it as a name match would
+silently DROP every school-wide row, which is most of a catalogue, and hand back
+a file narrower than the screen with nothing to say so. So it is declared and
+returned unmapped, which sets `exact` false, and the button stops to say
+"This file will show more than the screen" before running. A branch-TIED caller
+needs none of that: the dataset querysets already narrow to their branches.
 
 ### Not in this plan
 

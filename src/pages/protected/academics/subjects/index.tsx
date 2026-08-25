@@ -41,6 +41,7 @@ import type {
   SubjectWrite,
 } from "@/redux/services/academics/academics-types";
 import { EntityDrawer } from "../components/entity-drawer";
+import { ExportButton } from "../components/export-button";
 import { blankDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 import { OfferedAt } from "./offered-at";
@@ -190,6 +191,15 @@ export default function Subjects() {
             label="Table"
           />
         </div>
+
+        <ExportButton
+          screen="academics.subjects"
+          params={{
+            search,
+            is_core: type,
+            branch: branch === "all" ? undefined : branch,
+          }}
+        />
 
         <PermissionGate permission={P.CREATE_SUBJECT}>
           <Button className="shrink-0 text-sm" onClick={() => open(null)}>
