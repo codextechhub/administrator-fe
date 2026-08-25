@@ -742,7 +742,7 @@ to whichever row was opened FIRST - every drawer after that started dirty. It is
 re-baselined whenever the drawer is pointed somewhere new, and a test pins the
 rule.
 
-### Phase 7 - Assignments, and the Export buttons - **SHIPPED (one decision open)**
+### Phase 7 - Assignments, and the Export buttons - **SHIPPED**
 
 **Assignments** ships exactly as designed: two panels that say what they will
 do, what has to exist first, and what opens them. No buttons, because both

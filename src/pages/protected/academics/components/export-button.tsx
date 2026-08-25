@@ -46,16 +46,6 @@ import type { FromScreen } from "@/redux/services/exports/exports-types";
 // with no further work.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Screen parameters, in the words a school uses for them. */
-const FILTER_LABEL: Record<string, string> = {
-  branch: "the branch you are viewing",
-  level: "the level filter",
-  is_core: "the core/elective filter",
-  is_active: "the status filter",
-  search: "the search",
-  status: "the status filter",
-};
-
 export function ExportButton({
   screen,
   params,
@@ -100,9 +90,10 @@ export function ExportButton({
 
   if (tenantIsPending || !canExport) return null;
 
-  const lost = (pending?.unmapped ?? [])
-    .map((key) => FILTER_LABEL[key] ?? key)
-    .join(", ");
+  // The server's own sentences, joined. It wrote them for this reader, and only
+  // the module that owns the binding knows WHY a filter could not be carried -
+  // a second copy of that explanation here would drift from it.
+  const why = (pending?.unmapped ?? []).map((u) => u.reason).join(" ");
 
   return (
     <>
@@ -127,7 +118,7 @@ export function ExportButton({
         loading={running}
         canCancel
         title="This file will show more than the screen"
-        description={`The export cannot carry ${lost}, so the file will cover everything you can see rather than just what is on screen. Everything else you have filtered by is carried.`}
+        description={`${why} Everything else you have filtered by is carried.`}
         onConfirmText="Export anyway"
         containerClass="min-h-[320px] lg:w-[430px]"
         srcClass="size-25"

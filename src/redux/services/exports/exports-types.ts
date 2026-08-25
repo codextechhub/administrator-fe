@@ -24,14 +24,25 @@ export interface FromScreen {
   /**
    * Screen filters that could not be carried into the file.
    *
-   * Never empty because something went wrong - it is the honest answer for a
-   * filter the dataset cannot express. A screen must show these before running,
-   * because the file will not match the table the person is looking at.
+   * Not an error - it is the honest answer for a filter the dataset cannot
+   * express, and each entry carries its own `reason`, WRITTEN BY THE SERVER for
+   * this reader. The screen shows those sentences rather than composing its
+   * own: only the module that owns the binding knows why a filter could not be
+   * carried, and a second copy of that explanation here would drift from it.
    */
-  unmapped?: string[];
-  /** False when the file would be WIDER than the screen. */
+  unmapped?: { param: string; value?: unknown; reason: string }[];
+  /** Screen filters that DID make it into the file. */
+  carried?: string[];
+  /**
+   * Filters the export added that the screen did not ask for - in practice a
+   * required date window. These make the file NARROWER, which is safe, but the
+   * reader is still told.
+   */
+  added?: { id: string; label: string; reason: string }[];
+  /** False when anything was dropped: the file will not match the table. */
   exact?: boolean;
-  estimate?: { rows?: number; estimated_bytes?: number };
+  matching_rows?: number;
+  estimated_bytes?: number;
 }
 
 export interface QuickExportResult {
