@@ -22,6 +22,7 @@ import type {
   OverviewSession,
   TermState,
 } from "@/redux/services/academics/academics-types";
+import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { StructureTree } from "./structure-tree";
 
 /**
@@ -103,20 +104,15 @@ export default function AcademicStructureOverview() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-medium text-black-01">The structure</h2>
-        <div className="inline-flex rounded-full border border-white-02 bg-white p-0.5">
-          <ViewButton
-            active={view === "list"}
-            onClick={() => setView("list")}
-            icon={LayoutList}
-            label="List view"
-          />
-          <ViewButton
-            active={view === "tree"}
-            onClick={() => setView("tree")}
-            icon={ListTree}
-            label="Tree view"
-          />
-        </div>
+        <SegmentedToggle
+          ariaLabel="Structure view"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "list", label: "List", icon: LayoutList },
+            { value: "tree", label: "Tree", icon: ListTree },
+          ]}
+        />
       </div>
 
       {view === "list" ? (
@@ -253,32 +249,6 @@ function CountSpine({ counts }: { counts: Counts }) {
 
 // ── The list view ───────────────────────────────────────────────────────────
 
-function ViewButton({
-  active,
-  onClick,
-  icon: Icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ElementType;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs whitespace-nowrap",
-        active ? "bg-pry-01 text-primary" : "text-gray-06 hover:text-black-01",
-      )}
-    >
-      <Icon className="size-3.5" />
-      {label}
-    </button>
-  );
-}
 
 /**
  * The six things the structure is made of.

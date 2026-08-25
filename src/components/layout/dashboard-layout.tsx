@@ -29,7 +29,7 @@ import {
 import { NotLiveNotice } from "@/pages/protected/onboarding/components/not-live-notice";
 import { OnboardingStatusStrip } from "@/pages/protected/onboarding/components/onboarding-status-strip";
 import { AppSearch } from "./app-search";
-import { LensStrip } from "./lens-pills";
+import { ReadOnlyNotice } from "./lens-pills";
 import { NotificationsBell } from "@/components/custom/notifications-bell";
 import { SupportSheet } from "@/components/layout/support-sheet";
 import { SUPPORT_OPEN_EVENT } from "@/components/layout/support-open";
@@ -322,10 +322,11 @@ export default function DashboardLayout() {
               all of that would eat the fold on every onboarding screen. */}
           {onboardingRoute && <OnboardingStatusStrip />}
 
-          {/* Below the sticky block, not inside it: the header's centre is the
-              search box, which is absolutely positioned, so a lens added to the
-              header's right-hand cluster runs underneath it. */}
-          {showLens && !pageIsClosed && <LensStrip />}
+          {/* The lenses themselves live at the foot of the sidebar - see
+              lens-pills. What stays here is the statement that follows from
+              one of them: an archived year is read-only, and that is a fact
+              about the PAGE rather than a control. */}
+          {showLens && !pageIsClosed && <ReadOnlyNotice />}
 
           {canProxy && (
             <ProxyUserDialog

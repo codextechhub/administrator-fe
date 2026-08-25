@@ -7,6 +7,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
@@ -15,7 +23,9 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import { Link } from "react-router";
 
 export function NavMain({
@@ -36,6 +46,9 @@ export function NavMain({
   }[];
   groupTitle?: string;
 }) {
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+
   return (
     <SidebarGroup className="py-0">
       {groupTitle && (
@@ -61,6 +74,54 @@ export function NavMain({
               </SidebarMenuItem>
             );
           }
+          // Collapsed to icons, the inline accordion is hidden by the rail's
+          // own CSS - so pressing a parent did nothing at all and its children
+          // could not be reached without expanding the sidebar first. A rail
+          // that hides where you can go is worse than no rail. Same answer as
+          // console-fe: a menu to the right, opened from the icon.
+          if (isCollapsed) {
+            return (
+              <SidebarMenuItem key={idx}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton
+                      className="mx-auto h-9"
+                      tooltip={item.title}
+                      isActive={item.isActive || item.childActive}
+                    >
+                      {item.icon && <item.icon />}
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    side="right"
+                    align="start"
+                    className="min-w-48"
+                  >
+                    {/* The parent names itself, because the icon that opened
+                        this is no longer visible once the menu covers it. */}
+                    <DropdownMenuLabel className="text-xs font-normal text-gray-01">
+                      {item.title}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {item.items?.map((subItem) => (
+                      <DropdownMenuItem key={subItem.title} asChild>
+                        <Link
+                          to={subItem.url}
+                          className={cn(
+                            subItem.isActive && "font-medium text-primary",
+                          )}
+                        >
+                          {subItem.title}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+            );
+          }
+
           return (
             <Collapsible
               key={idx}

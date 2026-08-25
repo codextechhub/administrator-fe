@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { SearchSelect } from "@/components/custom/search-select";
 import { EntityDrawer } from "@/pages/protected/academics/components/entity-drawer";
 import {
   blankDraft,
@@ -108,18 +109,20 @@ export function ClassDrawer({
                 screen first, or widen the branch filter.
               </p>
             ) : (
-              <select
-                value={level ?? ""}
-                onChange={(e) => setLevel(Number(e.target.value))}
+              // A school runs sixteen levels or more; typing "JSS" beats
+              // scrolling past Nursery and Primary to reach it.
+              <SearchSelect
                 aria-label="Level"
-                className="w-full rounded-lg border border-white-02 px-3 py-2.5 text-sm outline-none focus:border-primary"
-              >
-                {levels.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name} · {l.program_name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Search levels"
+                value={level ? String(level) : ""}
+                onChange={(e) =>
+                  setLevel(e.target.value ? Number(e.target.value) : null)
+                }
+                options={levels.map((l) => ({
+                  value: String(l.id),
+                  label: `${l.name} · ${l.program_name}`,
+                }))}
+              />
             )}
           </div>
 

@@ -40,6 +40,7 @@ import type {
   Subject,
   SubjectWrite,
 } from "@/redux/services/academics/academics-types";
+import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "../components/export-button";
 import { blankDraft } from "../components/entity-draft";
@@ -177,20 +178,15 @@ export default function Subjects() {
           <option value="false">Electives only</option>
         </select>
 
-        <div className="inline-flex shrink-0 rounded-full border border-white-02 bg-white p-0.5">
-          <ViewButton
-            active={view === "cards"}
-            onClick={() => setView("cards")}
-            icon={LayoutGrid}
-            label="Cards"
-          />
-          <ViewButton
-            active={view === "table"}
-            onClick={() => setView("table")}
-            icon={Rows3}
-            label="Table"
-          />
-        </div>
+        <SegmentedToggle
+          ariaLabel="Subject view"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "cards", label: "Cards", icon: LayoutGrid },
+            { value: "table", label: "Table", icon: Rows3 },
+          ]}
+        />
 
         <ExportButton
           screen="academics.subjects"
@@ -518,30 +514,3 @@ function SubjectCard({
   );
 }
 
-function ViewButton({
-  active,
-  onClick,
-  icon: Icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ElementType;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      aria-label={`${label} view`}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs whitespace-nowrap",
-        active ? "bg-pry-01 text-primary" : "text-gray-06 hover:text-black-01",
-      )}
-    >
-      <Icon className="size-3.5" />
-      {label}
-    </button>
-  );
-}

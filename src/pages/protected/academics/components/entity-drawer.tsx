@@ -9,6 +9,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { SearchSelect } from "@/components/custom/search-select";
 import { parseApiError } from "@/utils/api-error";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import type { AnyEntityWrite } from "@/redux/services/academics/academics-types";
@@ -108,7 +109,18 @@ export function EntityDrawer({
     useBranchLens();
 
   const [draft, setDraft] = useState<EntityDraft>(initial);
+  /**
+   * Which fields have been filled in and left, so a message is owed.
+   *
+   * NOT "focus passed through". The drawer puts focus in the name box on open,
+   * so a blur-marks-touched rule scolded the reader for a field they had never
+   * typed in the moment they reached for anything else - and the inserted
+   * message pushed every control below it down by a line WHILE THEY WERE
+   * CLICKING one, so the click landed on empty space and the drawer appeared to
+   * ignore them. That is the bug this rule exists to prevent, not a nicety.
+   */
   const [touched, setTouched] = useState<{ name?: boolean; code?: boolean }>({});
+  const [edited, setEdited] = useState<{ name?: boolean; code?: boolean }>({});
   /**
    * Whether the code in the box is OURS or THEIRS.
    *
@@ -134,6 +146,7 @@ export function EntityDrawer({
     if (open) {
       setDraft(initial);
       setTouched({});
+      setEdited({});
       setRefusal(null);
       setCodeIsOurs(!initial.code);
       setInitialExtra(JSON.stringify(extraBody ?? {}));
@@ -182,6 +195,9 @@ export function EntityDrawer({
     JSON.stringify(extraBody ?? {}) !== initialExtra;
 
   const save = async () => {
+    // A save attempt DOES owe every message, whether the field was touched or
+    // not - that is the moment the reader asked for the form to be judged.
+    setTouched({ name: true, code: true });
     try {
       await onSave({
         ...extraBody,
@@ -237,6 +253,7 @@ export function EntityDrawer({
               value={shownName}
               onChange={(e) => {
                 onNameEdited?.();
+                setEdited((t) => ({ ...t, name: true }));
                 patch({
                   name: e.target.value,
                   ...(codeIsOurs && draft.code
@@ -244,7 +261,8 @@ export function EntityDrawer({
                     : {}),
                 });
               }}
-              onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+              // Only once they have actually typed something here. See `touched`.
+              onBlur={() => edited.name && setTouched((t) => ({ ...t, name: true }))}
               placeholder={copy.namePlaceholder}
               className={inputClass(nameEmpty || refusal?.field === "name")}
             />
@@ -317,19 +335,27 @@ export function EntityDrawer({
                       }
                     />
                   </div>
+                  {/* Searchable, not a bare select. A school with twenty
+                      branches turns a native dropdown into a scroll hunt, and
+                      the name is the only thing the reader knows - so let them
+                      type it. */}
                   {draft.branch !== null && (
-                    <select
-                      value={draft.branch ?? ""}
-                      onChange={(e) => patch({ branch: Number(e.target.value) })}
-                      aria-label="Branch"
-                      className="mt-2 w-full rounded-lg border border-white-02 px-3 py-2.5 text-sm outline-none focus:border-primary"
-                    >
-                      {branches.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="mt-2">
+                      <SearchSelect
+                        aria-label="Branch"
+                        placeholder="Search branches"
+                        value={draft.branch === -1 ? "" : String(draft.branch)}
+                        onChange={(e) =>
+                          patch({
+                            branch: e.target.value ? Number(e.target.value) : -1,
+                          })
+                        }
+                        options={branches.map((b) => ({
+                          value: String(b.id),
+                          label: b.name,
+                        }))}
+                      />
+                    </div>
                   )}
                 </>
               )}

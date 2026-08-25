@@ -3,6 +3,7 @@ import * as React from "react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -28,6 +29,7 @@ import { P, type PermissionCode } from "@/permissions";
 import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
+import { LensRail } from "./layout/lens-pills";
 
 // A nav item may declare a permission (single code or a list). When absent the
 // item always renders. `permissionMode` decides whether a list requires ANY
@@ -349,6 +351,15 @@ export function AppSidebar({
             </>
           )}
         </SidebarContent>
+
+        {/* The branch and session lenses, pinned under the nav so they stay put
+            while it scrolls. Absent for a school with one branch and one year -
+            see lens-pills. Hidden during onboarding for the same reason the
+            nav is reduced there: the school has one thing to do. */}
+        {!onboarding && <SidebarFooter className="bg-white p-0">
+          <LensRail collapsed={state === "collapsed"} />
+        </SidebarFooter>}
+
         <SidebarRail />
       </Sidebar>
 

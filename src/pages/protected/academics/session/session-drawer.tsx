@@ -10,6 +10,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { parseApiError } from "@/utils/api-error";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
@@ -89,7 +91,17 @@ export function SessionDrawer({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState<Draft>(() => draftFrom(session));
+  /**
+   * Whether the name is owed a message yet.
+   *
+   * Set by a save attempt, or by leaving the field AFTER typing in it - never
+   * by focus merely passing through. The drawer focuses this box on open, so
+   * the weaker rule inserted "A name is required" the instant the reader
+   * reached for anything else, and the line it added pushed the control they
+   * were clicking downwards mid-click. See the same note in entity-drawer.
+   */
   const [touchedName, setTouchedName] = useState(false);
+  const [editedName, setEditedName] = useState(false);
   /** The server's duplicate refusal, shown under the field it names. */
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(null);
 
@@ -116,6 +128,7 @@ export function SessionDrawer({
     if (open) {
       setDraft(draftFrom(session));
       setTouchedName(false);
+      setEditedName(false);
       setRefusal(null);
     }
   }
@@ -160,6 +173,7 @@ export function SessionDrawer({
   const dirty = JSON.stringify(draft) !== initial;
 
   const save = async () => {
+    setTouchedName(true);
     const body = {
       name: draft.name.trim(),
       start_date: draft.start,
@@ -215,8 +229,11 @@ export function SessionDrawer({
           </label>
           <input
             value={draft.name}
-            onChange={(e) => patch({ name: e.target.value })}
-            onBlur={() => setTouchedName(true)}
+            onChange={(e) => {
+              setEditedName(true);
+              patch({ name: e.target.value });
+            }}
+            onBlur={() => editedName && setTouchedName(true)}
             placeholder="e.g. 2026/2027"
             className={cn(
               "w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-primary",
@@ -239,25 +256,23 @@ export function SessionDrawer({
               <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
                 Starts *
               </label>
-              <input
-                type="date"
+              <DatePickerInput
+                aria-label="Session start date"
                 value={draft.start}
                 onChange={(e) => patch({ start: e.target.value })}
-                className="w-full rounded-lg border border-white-02 px-3 py-2.5 text-sm outline-none focus:border-primary"
               />
             </div>
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
                 Ends *
               </label>
-              <input
-                type="date"
+              <DatePickerInput
+                aria-label="Session end date"
                 value={draft.end}
+                min={draft.start || undefined}
                 onChange={(e) => patch({ end: e.target.value })}
-                className={cn(
-                  "w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-primary",
-                  datesBackwards ? "border-error-01" : "border-white-02",
-                )}
+                aria-invalid={datesBackwards || undefined}
+                className={cn(datesBackwards && "border-error-01")}
               />
             </div>
           </div>
@@ -292,31 +307,25 @@ export function SessionDrawer({
                 </p>
               ) : (
                 <>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {branches.map((b) => {
-                      const on = draft.branchIds.includes(b.id);
-                      return (
-                        <button
-                          key={b.id}
-                          type="button"
-                          onClick={() =>
-                            patch({
-                              branchIds: on
-                                ? draft.branchIds.filter((id) => id !== b.id)
-                                : [...draft.branchIds, b.id],
-                            })
-                          }
-                          className={cn(
-                            "rounded-full border px-3 py-1 text-xs",
-                            on
-                              ? "border-primary bg-pry-01 text-primary"
-                              : "border-white-02 text-gray-06 hover:bg-gray-04",
-                          )}
-                        >
-                          {b.name}
-                        </button>
-                      );
-                    })}
+                  {/* A picker, not a field of chips. A school with twenty
+                      branches turns loose chips into a wall you have to read
+                      end to end; a box you can type into answers "is Ikeja in
+                      this year?" in one keystroke, and shows what is chosen
+                      without the reader hunting for the highlighted ones. */}
+                  <div className="mt-3">
+                    <MultiSelect
+                      searchable
+                      placeholder="Choose branches"
+                      value={draft.branchIds.map(String)}
+                      onValueChange={(next) =>
+                        patch({ branchIds: next.map(Number) })
+                      }
+                      options={branches.map((b) => ({
+                        value: String(b.id),
+                        label: b.name,
+                      }))}
+                      className="w-full"
+                    />
                   </div>
                   {noBranchPicked && (
                     <p className="mt-2 text-xs text-error-text">
@@ -390,23 +399,23 @@ export function SessionDrawer({
                     </button>
                   </div>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <input
-                      type="date"
+                    {/* Bounded by the session, so the calendar cannot offer a
+                        day the form is about to reject. */}
+                    <DatePickerInput
+                      aria-label={`${term.name || `Term ${i + 1}`} start date`}
                       value={term.start_date}
+                      min={draft.start || undefined}
+                      max={draft.end || undefined}
                       onChange={(e) => setTerm(i, { start_date: e.target.value })}
-                      className={cn(
-                        "w-full rounded-md border bg-white px-2.5 py-1.5 text-sm outline-none focus:border-primary",
-                        termErrors[i] ? "border-error-01" : "border-white-02",
-                      )}
+                      className={cn("h-9.5", termErrors[i] && "border-error-01")}
                     />
-                    <input
-                      type="date"
+                    <DatePickerInput
+                      aria-label={`${term.name || `Term ${i + 1}`} end date`}
                       value={term.end_date}
+                      min={term.start_date || draft.start || undefined}
+                      max={draft.end || undefined}
                       onChange={(e) => setTerm(i, { end_date: e.target.value })}
-                      className={cn(
-                        "w-full rounded-md border bg-white px-2.5 py-1.5 text-sm outline-none focus:border-primary",
-                        termErrors[i] ? "border-error-01" : "border-white-02",
-                      )}
+                      className={cn("h-9.5", termErrors[i] && "border-error-01")}
                     />
                   </div>
                   {termErrors[i] && (

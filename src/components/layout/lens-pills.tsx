@@ -1,4 +1,4 @@
-import { Building2, CalendarRange, Check, ChevronDown, Lock } from "lucide-react";
+import { Building2, CalendarRange, Check, ChevronUp, Lock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,14 +10,21 @@ import { useBranchLens } from "@/hooks/use-branch-lens";
 import { useSessionLens } from "@/hooks/use-session-lens";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// The two lenses, and the read-only notice that follows from one of them.
+// The two lenses: which branch you are looking at, and which year.
 //
-// They sit in a strip UNDER the header rather than in it. The header's centre is
-// taken by the search box, which is absolutely positioned and centred on the bar
-// itself - so anything added to the right-hand cluster grows leftwards until it
-// runs underneath it. A strip also means a phone gets the lens instead of having
-// it hidden, which matters more here than saving 40px: a branch admin on a phone
-// is exactly the reader who needs to know which branch they are looking at.
+// They live PINNED TO THE BOTTOM OF THE SIDEBAR, with the nav scrolling above
+// them, which is where the design puts them and it earns the place: a lens is
+// not a page control, it is the state the whole workspace is being read in, so
+// it belongs with the workspace's own furniture rather than with the page's.
+// Being pinned also means it stays put while the nav scrolls, which is the
+// point of a lens you can check at a glance.
+//
+// The menus open UPWARD for the same reason - there is nothing below them.
+//
+// Both RECEDE rather than grey out, and the rule is the same for each: a picker
+// with one option is not a choice. One branch, no branch pill. One session, no
+// session pill. The screens still know which year they are in; they just do not
+// ask a question with a single answer.
 //
 // Both RECEDE rather than grey out. A single-branch school gets no branch pill;
 // a school with no year yet gets no session pill. A control with one option, or
@@ -25,12 +32,13 @@ import { useSessionLens } from "@/hooks/use-session-lens";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const pill =
-  "inline-flex h-8.5 max-w-[11rem] items-center gap-1.5 rounded-full border " +
-  "border-white-02 bg-white px-3 text-[13px] text-black-01 " +
+  "flex h-9.5 w-full items-center gap-2.5 rounded-lg border border-white-02 " +
+  "bg-white px-2.5 text-[13px] font-medium text-black-01 " +
   "hover:bg-gray-04 focus-visible:outline-none focus-visible:ring-2 " +
-  "focus-visible:ring-primary/30";
+  "focus-visible:ring-primary/30 group-data-[collapsible=icon]:justify-center " +
+  "group-data-[collapsible=icon]:px-0";
 
-export function BranchPill() {
+export function BranchPill({ collapsed }: { collapsed: boolean }) {
   const { applies, isTied, branch, label, branches, setBranch } = useBranchLens();
 
   if (!applies) return null;
@@ -43,8 +51,8 @@ export function BranchPill() {
         className={cn(pill, "cursor-default hover:bg-white")}
         title={`Your account is tied to ${label}`}
       >
-        <Building2 className="size-3.5 shrink-0 text-gray-06" />
-        <span className="min-w-0 truncate">{label}</span>
+        <Building2 className="size-4 shrink-0 text-gray-06" />
+        {!collapsed && <span className="min-w-0 flex-1 truncate text-left">{label}</span>}
       </span>
     );
   }
@@ -57,13 +65,24 @@ export function BranchPill() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" aria-label="Change branch" className={pill}>
-          <Building2 className="size-3.5 shrink-0 text-gray-06" />
-          <span className="min-w-0 truncate">{label}</span>
-          <ChevronDown className="size-3.5 shrink-0 text-gray-06" />
+        <button
+          type="button"
+          aria-label="Change branch"
+          title={label}
+          className={pill}
+        >
+          <Building2 className="size-4 shrink-0 text-gray-06" />
+          {!collapsed && (
+            <>
+              <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+              <ChevronUp className="size-3.5 shrink-0 text-gray-06" />
+            </>
+          )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
+      {/* Upward, because the pill is the last thing on the rail: there is no
+          room below it and a menu that tried would be clipped by the viewport. */}
+      <DropdownMenuContent side="top" align="start" className="w-56">
         {options.map((o) => (
           <DropdownMenuItem
             key={o.key}
@@ -85,7 +104,7 @@ const STATUS_SUFFIX: Record<string, string> = {
   ARCHIVED: "archived",
 };
 
-export function SessionPill() {
+export function SessionPill({ collapsed }: { collapsed: boolean }) {
   const { applies, sessions, current, label, setSession } = useSessionLens();
 
   if (!applies) return null;
@@ -93,13 +112,22 @@ export function SessionPill() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" aria-label="Change session" className={pill}>
-          <CalendarRange className="size-3.5 shrink-0 text-gray-06" />
-          <span className="min-w-0 truncate">{label}</span>
-          <ChevronDown className="size-3.5 shrink-0 text-gray-06" />
+        <button
+          type="button"
+          aria-label="Change session"
+          title={label}
+          className={pill}
+        >
+          <CalendarRange className="size-4 shrink-0 text-gray-06" />
+          {!collapsed && (
+            <>
+              <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+              <ChevronUp className="size-3.5 shrink-0 text-gray-06" />
+            </>
+          )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent side="top" align="start" className="w-60">
         {sessions.map((s) => (
           <DropdownMenuItem
             key={s.id}
@@ -123,40 +151,48 @@ export function SessionPill() {
 
 
 /**
- * The lens strip: which branch, which year, and whether the year can be edited.
+ * The lenses, pinned under the nav.
  *
- * Renders nothing at all when neither lens applies - a single-branch school with
- * no sessions yet gets no empty bar.
+ * Renders nothing at all when neither applies - a single-branch school running
+ * one year gets no bar and no border, rather than an empty tray.
  */
-export function LensStrip() {
+export function LensRail({ collapsed }: { collapsed: boolean }) {
   const branch = useBranchLens();
   const session = useSessionLens();
-
-  const archived = session.current?.status === "ARCHIVED";
-  const activeName = session.sessions.find((s) => s.status === "ACTIVE")?.name;
 
   if (!branch.applies && !session.applies) return null;
 
   return (
-    <div className="border-b border-white-02 bg-white-05">
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2 lg:px-5">
-        <BranchPill />
-        <SessionPill />
+    <div className="flex flex-col gap-1.5 border-t border-white-02 px-2 py-2.5">
+      <BranchPill collapsed={collapsed} />
+      <SessionPill collapsed={collapsed} />
+    </div>
+  );
+}
 
-        {/* An archived year is read-only on the server too - every write answers
-            SESSION_ARCHIVED_READ_ONLY - so this states the rule before somebody
-            fills in a form that cannot be saved. */}
-        {archived && (
-          <p className="inline-flex min-w-0 items-center gap-1.5 text-xs text-gray-05">
-            <Lock className="size-3.5 shrink-0" />
-            <span className="min-w-0 text-pretty">
-              <span className="font-medium text-black-01">Read-only.</span> You are
-              viewing the archived {session.current?.name} session
-              {activeName ? `. Switch to ${activeName} to make changes.` : "."}
-            </span>
-          </p>
-        )}
-      </div>
+/**
+ * Read-only, because the year being looked at is archived.
+ *
+ * Left behind by the lenses on purpose: it is not a control, it is a statement
+ * about the page, and it belongs where the page is. The server agrees - every
+ * write against an archived year answers SESSION_ARCHIVED_READ_ONLY - so this
+ * says the rule before somebody fills in a form that cannot be saved.
+ */
+export function ReadOnlyNotice() {
+  const { current, sessions } = useSessionLens();
+  if (current?.status !== "ARCHIVED") return null;
+  const activeName = sessions.find((s) => s.status === "ACTIVE")?.name;
+
+  return (
+    <div className="border-b border-white-02 bg-white-05 px-3 py-2 lg:px-5">
+      <p className="inline-flex min-w-0 items-center gap-1.5 text-xs text-gray-05">
+        <Lock className="size-3.5 shrink-0" />
+        <span className="min-w-0 text-pretty">
+          <span className="font-medium text-black-01">Read-only.</span> You are
+          viewing the archived {current?.name} session
+          {activeName ? `. Switch to ${activeName} to make changes.` : "."}
+        </span>
+      </p>
     </div>
   );
 }

@@ -18,6 +18,11 @@ import type { AcademicSession } from "@/redux/services/academics/academics-types
 //
 // Defaults to the ACTIVE year, not the first row: a school with a draft year
 // for next term should still land on the one it is running.
+//
+// It RECEDES at one session, the way the branch pill recedes at one branch. A
+// picker with a single option is not a choice - it is a label pretending to be
+// a control, and a reader who taps it learns nothing. The screens still know
+// which year they are in; they just do not ask.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function useSessionLens() {
@@ -44,8 +49,13 @@ export function useSessionLens() {
   const current = sessions.find((s) => s.id === lens.id) ?? active;
 
   return {
-    /** Nothing to name until the school has written its first year. */
-    applies: sessions.length > 0,
+    /**
+     * Only worth showing when there is something to switch BETWEEN.
+     *
+     * Nothing to name before the first year is written, and nothing to choose
+     * when there is exactly one.
+     */
+    applies: sessions.length > 1,
     sessions,
     current,
     label: current?.name ?? "No session yet",
