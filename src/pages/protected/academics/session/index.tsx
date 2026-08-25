@@ -42,7 +42,7 @@ import type {
 import { ExportButton } from "../components/export-button";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { SessionDrawer } from "./session-drawer";
-import { CardActions, ClickableCard } from "@/components/custom/clickable-card";
+import { CardActions, ClickableCard } from "@/components/custom/surface";
 import { SessionStatusChip } from "./session-chips";
 import { scopeOf, statusOf, TERM_TONE, termState } from "./session-format";
 

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { Panel } from "@/components/custom/surface";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { useSessionLens } from "@/hooks/use-session-lens";
 import { useGetStructureTreeQuery } from "@/redux/services/academics/academics-api";
@@ -116,16 +117,16 @@ export function StructureTree() {
 
   if (isLoading) {
     return (
-      <div className="space-y-2 rounded-md bg-white p-4">
+      <Panel className="space-y-2 p-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-9 w-full rounded" />
         ))}
-      </div>
+      </Panel>
     );
   }
 
   return (
-    <section className="min-w-0 rounded-md bg-white">
+    <Panel as="section">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white-02 px-4 py-3">
         <p className="text-sm text-gray-01 text-pretty">
           Expand a programme to see its levels, then a level to see its classes
@@ -219,6 +220,6 @@ export function StructureTree() {
           Loading classes and subjects…
         </p>
       )}
-    </section>
+    </Panel>
   );
 }

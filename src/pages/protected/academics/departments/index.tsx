@@ -25,7 +25,7 @@ import PromptModal from "@/components/modal/prompt-modal";
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
-import { CardActions, ClickableCard } from "@/components/custom/clickable-card";
+import { CardActions, ClickableCard } from "@/components/custom/surface";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useBranchLens } from "@/hooks/use-branch-lens";

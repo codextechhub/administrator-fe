@@ -1,4 +1,5 @@
 import { GraduationCap, UsersRound } from "lucide-react";
+import { Panel } from "@/components/custom/surface";
 import { useGetAcademicOverviewQuery } from "@/redux/services/academics/academics-api";
 
 /**
@@ -53,10 +54,7 @@ export default function Assignments() {
 
       <div className="grid items-start gap-5 lg:grid-cols-2">
         {panels.map((panel) => (
-          <section
-            key={panel.title}
-            className="min-w-0 rounded-md bg-white px-5 py-4"
-          >
+          <Panel as="section" key={panel.title} className="px-5 py-4">
             <div className="flex items-start gap-3">
               <span className="grid size-9 shrink-0 place-content-center rounded-md bg-gray-04 text-gray-06">
                 <panel.icon className="size-4.5" />
@@ -75,7 +73,7 @@ export default function Assignments() {
             </div>
 
             <p className="mt-3 text-xs text-gray-05">{panel.unlock}</p>
-          </section>
+          </Panel>
         ))}
       </div>
 

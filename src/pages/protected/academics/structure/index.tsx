@@ -23,6 +23,7 @@ import type {
   TermState,
 } from "@/redux/services/academics/academics-types";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
+import { Panel } from "@/components/custom/surface";
 import { StructureTree } from "./structure-tree";
 
 /**
@@ -235,13 +236,13 @@ function CountSpine({ counts }: { counts: Counts }) {
     // four slivers.
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {cards.map((card) => (
-        <div key={card.label} className="rounded-md bg-white px-4 py-3">
+        <Panel key={card.label} className="px-4 py-3">
           <div className="flex items-center gap-2 text-gray-05">
             <card.icon className="size-4 shrink-0" />
             <p className="min-w-0 truncate text-xs">{card.label}</p>
           </div>
           <p className="mt-1 text-2xl font-semibold text-black-01">{card.value}</p>
-        </div>
+        </Panel>
       ))}
     </div>
   );
@@ -322,7 +323,7 @@ function SpineList({
   ];
 
   return (
-    <section className="divide-y divide-white-02 overflow-hidden rounded-md bg-white">
+    <Panel as="section" className="divide-y divide-border overflow-hidden">
       {rows.map((row) => {
         const inner = (
           <div className="flex items-center gap-3 px-4 py-3.5">
@@ -347,6 +348,6 @@ function SpineList({
           <div key={row.title}>{inner}</div>
         );
       })}
-    </section>
+    </Panel>
   );
 }

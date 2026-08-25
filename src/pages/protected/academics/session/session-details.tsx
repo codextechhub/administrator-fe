@@ -9,6 +9,7 @@ import PermissionGate from "@/components/custom/permission-gate";
 import { P } from "@/permissions";
 import { cn, formatMonthYearShort } from "@/lib/utils";
 import { useGetSessionQuery } from "@/redux/services/academics/academics-api";
+import { Panel } from "@/components/custom/surface";
 import { SessionDrawer } from "./session-drawer";
 import { SessionStatusChip } from "./session-chips";
 import { scopeOf, TERM_LABEL, TERM_TONE, termState } from "./session-format";
@@ -142,10 +143,7 @@ export default function SessionDetails() {
         {session.terms.map((term) => {
           const state = termState(term);
           return (
-            <div
-              key={term.id}
-              className="w-full min-w-0 rounded-md bg-white px-4 py-3"
-            >
+            <Panel key={term.id} className="w-full px-4 py-3">
               <div className="flex items-center justify-between gap-5">
                 <div className="min-w-0">
                   <p className="truncate font-medium text-black-01">{term.name}</p>
@@ -163,7 +161,7 @@ export default function SessionDetails() {
                   {TERM_LABEL[state]}
                 </span>
               </div>
-            </div>
+            </Panel>
           );
         })}
 

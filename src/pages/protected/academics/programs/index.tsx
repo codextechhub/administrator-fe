@@ -41,6 +41,7 @@ import type {
   Level,
   Program,
 } from "@/redux/services/academics/academics-types";
+import { Panel } from "@/components/custom/surface";
 import { BulkLevelsDrawer } from "./bulk-levels-drawer";
 import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "../components/export-button";
@@ -511,7 +512,7 @@ function ProgramRow({
 }) {
   const levels = program.levels ?? [];
   return (
-    <section className="min-w-0 overflow-hidden rounded-md bg-white">
+    <Panel as="section" className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 px-4 py-3">
         <button
           type="button"
@@ -653,6 +654,6 @@ function ProgramRow({
           )}
         </div>
       )}
-    </section>
+    </Panel>
   );
 }
