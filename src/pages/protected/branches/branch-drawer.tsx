@@ -12,7 +12,7 @@ import { useGetMyBranchQuery } from "@/redux/services/branches/branches-api";
 import { locationOf, StatusChip } from "./branch-display";
 
 /**
- * One campus in full.
+ * One branch in full.
  *
  * A drawer rather than a page, matching the role drawer: this is a handful of
  * facts about a row the reader is already looking at, and a route would take
@@ -24,7 +24,7 @@ export function BranchDrawer({
   code,
   onClose,
 }: {
-  /** The campus to show, or null when the drawer is shut. */
+  /** The branch to show, or null when the drawer is shut. */
   code: number | null;
   onClose: () => void;
 }) {
@@ -44,10 +44,10 @@ export function BranchDrawer({
             <span className="grid size-8 shrink-0 place-content-center rounded-md bg-pry-01 text-primary">
               <GraduationCap className="size-4" />
             </span>
-            <span className="truncate">{branch?.name ?? "Campus"}</span>
+            <span className="truncate">{branch?.name ?? "Branch"}</span>
           </SheetTitle>
           <SheetDescription className="text-[13px] text-gray-01">
-            {branch ? locationOf(branch) : "Loading this campus…"}
+            {branch ? locationOf(branch) : "Loading this branch…"}
           </SheetDescription>
         </SheetHeader>
 
@@ -59,13 +59,13 @@ export function BranchDrawer({
             </div>
           ) : isError || !branch ? (
             <p className="text-sm text-gray-01">
-              We could not load this campus. Close this and try again.
+              We could not load this branch. Close this and try again.
             </p>
           ) : (
             <>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant={branch.is_main ? "blue" : "inactive"}>
-                  {branch.is_main ? "Main campus" : "Branch"}
+                  {branch.is_main ? "Main branch" : "Branch"}
                 </Badge>
                 {branch.branch_type?.trim() && (
                   <Badge variant="amber">{branch.branch_type}</Badge>
@@ -74,7 +74,7 @@ export function BranchDrawer({
               </div>
 
               <dl className="mt-5 grid gap-0">
-                <Row label="Campus code" value={String(branch.code)} mono />
+                <Row label="Branch code" value={String(branch.code)} mono />
                 <Row label="Address" value={branch.address} />
                 <Row label="State" value={branch.state} />
                 <Row label="Country" value={branch.country} />
@@ -95,13 +95,13 @@ export function BranchDrawer({
                 </p>
                 <p className="mt-1 text-[13px] text-gray-01 text-pretty">
                   Not available yet. These arrive with the student and staff
-                  records, and this campus will count them then.
+                  records, and this branch will count them then.
                 </p>
               </div>
 
               <p className="mt-4 flex items-start gap-1.5 text-xs text-gray-05">
                 <Info className="size-3.5 shrink-0 mt-px" />
-                CodeX maintains your campuses. Ask the team to open a new one or
+                CodeX maintains your branches. Ask the team to open a new one or
                 change any of these details.
               </p>
             </>

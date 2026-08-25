@@ -11,17 +11,17 @@ import { BranchDrawer } from "./branch-drawer";
 import { locationOf, StatusChip } from "./branch-display";
 
 /**
- * The campuses this school runs.
+ * The branches this school runs.
  *
  * Read-only, and that is the product decision rather than a gap. Opening and
  * editing a branch is CodeX's: every write endpoint demands
  * `platform.branches.*`, which no school role holds. So there is no Edit
  * button. A card that offered one would be refused by the API behind it, and a
- * school that needs a new campus or a corrected address asks the team.
+ * school that needs a new branch or a corrected address asks the team.
  *
  * The three counts read as dashes because there is no Student, Teacher or Class
  * model in the product yet. The server sends null rather than zero for exactly
- * this reason: zero would claim a campus has no students, which is a different
+ * this reason: zero would claim a branch has no students, which is a different
  * and false statement. The fields are already in the response shape, so the day
  * those models land this screen needs no change.
  */
@@ -48,7 +48,7 @@ export default function Branches() {
       <main className="px-5 pt-3 pb-8">
         <OutlinedNotice
           icon={GraduationCap}
-          title="We could not load your campuses"
+          title="We could not load your branches"
           body="Something went wrong on our side. Try again in a moment."
           actionLabel="Try again"
           onAction={() => refetch()}
@@ -62,8 +62,8 @@ export default function Branches() {
       <main className="px-5 pt-3 pb-8">
         <OutlinedNotice
           icon={GraduationCap}
-          title="No campuses yet"
-          body="CodeX sets up your campuses. Ask the team if one is missing."
+          title="No branches yet"
+          body="CodeX sets up your branches. Ask the team if one is missing."
         />
       </main>
     );
@@ -89,7 +89,7 @@ export default function Branches() {
   );
 }
 
-/** How a campus reads at a glance. */
+/** How a branch reads at a glance. */
 function BranchCard({
   branch,
   onView,
@@ -103,7 +103,21 @@ function BranchCard({
   const type = branch.branch_type?.trim();
 
   return (
-    <div className="h-fit bg-white rounded-md w-full px-4 py-3 min-w-0">
+    // The whole card opens the branch, not just the button. The lift on hover
+    // promises the card is clickable, so it has to be - a card that leans
+    // towards you and then ignores the click is worse than a flat one.
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onView}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onView();
+        }
+      }}
+      className="h-fit bg-white rounded-md w-full px-4 py-3 min-w-0 border border-border cursor-pointer transition-all ease-linear hover:scale-98 hover:border-pry-01 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
       <div className="flex justify-between gap-3">
         <figure
           className={cn(
@@ -123,7 +137,7 @@ function BranchCard({
             variant={branch.is_main ? "blue" : "inactive"}
             className="text-xs py-0.5 h-fit rounded-lg"
           >
-            {branch.is_main ? "Main campus" : "Branch"}
+            {branch.is_main ? "Main branch" : "Branch"}
           </Badge>
           <StatusChip status={branch.status} />
         </div>

@@ -14,7 +14,7 @@ export function locationOf(branch: SchoolBranch): string {
   const parts = [branch.address, branch.state, branch.country]
     .map((part) => part?.trim())
     .filter(Boolean);
-  // Most branches have no address on file, so the line says so rather than
+  // A branch with no address on file says so rather than
   // rendering an empty row that reads as a loading bug.
   return parts.length ? parts.join(", ") : "No address on file";
 }
@@ -30,10 +30,10 @@ const STATUS_LABEL: Record<
   CLOSED: { text: "Closed", tone: "rejected" },
 };
 
-/** A campus's status, when it is worth saying. */
+/** A branch's status, when it is worth saying. */
 export function StatusChip({ status }: { status: string }) {
   const known = STATUS_LABEL[status];
-  // An active campus is the normal case and needs no chip announcing it.
+  // An active branch is the normal case and needs no chip announcing it.
   if (!known || status === "ACTIVE") return null;
   return (
     <Badge variant={known.tone} className="text-xs py-0.5 h-fit rounded-lg">
