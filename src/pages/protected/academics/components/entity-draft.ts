@@ -41,27 +41,46 @@ export function codeFromName(name: string): string {
 }
 
 /**
- * A class code, built from the class NAME.
+ * A class code, built from the class NAME and - when we know it - its arm.
  *
  * Classes cannot use `codeFromName`, and the reason is structural rather than
  * cosmetic: a class name STARTS with its level, so the first three letters are
  * always the parent programme's code - "SSS3 Science" generated "SSS", which is
  * Senior Secondary's own.
  *
- * So the name is split instead: everything but the last word is the level, the
- * last word is the arm, and they are joined with a hyphen. "JSS1 A" gives
- * JSS1-A, "Primary 4 B" gives PRIMARY4-B, and a level with no arm gives just
- * the level. Reading the NAME rather than the level and arm fields means a
- * hand-typed name gets a code that matches what the person actually wrote -
- * deriving from the fields would have answered JSS1-A to somebody who had
- * renamed the class to "Alpha Stream".
+ * The ARM is the split point, because it is the only part the level is not.
+ * "SSS2 Science" with arm Science gives SSS2-SCIENCE; "Nursery 1" with no arm
+ * gives NURSERY1, not NURSERY-1 - splitting on the last word would have read
+ * that trailing "1" as an arm, which is exactly what a level number is not.
+ *
+ * Reading the NAME rather than the level field means a hand-typed name gets a
+ * code that matches what the person actually wrote: renaming a class to "Alpha
+ * Stream" answers ALPHASTREAM rather than a code built from a level no longer
+ * visible anywhere in it.
  */
-export function classCode(name: string): string {
+export function classCode(name: string, arm = ""): string {
   const clean = (v: string) => (v || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  const words = (name || "").trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "";
-  if (words.length === 1) return clean(words[0]).slice(0, 12);
-  const arm = clean(words[words.length - 1]);
-  const base = clean(words.slice(0, -1).join(""));
-  return (arm ? `${base}-${arm}` : base).slice(0, 12);
+  const full = (name || "").trim();
+  if (!full) return "";
+
+  const armPart = arm.trim();
+  if (!armPart) return clean(full).slice(0, 12);
+
+  // The name is composed as "<level> <arm>", so the level is what is left when
+  // the arm is taken off the end. A name that no longer ends with the arm has
+  // been typed over, and is used whole.
+  const base = full.toLowerCase().endsWith(armPart.toLowerCase())
+    ? full.slice(0, full.length - armPart.length)
+    : full;
+  const cleanArm = clean(armPart);
+  if (!clean(base)) return cleanArm.slice(0, 12);
+
+  // Both give way, in the order that keeps the code readable. The LEVEL is
+  // abbreviated only as far as ten characters, because it is what a person
+  // scans for; the ARM takes whatever is left, which is why "SSS2 Commercial"
+  // reads SSS2-COMMERC and not S-COMMERCIAL. Truncating the whole string
+  // instead produced "ALPHASTREAM-", with the one part that tells two classes
+  // apart falling off the end.
+  const cleanBase = clean(base).slice(0, 10);
+  return `${cleanBase}-${cleanArm.slice(0, 12 - cleanBase.length - 1)}`;
 }

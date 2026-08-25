@@ -190,6 +190,21 @@ export function EntityDrawer({
 
   // The derived value wins until the person types over it.
   const shownName = derivedName !== undefined ? derivedName : draft.name;
+
+  /**
+   * The code, DERIVED as the form is filled in rather than pushed on change.
+   *
+   * Derived because the thing it follows does not always announce itself: a
+   * class's name is composed from its level and arm by the caller, so choosing
+   * a level fires no onChange here at all and a push-based code sat empty until
+   * Generate was pressed. Reading it during render means the code appears as
+   * the selections are made - pick JSS1 and it says JSS1, add arm C and it says
+   * JSS1-C - which is what a generated value should do.
+   *
+   * Generate is still worth its place: it takes a code the person typed over
+   * and hands the field back to us.
+   */
+  const shownCode = codeIsOurs ? makeCode(shownName) : draft.code;
   const nameEmpty = !!touched.name && !shownName.trim();
   const branchMissing = multiBranch && draft.branch === -1;
 
@@ -202,7 +217,12 @@ export function EntityDrawer({
   // opened FIRST, so every drawer after that started dirty and offered Save on
   // a form nobody had touched.
   const dirty =
-    JSON.stringify({ ...draft, name: shownName, branch: effectiveBranch }) !==
+    JSON.stringify({
+      ...draft,
+      name: shownName,
+      code: shownCode,
+      branch: effectiveBranch,
+    }) !==
       JSON.stringify({ ...initial, branch: lock ? lock.id : initial.branch }) ||
     JSON.stringify(extraBody ?? {}) !== initialExtra;
 
@@ -216,7 +236,7 @@ export function EntityDrawer({
         name: shownName.trim(),
         // Left empty on purpose: the server generates one, and its rule is the
         // one that has to hold.
-        code: draft.code.trim() || undefined,
+        code: shownCode.trim() || undefined,
         description: draft.description,
         // Sent explicitly, including null. Omitting it on a PATCH means "leave
         // it alone", which is not what picking school-wide means.
@@ -268,12 +288,10 @@ export function EntityDrawer({
               onChange={(e) => {
                 onNameEdited?.();
                 setEdited((t) => ({ ...t, name: true }));
-                patch({
-                  name: e.target.value,
-                  ...(codeIsOurs && draft.code
-                    ? { code: makeCode(e.target.value) }
-                    : {}),
-                });
+                // No code here: `shownCode` derives it from the name every
+                // render, so pushing one would be a second source for the
+                // same value.
+                patch({ name: e.target.value });
               }}
               // Only once they have actually typed something here. See `touched`.
               onBlur={() => edited.name && setTouched((t) => ({ ...t, name: true }))}
@@ -289,7 +307,7 @@ export function EntityDrawer({
             >
               <div className="flex gap-2">
                 <Input
-                  value={draft.code}
+                  value={shownCode}
                   onChange={(e) => {
                     setCodeIsOurs(false);
                     patch({ code: e.target.value.toUpperCase() });
@@ -301,10 +319,12 @@ export function EntityDrawer({
                 <Button
                   variant="outline"
                   className="shrink-0 border-primary text-primary"
-                  disabled={!shownName.trim()}
+                  // Only worth pressing once the field is theirs; while it is
+                  // ours it already says what this would set.
+                  disabled={!shownName.trim() || codeIsOurs}
                   onClick={() => {
                     setCodeIsOurs(true);
-                    patch({ code: makeCode(shownName) });
+                    patch({ code: "" });
                   }}
                 >
                   Generate
@@ -312,7 +332,9 @@ export function EntityDrawer({
               </div>
             </Field>
             <p className="mt-1 text-xs text-gray-05">
-              Leave it blank and one is built from the name.
+              {codeIsOurs
+                ? "Built from the name as you fill it in. Type your own to override."
+                : "Your own code. Generate returns to the built one."}
             </p>
           </div>
 

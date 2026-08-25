@@ -42,35 +42,54 @@ describe("blankDraft", () => {
 });
 
 describe("classCode", () => {
-  it("splits the name: everything but the last word is the level", () => {
-    expect(classCode("JSS1 A")).toBe("JSS1-A");
-    expect(classCode("SSS2 Science")).toBe("SSS2-SCIENCE");
-    expect(classCode("Primary 4 B")).toBe("PRIMARY4-B");
+  it("splits on the arm, because that is the part the level is not", () => {
+    expect(classCode("JSS1 A", "A")).toBe("JSS1-A");
+    expect(classCode("SSS2 Science", "Science")).toBe("SSS2-SCIENCE");
+    expect(classCode("Primary 4 B", "B")).toBe("PRIMARY4-B");
   });
 
-  it("is the whole name when there is no arm on it", () => {
-    expect(classCode("JSS1")).toBe("JSS1");
+  it("does not read a level number as an arm", () => {
+    // "Nursery 1" with no arm is one class, not arm 1 of Nursery. Splitting on
+    // the last word would have answered NURSERY-1.
+    expect(classCode("Nursery 1", "")).toBe("NURSERY1");
+    expect(classCode("Primary 4", "")).toBe("PRIMARY4");
   });
 
   it("does NOT fall back to the first three letters of the name", () => {
     // codeFromName("SSS3 Science") returns "SSS" - Senior Secondary's own code,
     // on a class. That collision is why this function exists.
-    expect(classCode("SSS3 Science")).not.toBe("SSS");
+    expect(classCode("SSS3 Science", "Science")).not.toBe("SSS");
   });
 
-  it("follows a hand-typed name rather than the level and arm fields", () => {
-    // Somebody who renames the class to "Alpha Stream" should not be handed a
-    // code built from a level they can no longer see in the name.
-    expect(classCode("Alpha Stream")).toBe("ALPHA-STREAM");
+  it("follows a hand-typed name rather than the level field", () => {
+    expect(classCode("Alpha Stream", "")).toBe("ALPHASTREAM");
+  });
+
+  it("uses a typed name whole when it no longer ends with the arm", () => {
+    // The base gives way to fit the column; the arm never does, because it is
+    // the part that tells two classes apart.
+    expect(classCode("Alpha Stream", "B")).toBe("ALPHASTREA-B");
+  });
+
+  it("abbreviates the arm before the level, and keeps both", () => {
+    // The level is what a person scans for, so it holds; the arm takes what is
+    // left. "S-COMMERCIAL" would be the other way round and unreadable.
+    expect(classCode("SSS2 Commercial", "Commercial")).toBe("SSS2-COMMERC");
   });
 
   it("stays inside the column's 12 characters", () => {
-    expect(classCode("Junior Secondary 1 Commercial").length).toBeLessThanOrEqual(12);
+    for (const [name, arm] of [
+      ["Junior Secondary 1 Commercial", "Commercial"],
+      ["Alpha Stream", "B"],
+      ["SSS2 Commercial", "Commercial"],
+    ] as const) {
+      expect(classCode(name, arm).length).toBeLessThanOrEqual(12);
+    }
   });
 
   it("returns nothing for an empty name", () => {
-    expect(classCode("")).toBe("");
-    expect(classCode("   ")).toBe("");
+    expect(classCode("", "A")).toBe("");
+    expect(classCode("   ", "")).toBe("");
   });
 });
 
