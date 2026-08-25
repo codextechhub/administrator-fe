@@ -226,6 +226,12 @@ export interface ClassListArgs extends ListArgs {
   level?: number;
 }
 
+export interface ClassWrite extends EntityWrite {
+  level?: number;
+  arm?: string;
+  capacity?: number | null;
+}
+
 export interface SubjectListArgs extends ListArgs {
   is_core?: "true" | "false";
 }
@@ -291,6 +297,19 @@ export interface EntityWrite {
   is_active?: boolean;
   /** Programmes and subjects only. Null means "in no department". */
   department?: number | null;
+}
+
+/**
+ * One class per arm, for a level.
+ *
+ * Idempotent on the server: an arm already present at that level and branch is
+ * SKIPPED rather than refused, so a school adding a fourth arm types A, B, C, D
+ * and gets one new class instead of an error about the three it already has.
+ */
+export interface GenerateArmsWrite {
+  level: number;
+  arms: string[];
+  branch?: number | null;
 }
 
 /** One level name per line, as the bulk drawer sends them. */

@@ -5,9 +5,11 @@ import type {
   AcademicSession,
   BranchFilter,
   ClassListArgs,
+  ClassWrite,
   BulkLevelWrite,
   Department,
   EntityWrite,
+  GenerateArmsWrite,
   Level,
   ListArgs,
   Program,
@@ -274,6 +276,53 @@ export const academicsApi = baseApi.injectEndpoints({
       providesTags: ["Classes"],
     }),
 
+    createClass: builder.mutation<Envelope<SchoolClass>, ClassWrite>({
+      query: (body) => ({ url: `/academics/classes/`, method: "POST", body }),
+      // A class hangs off a level, so the accordion's per-level count moves too.
+      invalidatesTags: ["Classes", "AcademicStructure", "AcademicOverview"],
+    }),
+
+    updateClass: builder.mutation<
+      Envelope<SchoolClass>,
+      { id: number } & ClassWrite
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/academics/classes/${id}/`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Classes", "AcademicStructure", "AcademicOverview"],
+    }),
+
+    generateArms: builder.mutation<Envelope<SchoolClass[]>, GenerateArmsWrite>({
+      query: (body) => ({
+        url: `/academics/classes/generate-arms/`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Classes", "AcademicStructure", "AcademicOverview"],
+    }),
+
+    // Archive and restore rather than delete: there IS no delete route, and its
+    // absence is a promise another module depends on - M11's enrolment points
+    // at SchoolClass with on_delete=PROTECT, which is only safe because no
+    // route can reach that refusal.
+    archiveClass: builder.mutation<Envelope<SchoolClass>, number>({
+      query: (id) => ({
+        url: `/academics/classes/${id}/archive/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Classes", "AcademicStructure", "AcademicOverview"],
+    }),
+
+    restoreClass: builder.mutation<Envelope<SchoolClass>, number>({
+      query: (id) => ({
+        url: `/academics/classes/${id}/restore/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Classes", "AcademicStructure", "AcademicOverview"],
+    }),
+
     // ── Subjects ───────────────────────────────────────────────────────────
     getSubjects: builder.query<PaginatedEnvelope<Subject>, SubjectListArgs | void>({
       query: (args) => {
@@ -311,5 +360,10 @@ export const {
   useUpdateLevelMutation,
   useDeleteLevelMutation,
   useGetClassesQuery,
+  useCreateClassMutation,
+  useUpdateClassMutation,
+  useGenerateArmsMutation,
+  useArchiveClassMutation,
+  useRestoreClassMutation,
   useGetSubjectsQuery,
 } = academicsApi;

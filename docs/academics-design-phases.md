@@ -668,12 +668,48 @@ gone, so CASCADE is arguably right and would remove a chore with no safety
 value. It deletes rows, so it is your call, not mine - the copy above is honest
 either way.
 
-### Phase 5 - Classes & Arms
+### Phase 5 - Classes & Arms - **SHIPPED**
 
-Keep the existing card; put the API behind it and swap the two unservable stats
-(section 3.1). Then add the table view, the level, scope and status filters,
-archive and restore (archived rows swap Archive for Restore), the class drawer
-with its level/arm name composition, and the **generate-arms drawer**.
+Built and driven against the real API at 1440px and 390px. Zero console errors,
+zero horizontal page overflow, 243 frontend and 180 backend tests green.
+
+The card kept its design - name, the tile coloured by programme band, three
+stats, Edit and Archive - and got the API behind it. The three stats changed
+only because two had nothing behind them: they read Students / Subject / Avg
+Score, and there is no student model in the product and no assessment module at
+all. Subjects is real (the offerings at this class's level), so Level and Arm
+take the other two slots.
+
+Added: the level filter, the status filter, a table view, search, pagination,
+archive and restore, the class drawer, and the generate-arms drawer.
+
+There is still no Delete, and its absence is a promise rather than an omission:
+M11's enrolment points at `SchoolClass` with `on_delete=PROTECT`, which is safe
+precisely because no route can reach that refusal.
+
+**Three things the build turned up:**
+
+1. **Generate-arms had no branch control, and silently made school-wide
+   classes.** The level decides for its classes only when the LEVEL belongs to a
+   branch. JSS1 is school-wide while JSS1 A runs at the main branch and JSS1 B at
+   the annex - which is exactly what the seeded school looks like - so a
+   school-wide level does not answer the question, and not asking it produced
+   classes belonging nowhere. The drawer now asks, states the answer instead
+   when the level or the account decides it, and its "Already there" check is
+   per level AND branch, matching the constraint: "JSS1 A" may exist at both
+   branches, and marking the second one taken would refuse a class the school is
+   entitled to.
+
+2. **A generated class code was the programme's.** `codeFromName("SSS3 Science")`
+   returns "SSS" - Senior Secondary's own code - because a class name starts with
+   its level, so the first three letters are always the parent programme's. Class
+   codes are built from the level and the arm instead (`SSS3-SCIENCE`), which is
+   what the seeded codes and the server's own generate-arms already do.
+
+3. **The drawer needed the name to follow its inputs.** The class name is
+   composed from the level and arm as they are picked, until the person types
+   over it - the same ours-versus-theirs rule the code field learned in phase 3,
+   applied to the name.
 
 ### Phase 6 - Subjects
 

@@ -39,3 +39,20 @@ export function blankDraft(branch: number | null = null): EntityDraft {
 export function codeFromName(name: string): string {
   return (name || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 3);
 }
+
+/**
+ * A class code from its level and arm: JSS1 + A becomes JSS1-A.
+ *
+ * Classes cannot use `codeFromName`, and the reason is structural rather than
+ * cosmetic: a class name STARTS with its level, so the first three letters are
+ * always the parent programme's code - "SSS3 Science" generated "SSS", which is
+ * Senior Secondary's. The level-and-arm rule is also what the seeded codes and
+ * the server's generate-arms already follow, so a hand-made class now matches a
+ * generated one.
+ */
+export function classCode(level: string, arm: string): string {
+  const clean = (v: string) => (v || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const base = clean(level);
+  if (!base) return "";
+  return (arm.trim() ? `${base}-${clean(arm)}` : base).slice(0, 12);
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { blankDraft, codeFromName } from "./entity-draft";
+import { blankDraft, classCode, codeFromName } from "./entity-draft";
 
 describe("codeFromName", () => {
   it("takes the first three letters, uppercased", () => {
@@ -38,5 +38,31 @@ describe("blankDraft", () => {
     expect(draft.name).toBe("");
     expect(draft.code).toBe("");
     expect(draft.description).toBe("");
+  });
+});
+
+describe("classCode", () => {
+  it("joins the level and the arm", () => {
+    expect(classCode("JSS1", "A")).toBe("JSS1-A");
+    expect(classCode("SSS2", "Science")).toBe("SSS2-SCIENCE");
+  });
+
+  it("is the level alone when there is no arm", () => {
+    expect(classCode("Primary 4", "")).toBe("PRIMARY4");
+  });
+
+  it("does NOT fall back to the first three letters of the name", () => {
+    // A class name starts with its level, so codeFromName("SSS3 Science")
+    // returns "SSS" - Senior Secondary's own code, on a class. That collision
+    // is the whole reason this function exists.
+    expect(classCode("SSS3", "Science")).not.toBe("SSS");
+  });
+
+  it("stays inside the column's 12 characters", () => {
+    expect(classCode("Junior Secondary 1", "Commercial").length).toBeLessThanOrEqual(12);
+  });
+
+  it("returns nothing when there is no level to build from", () => {
+    expect(classCode("", "A")).toBe("");
   });
 });

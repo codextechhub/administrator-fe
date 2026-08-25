@@ -11,7 +11,10 @@ import {
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import { useBranchLens } from "@/hooks/use-branch-lens";
-import type { EntityWrite } from "@/redux/services/academics/academics-types";
+// ClassWrite is EntityWrite plus the class-only fields. Typing the drawer on
+// the widest shape lets one component serve all five kinds without each of them
+// widening it again.
+import type { ClassWrite } from "@/redux/services/academics/academics-types";
 import {
   codeFromName,
   type EntityCopy,
@@ -54,6 +57,9 @@ export function EntityDrawer({
   extrasValid = true,
   extraBody,
   lockedTo,
+  derivedName,
+  onNameEdited,
+  deriveCode,
 }: {
   open: boolean;
   copy: EntityCopy;
@@ -64,7 +70,7 @@ export function EntityDrawer({
   saving: boolean;
   onClose: () => void;
   /** Resolve to the caller's mutation. Rejections are read for a refusal. */
-  onSave: (body: EntityWrite) => Promise<unknown>;
+  onSave: (body: ClassWrite) => Promise<unknown>;
   /** Kind-specific controls (a department picker, offered-at levels, an arm). */
   children?: (draft: EntityDraft) => React.ReactNode;
   /**
@@ -76,7 +82,7 @@ export function EntityDrawer({
    * Save is ONE call: a programme whose department arrived in a second request
    * is a programme that can end up in half of what was asked for.
    */
-  extraBody?: EntityWrite;
+  extraBody?: ClassWrite;
   /** False while a kind-specific control is incomplete. */
   extrasValid?: boolean;
   /**
@@ -88,6 +94,18 @@ export function EntityDrawer({
    * Null (the default) means the row is free to choose.
    */
   lockedTo?: { id: number; name: string; reason: string } | null;
+  /**
+   * A name the caller is composing from its own controls.
+   *
+   * The class drawer builds "JSS1 A" from the level and the arm as they are
+   * picked. While this is set the field follows it; the caller stops sending it
+   * once `onNameEdited` fires, and the person's own text is then left alone.
+   * Same rule as the code field, for the same reason.
+   */
+  derivedName?: string;
+  onNameEdited?: () => void;
+  /** Overrides the first-three-letters rule where a kind needs its own. */
+  deriveCode?: (name: string) => string;
 }) {
   const { applies: multiBranch, isTied, branch: tiedBranch, branches, label: tiedLabel } =
     useBranchLens();
@@ -121,6 +139,8 @@ export function EntityDrawer({
     }
   }
 
+  const makeCode = deriveCode ?? codeFromName;
+
   const patch = (next: Partial<EntityDraft>) => {
     setDraft((d) => ({ ...d, ...next }));
     setRefusal(null);
@@ -142,16 +162,17 @@ export function EntityDrawer({
   const lock = lockedTo ?? tiedLock;
   const effectiveBranch = lock ? lock.id : draft.branch;
 
-  const nameEmpty = !!touched.name && !draft.name.trim();
+  // The derived value wins until the person types over it.
+  const shownName = derivedName !== undefined ? derivedName : draft.name;
+  const nameEmpty = !!touched.name && !shownName.trim();
   const branchMissing = multiBranch && draft.branch === -1;
 
-  const valid =
-    !!draft.name.trim() && !nameEmpty && !branchMissing && extrasValid;
+  const valid = !!shownName.trim() && !nameEmpty && !branchMissing && extrasValid;
   // The extras count as changes too, or picking a department on an otherwise
   // untouched form would leave Save greyed out.
   const [initialExtra] = useState(() => JSON.stringify(extraBody ?? {}));
   const dirty =
-    JSON.stringify({ ...draft, branch: effectiveBranch }) !==
+    JSON.stringify({ ...draft, name: shownName, branch: effectiveBranch }) !==
       JSON.stringify({ ...initial, branch: lock ? lock.id : initial.branch }) ||
     JSON.stringify(extraBody ?? {}) !== initialExtra;
 
@@ -159,7 +180,7 @@ export function EntityDrawer({
     try {
       await onSave({
         ...extraBody,
-        name: draft.name.trim(),
+        name: shownName.trim(),
         // Left empty on purpose: the server generates one, and its rule is the
         // one that has to hold.
         code: draft.code.trim() || undefined,
@@ -208,15 +229,16 @@ export function EntityDrawer({
             }
           >
             <input
-              value={draft.name}
-              onChange={(e) =>
+              value={shownName}
+              onChange={(e) => {
+                onNameEdited?.();
                 patch({
                   name: e.target.value,
                   ...(codeIsOurs && draft.code
-                    ? { code: codeFromName(e.target.value) }
+                    ? { code: makeCode(e.target.value) }
                     : {}),
-                })
-              }
+                });
+              }}
               onBlur={() => setTouched((t) => ({ ...t, name: true }))}
               placeholder={copy.namePlaceholder}
               className={inputClass(nameEmpty || refusal?.field === "name")}
@@ -244,10 +266,10 @@ export function EntityDrawer({
                 <Button
                   variant="outline"
                   className="shrink-0 border-primary text-primary"
-                  disabled={!draft.name.trim()}
+                  disabled={!shownName.trim()}
                   onClick={() => {
                     setCodeIsOurs(true);
-                    patch({ code: codeFromName(draft.name) });
+                    patch({ code: makeCode(shownName) });
                   }}
                 >
                   Generate
