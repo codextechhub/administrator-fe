@@ -13,6 +13,7 @@ const SessionDetails = lazy(
   () => import("@/pages/protected/academics/session/session-details"),
 );
 const Departments = lazy(() => import("@/pages/protected/academics/departments"));
+const Programs = lazy(() => import("@/pages/protected/academics/programs"));
 const AcademicCalendar = lazy(() => import("@/pages/protected/academics/calender"));
 const CalendarDetails = lazy(
   () => import("@/pages/protected/academics/calender/calender-details"),
@@ -61,6 +62,16 @@ export const academicRoutes = [
     Component: Departments,
     handle: {
       title: "Departments",
+      lens: true,
+      pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+
+  {
+    path: S.PROGRAMS,
+    Component: Programs,
+    handle: {
+      title: "Programmes & Levels",
       lens: true,
       pendingSurface: true,
     } satisfies DashboardHandle,

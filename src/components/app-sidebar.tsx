@@ -209,6 +209,14 @@ export function AppSidebar({
               perm: P.BROWSE_STRUCTURE,
             },
             {
+              title: "Programmes & Levels",
+              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.PROGRAMS,
+              isActive: location.startsWith(
+                routesPath.PROTECTED.ACADEMIC_STRUCTURE.PROGRAMS,
+              ),
+              perm: P.BROWSE_STRUCTURE,
+            },
+            {
               title: "Classes & Arms",
               url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES,
               isActive: location.startsWith(

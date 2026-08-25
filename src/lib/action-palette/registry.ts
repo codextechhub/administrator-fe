@@ -133,6 +133,16 @@ export const ACTIONS: ActionDef[] = [
     run: { to: R.ACADEMIC_STRUCTURE.DEPARTMENTS },
   },
   {
+    id: "view-programmes",
+    label: "View programmes and levels",
+    aliases: ["programs", "programmes", "levels", "year groups"],
+    section: "Academics",
+    group: "Academic structure",
+    kind: "view",
+    gate: { perm: P.BROWSE_STRUCTURE },
+    run: { to: R.ACADEMIC_STRUCTURE.PROGRAMS },
+  },
+  {
     id: "view-academic-calendar",
     label: "View academic calendar",
     // "calender" stays an alias: the old URL spelled it that way for months, so

@@ -615,11 +615,58 @@ rather than as five branches inside one file.
    reachable - and it tops up an existing dev database on a re-run rather than
    only a fresh one.
 
-### Phase 4 - Programs & Levels
+### Phase 4 - Programmes & Levels - **SHIPPED**
 
-New screen. The accordion with nested levels, per-level class counts, add-level
-with scope inherited from the parent programme, the **bulk levels drawer** with
-its live New/Already-exists preview, and both blocked-delete modals.
+Built and driven against the real API at 1440px and 390px. Zero console errors,
+zero horizontal page overflow, 238 frontend and 179 backend tests green.
+
+The accordion, with levels nested and their class counts, expand/collapse all,
+search across level names as well as programme names, and the scope chip on
+both rows. Add, edit and delete for each, plus a department picker on the
+programme drawer - lifted into the parent so it travels in the drawer's single
+save request rather than a second one.
+
+**The bulk-levels drawer** with its live preview. The preview is the point: the
+server refuses the WHOLE batch if any name already exists, deliberately, because
+half-creating a run leaves a school unable to tell which of the names it typed
+took. A preview that only appeared after the refusal would make the reader guess
+which line to delete. It counts a repeat inside the box as a clash too.
+
+**The inherited scope lock**, this phase's real new case. A level inside a
+branch-only programme cannot be school-wide - it would be visible where its own
+parent is not - so the drawer states the branch and the reason
+("Vocational belongs to this branch, so its levels cannot be school-wide")
+instead of offering a radio the server would refuse.
+
+**Two things the build turned up:**
+
+1. **The blocked-delete refusals were speaking SQL.** Departments got a written
+   sentence because `DepartmentDetailView` guards explicitly; programmes and
+   levels were left to the platform's `PROTECTED_REFERENCE` handler, which
+   pluralises from MODEL names. A school deleting JSS1 was told *"This record
+   cannot be deleted because 2 school class and 5 subject offerings still
+   reference it. Remove or reassign them first."* - two things a school has
+   never heard of, and an instruction to reassign a join row it cannot see.
+   Both now have typed refusals in this module's own voice: *"2 classes sit at
+   JSS1. Archive or move them first, then delete the level."* and *"3 levels sit
+   inside Junior Secondary. Delete or move them first, then delete the
+   programme."* Offerings are phrased as the school's other job - "2 subjects are
+   offered at JSS1. Remove JSS1 from those subjects first" - because nobody
+   deletes an offering, they stop offering a subject at a level.
+
+2. **The bulk preview showed a code it could not compute.** Three lines all read
+   "VOC" while the server would save VOC, VOC2 and VOC3: it suffixes to keep a
+   code unique across the school, and the drawer only holds THIS programme's
+   levels. The column is gone - the drawer already says codes are generated, and
+   a guess there is worse than nothing.
+
+**One question this raised, for you rather than for me.** `SubjectOffering.level`
+is `on_delete=PROTECT`, so a level with no classes still cannot be deleted until
+someone edits every subject offered at it. An offering is a statement ABOUT that
+level ("Mathematics is taught at JSS1") and is meaningless once the level is
+gone, so CASCADE is arguably right and would remove a chore with no safety
+value. It deletes rows, so it is your call, not mine - the copy above is honest
+either way.
 
 ### Phase 5 - Classes & Arms
 

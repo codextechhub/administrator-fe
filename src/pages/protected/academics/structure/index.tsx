@@ -326,6 +326,7 @@ function SpineList({
       body: "The programmes pupils move through, and the levels in each.",
       count: `${counts.programs} ${counts.programs === 1 ? "programme" : "programmes"}`,
       icon: ListTree,
+      to: P.PROGRAMS,
     },
     {
       title: "Classes & Arms",

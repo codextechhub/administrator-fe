@@ -52,6 +52,8 @@ export function EntityDrawer({
   onSave,
   children,
   extrasValid = true,
+  extraBody,
+  lockedTo,
 }: {
   open: boolean;
   copy: EntityCopy;
@@ -63,10 +65,29 @@ export function EntityDrawer({
   onClose: () => void;
   /** Resolve to the caller's mutation. Rejections are read for a refusal. */
   onSave: (body: EntityWrite) => Promise<unknown>;
-  /** Kind-specific controls (offered-at levels, arm, and so on). */
+  /** Kind-specific controls (a department picker, offered-at levels, an arm). */
   children?: (draft: EntityDraft) => React.ReactNode;
+  /**
+   * Fields the kind-specific controls own, merged into the one request.
+   *
+   * The parent holds their state, because it is the parent that knows what a
+   * programme or a subject needs. Passing it in - rather than letting the
+   * children write straight to the server - keeps the drawer's promise that
+   * Save is ONE call: a programme whose department arrived in a second request
+   * is a programme that can end up in half of what was asked for.
+   */
+  extraBody?: EntityWrite;
   /** False while a kind-specific control is incomplete. */
   extrasValid?: boolean;
+  /**
+   * Scope this row cannot choose, because its PARENT already decided.
+   *
+   * A level inside a branch-only programme cannot be school-wide - it would be
+   * visible where its own parent is not, and `assert_within_parent` refuses it.
+   * So the branch is stated with the reason, rather than offered and refused.
+   * Null (the default) means the row is free to choose.
+   */
+  lockedTo?: { id: number; name: string; reason: string } | null;
 }) {
   const { applies: multiBranch, isTied, branch: tiedBranch, branches, label: tiedLabel } =
     useBranchLens();
@@ -105,23 +126,39 @@ export function EntityDrawer({
     setRefusal(null);
   };
 
-  // A tied account cannot widen scope; the server enforces it, so offering the
-  // choice would render a control that quietly does nothing.
-  const lockedTo = isTied && tiedBranch !== "all" ? (tiedBranch as number) : null;
-  const lockedName = lockedTo != null ? tiedLabel : "";
-  const effectiveBranch = lockedTo ?? draft.branch;
+  // Two ways scope stops being a choice, and both end in a sentence rather
+  // than a control. The parent wins over the account: a level inside a
+  // branch-only programme belongs to THAT branch even for an admin tied to a
+  // different one - and the server would refuse the write either way.
+  const tiedLock =
+    isTied && tiedBranch !== "all"
+      ? {
+          id: tiedBranch as number,
+          name: tiedLabel,
+          reason:
+            "Your account is tied to this branch, so anything you create belongs to it.",
+        }
+      : null;
+  const lock = lockedTo ?? tiedLock;
+  const effectiveBranch = lock ? lock.id : draft.branch;
 
   const nameEmpty = !!touched.name && !draft.name.trim();
   const branchMissing = multiBranch && draft.branch === -1;
 
   const valid =
     !!draft.name.trim() && !nameEmpty && !branchMissing && extrasValid;
-  const dirty = JSON.stringify({ ...draft, branch: effectiveBranch }) !==
-    JSON.stringify({ ...initial, branch: lockedTo ?? initial.branch });
+  // The extras count as changes too, or picking a department on an otherwise
+  // untouched form would leave Save greyed out.
+  const [initialExtra] = useState(() => JSON.stringify(extraBody ?? {}));
+  const dirty =
+    JSON.stringify({ ...draft, branch: effectiveBranch }) !==
+      JSON.stringify({ ...initial, branch: lock ? lock.id : initial.branch }) ||
+    JSON.stringify(extraBody ?? {}) !== initialExtra;
 
   const save = async () => {
     try {
       await onSave({
+        ...extraBody,
         name: draft.name.trim(),
         // Left empty on purpose: the server generates one, and its rule is the
         // one that has to hold.
@@ -230,12 +267,11 @@ export function EntityDrawer({
             <div className="mt-5 border-t border-white-02 pt-4">
               <p className="mb-2 text-[13px] font-medium text-gray-06">Applies to *</p>
 
-              {lockedTo != null ? (
+              {lock ? (
                 <div className="rounded-lg border border-white-02 bg-white-05 px-3 py-2.5">
-                  <p className="text-sm text-black-01">{lockedName}</p>
+                  <p className="text-sm text-black-01">{lock.name}</p>
                   <p className="mt-0.5 text-xs text-gray-05 text-pretty">
-                    Your account is tied to this branch, so anything you create
-                    belongs to it.
+                    {lock.reason}
                   </p>
                 </div>
               ) : (
@@ -271,9 +307,11 @@ export function EntityDrawer({
                 </>
               )}
 
-              <p className="mt-2 text-xs text-gray-05 text-pretty">
-                {copy.scopeHint}
-              </p>
+              {!lock && (
+                <p className="mt-2 text-xs text-gray-05 text-pretty">
+                  {copy.scopeHint}
+                </p>
+              )}
             </div>
           )}
 

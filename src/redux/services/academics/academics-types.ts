@@ -68,6 +68,7 @@ export interface Level extends Scoped {
   id: number;
   name: string;
   code: string;
+  description: string;
   order_index: number;
   is_active: boolean;
   program: number;
@@ -85,6 +86,7 @@ export interface Program extends Scoped {
   id: number;
   name: string;
   code: string;
+  description: string;
   order_index: number;
   is_active: boolean;
   department: number | null;
@@ -97,6 +99,7 @@ export interface SchoolClass extends Scoped {
   id: number;
   name: string;
   code: string;
+  description: string;
   arm: string;
   capacity: number | null;
   is_active: boolean;
@@ -279,4 +282,13 @@ export interface EntityWrite {
   description?: string;
   branch?: number | null;
   is_active?: boolean;
+  /** Programmes and subjects only. Null means "in no department". */
+  department?: number | null;
+}
+
+/** One level name per line, as the bulk drawer sends them. */
+export interface BulkLevelWrite {
+  program: number;
+  names: string[];
+  branch?: number | null;
 }

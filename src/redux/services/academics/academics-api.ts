@@ -5,8 +5,10 @@ import type {
   AcademicSession,
   BranchFilter,
   ClassListArgs,
+  BulkLevelWrite,
   Department,
   EntityWrite,
+  Level,
   ListArgs,
   Program,
   SchoolClass,
@@ -198,6 +200,67 @@ export const academicsApi = baseApi.injectEndpoints({
       providesTags: ["AcademicStructure"],
     }),
 
+    createProgram: builder.mutation<Envelope<Program>, EntityWrite>({
+      query: (body) => ({ url: `/academics/programs/`, method: "POST", body }),
+      invalidatesTags: ["AcademicStructure", "AcademicOverview"],
+    }),
+
+    updateProgram: builder.mutation<
+      Envelope<Program>,
+      { id: number } & EntityWrite
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/academics/programs/${id}/`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["AcademicStructure", "AcademicOverview"],
+    }),
+
+    deleteProgram: builder.mutation<Envelope<null>, number>({
+      query: (id) => ({ url: `/academics/programs/${id}/`, method: "DELETE" }),
+      invalidatesTags: ["AcademicStructure", "AcademicOverview"],
+    }),
+
+    // Levels are created UNDER a programme, so the parent is in the path
+    // rather than the body: the server reads the programme's own branch from
+    // it and refuses a level wider than its parent.
+    createLevel: builder.mutation<
+      Envelope<Level>,
+      { program: number } & EntityWrite
+    >({
+      query: ({ program, ...body }) => ({
+        url: `/academics/programs/${program}/levels/`,
+        method: "POST",
+        body,
+      }),
+      // Classes hang off levels, so their screen's counts move too.
+      invalidatesTags: ["AcademicStructure", "AcademicOverview", "Classes"],
+    }),
+
+    bulkCreateLevels: builder.mutation<Envelope<Level[]>, BulkLevelWrite>({
+      query: ({ program, ...body }) => ({
+        url: `/academics/programs/${program}/levels/bulk/`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AcademicStructure", "AcademicOverview", "Classes"],
+    }),
+
+    updateLevel: builder.mutation<Envelope<Level>, { id: number } & EntityWrite>({
+      query: ({ id, ...body }) => ({
+        url: `/academics/levels/${id}/`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["AcademicStructure", "AcademicOverview", "Classes"],
+    }),
+
+    deleteLevel: builder.mutation<Envelope<null>, number>({
+      query: (id) => ({ url: `/academics/levels/${id}/`, method: "DELETE" }),
+      invalidatesTags: ["AcademicStructure", "AcademicOverview", "Classes"],
+    }),
+
     // ── Classes ────────────────────────────────────────────────────────────
     getClasses: builder.query<PaginatedEnvelope<SchoolClass>, ClassListArgs | void>({
       query: (args) => {
@@ -240,6 +303,13 @@ export const {
   useUpdateDepartmentMutation,
   useDeleteDepartmentMutation,
   useGetProgramsQuery,
+  useCreateProgramMutation,
+  useUpdateProgramMutation,
+  useDeleteProgramMutation,
+  useCreateLevelMutation,
+  useBulkCreateLevelsMutation,
+  useUpdateLevelMutation,
+  useDeleteLevelMutation,
   useGetClassesQuery,
   useGetSubjectsQuery,
 } = academicsApi;
