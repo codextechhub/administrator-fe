@@ -54,6 +54,7 @@ export function EntityDrawer({
   onClose,
   onSave,
   children,
+  leading,
   extrasValid = true,
   extraBody,
   lockedTo,
@@ -71,8 +72,17 @@ export function EntityDrawer({
   onClose: () => void;
   /** Resolve to the caller's mutation. Rejections are read for a refusal. */
   onSave: (body: AnyEntityWrite) => Promise<unknown>;
-  /** Kind-specific controls (a department picker, offered-at levels, an arm). */
+  /** Kind-specific controls (a department picker, offered-at levels). */
   children?: (draft: EntityDraft) => React.ReactNode;
+  /**
+   * Controls that come BEFORE the name, because they build it.
+   *
+   * A class is a level plus an arm, and its name and code are both derived from
+   * those two - so asking for the name first is asking a question whose answer
+   * the next two fields are about to overwrite. Whatever FORMS a field belongs
+   * above it.
+   */
+  leading?: React.ReactNode;
   /**
    * Fields the kind-specific controls own, merged into the one request.
    *
@@ -241,6 +251,8 @@ export function EntityDrawer({
         </SheetHeader>
 
         <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+          {leading}
+
           <Field
             label={`${copy.nameLabel} *`}
             error={

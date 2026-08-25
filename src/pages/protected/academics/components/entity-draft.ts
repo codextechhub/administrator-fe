@@ -41,18 +41,27 @@ export function codeFromName(name: string): string {
 }
 
 /**
- * A class code from its level and arm: JSS1 + A becomes JSS1-A.
+ * A class code, built from the class NAME.
  *
  * Classes cannot use `codeFromName`, and the reason is structural rather than
  * cosmetic: a class name STARTS with its level, so the first three letters are
  * always the parent programme's code - "SSS3 Science" generated "SSS", which is
- * Senior Secondary's. The level-and-arm rule is also what the seeded codes and
- * the server's generate-arms already follow, so a hand-made class now matches a
- * generated one.
+ * Senior Secondary's own.
+ *
+ * So the name is split instead: everything but the last word is the level, the
+ * last word is the arm, and they are joined with a hyphen. "JSS1 A" gives
+ * JSS1-A, "Primary 4 B" gives PRIMARY4-B, and a level with no arm gives just
+ * the level. Reading the NAME rather than the level and arm fields means a
+ * hand-typed name gets a code that matches what the person actually wrote -
+ * deriving from the fields would have answered JSS1-A to somebody who had
+ * renamed the class to "Alpha Stream".
  */
-export function classCode(level: string, arm: string): string {
+export function classCode(name: string): string {
   const clean = (v: string) => (v || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  const base = clean(level);
-  if (!base) return "";
-  return (arm.trim() ? `${base}-${clean(arm)}` : base).slice(0, 12);
+  const words = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "";
+  if (words.length === 1) return clean(words[0]).slice(0, 12);
+  const arm = clean(words[words.length - 1]);
+  const base = clean(words.slice(0, -1).join(""));
+  return (arm ? `${base}-${arm}` : base).slice(0, 12);
 }

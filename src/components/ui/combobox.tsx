@@ -110,7 +110,20 @@ function ComboboxContent({
         align={align}
         alignOffset={alignOffset}
         anchor={anchor}
-        className="isolate z-50"
+        // Above the sheet, not level with it. Radix's Sheet overlay and content
+        // are both z-50, and this popup portals into the same body - so at z-50
+        // the sheet won on DOM order and the options rendered UNDERNEATH it.
+        // They were visible through the translucent overlay, which made it look
+        // like a working dropdown that ignored every click: a branch or a level
+        // could not be picked from inside any drawer at all.
+        // pointer-events-auto as well as the z-index, and this is the half that
+        // actually mattered. Radix's Dialog locks the page with
+        // `body { pointer-events: none }` and re-enables it on its OWN content;
+        // this popup portals outside that, so it inherited `none`. The options
+        // rendered, highlighted on hover, and swallowed every click - a
+        // dropdown that looked entirely well and could not be used, in every
+        // drawer that has one.
+        className="isolate z-[60] pointer-events-auto"
       >
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"

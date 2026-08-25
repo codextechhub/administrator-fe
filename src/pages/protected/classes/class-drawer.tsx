@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { SearchSelect } from "@/components/custom/search-select";
+import { Input } from "@/components/ui/input";
 import { EntityDrawer } from "@/pages/protected/academics/components/entity-drawer";
 import {
   blankDraft,
@@ -73,6 +74,7 @@ export function ClassDrawer({
   // here - so the drawer says where to go rather than offering an empty select.
   const noLevels = levels.length === 0;
 
+
   return (
     <EntityDrawer
       open={open}
@@ -92,21 +94,25 @@ export function ClassDrawer({
       onClose={onClose}
       onSave={onSave}
       onNameEdited={() => setNameEdited(true)}
-      // Built from the level and the arm, not from the first three letters of
-      // the name - see classCode.
-      deriveCode={() => classCode(levelName, arm)}
       derivedName={nameEdited ? undefined : composed}
-    >
-      {() => (
-        <div className="mt-4 grid gap-4">
+      // From the NAME, so a hand-typed one gets a code that matches what was
+      // written. See classCode for why the first-three-letters rule cannot
+      // serve a class.
+      deriveCode={(name) => classCode(name)}
+      // ABOVE the name, because these two BUILD it: picking JSS1 names the
+      // class JSS1, adding arm A makes it JSS1 A, and the code follows from
+      // there. Asking for a name first is asking a question the next two fields
+      // immediately answer over.
+      leading={
+        <div className="mb-5 grid gap-4 border-b border-border pb-5">
           <div>
             <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
               Level *
             </label>
             {noLevels ? (
-              <p className="rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-sm text-gray-05 text-pretty">
-                There are no levels in view. Add one on the Programmes & Levels
-                screen first, or widen the branch filter.
+              <p className="rounded-lg border border-border bg-white-05 px-3 py-2.5 text-sm text-gray-05 text-pretty">
+                There are no levels in view. Add one on the Programmes &amp;
+                Levels screen first, or widen the branch filter.
               </p>
             ) : (
               // A school runs sixteen levels or more; typing "JSS" beats
@@ -130,11 +136,10 @@ export function ClassDrawer({
             <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
               Arm or stream
             </label>
-            <input
+            <Input
               value={arm}
               onChange={(e) => setArm(e.target.value)}
               placeholder="e.g. A"
-              className="w-full rounded-lg border border-white-02 px-3 py-2.5 text-sm outline-none focus:border-primary"
             />
             <p className="mt-1 text-xs text-gray-05">
               Leave blank if this level has only one class. Names like Science or
@@ -142,7 +147,7 @@ export function ClassDrawer({
             </p>
           </div>
         </div>
-      )}
-    </EntityDrawer>
+      }
+    />
   );
 }

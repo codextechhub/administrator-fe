@@ -42,28 +42,35 @@ describe("blankDraft", () => {
 });
 
 describe("classCode", () => {
-  it("joins the level and the arm", () => {
-    expect(classCode("JSS1", "A")).toBe("JSS1-A");
-    expect(classCode("SSS2", "Science")).toBe("SSS2-SCIENCE");
+  it("splits the name: everything but the last word is the level", () => {
+    expect(classCode("JSS1 A")).toBe("JSS1-A");
+    expect(classCode("SSS2 Science")).toBe("SSS2-SCIENCE");
+    expect(classCode("Primary 4 B")).toBe("PRIMARY4-B");
   });
 
-  it("is the level alone when there is no arm", () => {
-    expect(classCode("Primary 4", "")).toBe("PRIMARY4");
+  it("is the whole name when there is no arm on it", () => {
+    expect(classCode("JSS1")).toBe("JSS1");
   });
 
   it("does NOT fall back to the first three letters of the name", () => {
-    // A class name starts with its level, so codeFromName("SSS3 Science")
-    // returns "SSS" - Senior Secondary's own code, on a class. That collision
-    // is the whole reason this function exists.
-    expect(classCode("SSS3", "Science")).not.toBe("SSS");
+    // codeFromName("SSS3 Science") returns "SSS" - Senior Secondary's own code,
+    // on a class. That collision is why this function exists.
+    expect(classCode("SSS3 Science")).not.toBe("SSS");
+  });
+
+  it("follows a hand-typed name rather than the level and arm fields", () => {
+    // Somebody who renames the class to "Alpha Stream" should not be handed a
+    // code built from a level they can no longer see in the name.
+    expect(classCode("Alpha Stream")).toBe("ALPHA-STREAM");
   });
 
   it("stays inside the column's 12 characters", () => {
-    expect(classCode("Junior Secondary 1", "Commercial").length).toBeLessThanOrEqual(12);
+    expect(classCode("Junior Secondary 1 Commercial").length).toBeLessThanOrEqual(12);
   });
 
-  it("returns nothing when there is no level to build from", () => {
-    expect(classCode("", "A")).toBe("");
+  it("returns nothing for an empty name", () => {
+    expect(classCode("")).toBe("");
+    expect(classCode("   ")).toBe("");
   });
 });
 
