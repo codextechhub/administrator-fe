@@ -238,8 +238,10 @@ export default function AcademicSessions() {
       ) : (
         <CustomTable
           tableHeaderList={["Session", "Starts", "Ends", "Terms", "Scope", "Status"]}
+          // Display fields only, in header order. The raw sessions go through
+          // `defaultBodyList`, which is what onRowClick receives.
+          defaultBodyList={sessions}
           tableBodyList={sessions.map((s) => ({
-            id: s.id,
             Session: s.name,
             Starts: formatMonthYearShort(s.start_date),
             Ends: formatMonthYearShort(s.end_date),
@@ -247,7 +249,7 @@ export default function AcademicSessions() {
             Scope: scopeOf(s),
             Status: statusOf(s.status).label,
           }))}
-          onRowClick={(row: { id: number }) =>
+          onRowClick={(row: AcademicSession) =>
             navigate(
               routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSION_DETAILS_ID(row.id),
             )

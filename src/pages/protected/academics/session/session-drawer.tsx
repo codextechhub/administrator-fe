@@ -15,6 +15,7 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { parseApiError } from "@/utils/api-error";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
+import { useGetSchoolProfileQuery } from "@/redux/services/school/school-api";
 import {
   useCreateSessionMutation,
   useUpdateSessionMutation,
@@ -47,19 +48,43 @@ interface Draft {
   schoolWide: boolean;
 }
 
-const BLANK_TERMS: TermWrite[] = [
-  { name: "First Term", order_index: 1, start_date: "", end_date: "" },
-  { name: "Second Term", order_index: 2, start_date: "", end_date: "" },
-  { name: "Third Term", order_index: 3, start_date: "", end_date: "" },
-];
+/**
+ * The rows a new year starts with, from the school's own calendar.
+ *
+ * A school states its term structure during onboarding - three terms or two
+ * semesters - and until now nothing read it back: every school got three boxes
+ * labelled "Term", including the ones that had just said they run semesters.
+ * They were free to rename and delete their way to the right shape, but being
+ * handed the wrong one and made to correct it is not the same as being asked.
+ *
+ * Only the DEFAULT. The server accepts any number of terms with any names, so a
+ * school that runs something else still can - this is where it starts, not what
+ * it is held to.
+ */
+const ORDINALS = ["First", "Second", "Third", "Fourth"];
 
-function draftFrom(session: AcademicSession | null): Draft {
+function blankTerms(structure?: string): TermWrite[] {
+  const semesters = structure === "2_SEMESTERS";
+  const word = semesters ? "Semester" : "Term";
+  const count = semesters ? 2 : 3;
+  return Array.from({ length: count }, (_, i) => ({
+    name: `${ORDINALS[i]} ${word}`,
+    order_index: i + 1,
+    start_date: "",
+    end_date: "",
+  }));
+}
+
+function draftFrom(
+  session: AcademicSession | null,
+  termStructure?: string,
+): Draft {
   if (!session) {
     return {
       name: "",
       start: "",
       end: "",
-      terms: BLANK_TERMS.map((t) => ({ ...t })),
+      terms: blankTerms(termStructure),
       branchIds: [],
       schoolWide: true,
     };
@@ -91,7 +116,13 @@ export function SessionDrawer({
   session: AcademicSession | null;
   onClose: () => void;
 }) {
-  const [draft, setDraft] = useState<Draft>(() => draftFrom(session));
+  // The school's own calendar shape, so a new year opens on the right rows.
+  const { data: profile } = useGetSchoolProfileQuery();
+  const termStructure = profile?.data?.term_structure;
+
+  const [draft, setDraft] = useState<Draft>(() =>
+    draftFrom(session, termStructure),
+  );
   /**
    * Whether the name is owed a message yet.
    *
@@ -122,12 +153,18 @@ export function SessionDrawer({
   // prescribes for "derive state from a prop change": an effect would paint the
   // previous year's values for one frame and then blank them, and the reader
   // would watch the form change under their hands.
-  const openedFor = open ? (session ? `s${session.id}` : "new") : "shut";
+  // The structure is part of the key: it arrives a moment after the drawer can
+  // open, and a new year must re-seed onto the right rows when it does.
+  const openedFor = open
+    ? session
+      ? `s${session.id}`
+      : `new:${termStructure ?? ""}`
+    : "shut";
   const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
   if (openedFor !== lastOpenedFor) {
     setLastOpenedFor(openedFor);
     if (open) {
-      setDraft(draftFrom(session));
+      setDraft(draftFrom(session, termStructure));
       setTouchedName(false);
       setEditedName(false);
       setRefusal(null);
@@ -170,7 +207,10 @@ export function SessionDrawer({
     termErrors.every((e) => !e) &&
     !noBranchPicked;
 
-  const initial = useMemo(() => JSON.stringify(draftFrom(session)), [session]);
+  const initial = useMemo(
+    () => JSON.stringify(draftFrom(session, termStructure)),
+    [session, termStructure],
+  );
   const dirty = JSON.stringify(draft) !== initial;
 
   const save = async () => {
@@ -339,7 +379,9 @@ export function SessionDrawer({
 
           <div className="mt-5 border-t border-white-02 pt-4">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-[13px] font-medium text-gray-06">Terms</p>
+              <p className="text-[13px] font-medium text-gray-06">
+                {termStructure === "2_SEMESTERS" ? "Semesters" : "Terms"}
+              </p>
               <Button
                 size="sm"
                 variant="ghost"
@@ -360,7 +402,7 @@ export function SessionDrawer({
                 }
               >
                 <Plus className="size-4" />
-                Add term
+                Add {termStructure === "2_SEMESTERS" ? "semester" : "term"}
               </Button>
             </div>
 

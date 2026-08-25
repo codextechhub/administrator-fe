@@ -255,8 +255,8 @@ export default function Subjects() {
             "Offered at",
             ...(multiBranch ? ["Scope"] : []),
           ]}
+          defaultBodyList={subjects}
           tableBodyList={subjects.map((s) => ({
-            id: s.id,
             Subject: s.name,
             Code: s.code,
             Department: s.department_name ?? "-",
@@ -264,8 +264,7 @@ export default function Subjects() {
             "Offered at": s.offered_label,
             ...(multiBranch ? { Scope: s.scope_label ?? "School-wide" } : {}),
           }))}
-          onRowClick={(row: { id: number }) => {
-            const subject = subjects.find((s) => s.id === row.id);
+          onRowClick={(subject: Subject) => {
             if (subject && canEdit) open(subject);
           }}
           currentPage={pagination?.currentPage ?? 1}

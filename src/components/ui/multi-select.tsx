@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/popover";
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -861,7 +860,14 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
           align="start"
           onEscapeKeyDown={() => setIsPopoverOpen(false)}
         >
-          <Command>
+          {/* The component filters `options` into `filteredOptions` itself, so
+              cmdk must NOT filter them a second time. Double-filtering is what
+              made a narrowing search go blind: type "zzz" and the list empties
+              correctly, but backspacing to "Ann" left "No results found." even
+              though "…College Annex" matches - the second filter had gone stale
+              over items that unmounted while there were no matches, and only
+              clearing the box entirely brought them back. */}
+          <Command shouldFilter={false}>
             {searchable && (
               <CommandInput
                 placeholder="Search..."
@@ -877,9 +883,15 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
                 "overscroll-behavior-y-contain",
               )}
             >
-              <CommandEmpty>
-                {emptyIndicator || "No results found."}
-              </CommandEmpty>{" "}
+              {/* Ours, not cmdk's. `CommandEmpty` renders when CMDK's filter
+                  finds nothing, and cmdk is no longer filtering - so it would
+                  never appear, and a search that matched nothing would show a
+                  blank panel with no explanation. */}
+              {filteredOptions.length === 0 && (
+                <div className="py-6 text-center text-sm text-gray-05">
+                  {emptyIndicator || "No results found."}
+                </div>
+              )}
               {!hideSelectAll && !searchValue && (
                 <CommandGroup>
                   <CommandItem

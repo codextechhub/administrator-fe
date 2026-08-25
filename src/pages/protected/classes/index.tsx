@@ -281,8 +281,8 @@ export default function Classes() {
             "Subjects",
             "Status",
           ]}
+          defaultBodyList={classes}
           tableBodyList={classes.map((c) => ({
-            id: c.id,
             Class: c.name,
             Code: c.code,
             Level: c.level_name,
@@ -291,8 +291,7 @@ export default function Classes() {
             Subjects: String(c.subject_count),
             Status: c.is_active ? "Active" : "Archived",
           }))}
-          onRowClick={(row: { id: number }) => {
-            const klass = classes.find((c) => c.id === row.id);
+          onRowClick={(klass: SchoolClass) => {
             if (klass && canEdit) {
               setEditing(klass);
               setDrawerOpen(true);

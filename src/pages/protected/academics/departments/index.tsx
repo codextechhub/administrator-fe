@@ -290,8 +290,8 @@ export default function Departments() {
             "Subjects",
             "Status",
           ]}
+          defaultBodyList={departments}
           tableBodyList={departments.map((d) => ({
-            id: d.id,
             Department: d.name,
             Code: d.code,
             ...(multiBranch ? { Scope: d.scope_label ?? "School-wide" } : {}),
@@ -299,8 +299,7 @@ export default function Departments() {
             Subjects: String(d.subject_count),
             Status: d.is_active ? "Active" : "Archived",
           }))}
-          onRowClick={(row: { id: number }) => {
-            const dept = departments.find((d) => d.id === row.id);
+          onRowClick={(dept: Department) => {
             if (dept && canEdit) openEdit(dept);
           }}
           currentPage={pagination?.currentPage ?? 1}
