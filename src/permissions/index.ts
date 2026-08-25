@@ -12,8 +12,8 @@
 //   MM = module group   10=school  20=onboarding  30=academics  40=import
 //   RR = resource       01 02 03 … (assigned sequentially per module)
 //   AA = action         01=view   02=create  03=update  04=delete
-//                       08=manage  09=suspend  10=reactivate  11=assign
-//                       12=start   13=end   14=run   15=execute
+//                       05=approve 08=manage  09=suspend  10=reactivate
+//                       11=assign  12=start   13=end   14=run   15=execute
 //                       39=view_sensitive
 //
 // ── Adding a permission ───────────────────────────────────────────────────────
@@ -83,6 +83,10 @@ const REGISTRY: Record<string, string> = {
   "100802": "school.roles.create",
   "100803": "school.roles.update",
   "100804": "school.roles.delete",
+  // Approving a role CHANGE, not a role. vs_rbac routes a sensitive edit through
+  // maker-checker and reads this key (`ROLE_APPROVE_KEYS` in vs_rbac/views.py);
+  // seeded CRITICAL to school_admin only.
+  "100805": "school.roles.approve",
   "100811": "school.roles.assign",
 
   // ── school / impersonation  (MM=10, RR=09) ─────────────────────────────────
@@ -94,6 +98,14 @@ const REGISTRY: Record<string, string> = {
   "100901": "school.impersonation.view",
   "100912": "school.impersonation.start",
   "100913": "school.impersonation.end",
+
+  // ── school / per-user permission exceptions  (MM=10, RR=13) ────────────────
+  // CRITICAL + restricted, school_admin only. `.view` is as restricted as
+  // `.manage` on purpose: without it a user must not be able to learn that
+  // exceptions exist on their own account. No screen reads these yet - the
+  // codes are here so the registry matches what the backend grants.
+  "101301": "school.user_overrides.view",
+  "101308": "school.user_overrides.manage",
 
   // ── onboarding / progress  (MM=20, RR=01) ──────────────────────────────────
   // The control room's own keys. Approve, reject and reinstate are deliberately
@@ -147,6 +159,24 @@ const REGISTRY: Record<string, string> = {
   "300303": "academics.classes.update",
   "300308": "academics.classes.manage",
   "300311": "academics.classes.assign",
+
+  // ── academics / structure  (MM=30, RR=04) ──────────────────────────────────
+  // Departments, programs and levels. One resource because they are one screen
+  // group and one mental object to a school - see the backend's
+  // seed_school_permissions.py, whose table this must stay in lockstep with.
+  // `.manage` is the DELETE verb on all three; bulk level creation is `.create`.
+  "300401": "academics.structure.view",
+  "300402": "academics.structure.create",
+  "300403": "academics.structure.update",
+  "300408": "academics.structure.manage",
+
+  // ── academics / subject  (MM=30, RR=05) ────────────────────────────────────
+  // Subjects and the levels they are offered at. Editing offerings is `.update`,
+  // not `.manage` - `.manage` is the DELETE verb.
+  "300501": "academics.subject.view",
+  "300502": "academics.subject.create",
+  "300503": "academics.subject.update",
+  "300508": "academics.subject.manage",
 
 };
 
@@ -202,12 +232,19 @@ export const P = {
   CREATE_ROLE:             "100802",  // add a custom role of the school's own
   MODIFY_ROLE:             "100803",  // change what a role can reach
   DELETE_ROLE:             "100804",  // remove a custom role
+  APPROVE_ROLE_CHANGE:     "100805",  // approve a role edit routed through maker-checker
   ASSIGN_ROLE:             "100811",  // assign or revoke roles from school users
 
   // ── Proxy (view the app as another user in this school) ────────────────────
   VIEW_PROXY_SESSIONS:     "100901",  // read the proxy session history / trail
   START_PROXY_SESSION:     "100912",  // search users and start viewing as one
   END_PROXY_SESSION:       "100913",  // end any proxy session in this school
+
+  // ── Per-user permission exceptions ─────────────────────────────────────────
+  // No screen reads these yet. Registered so the app can name every key the
+  // backend grants a school admin.
+  VIEW_USER_OVERRIDES:     "101301",  // see that a user has permission exceptions
+  MANAGE_USER_OVERRIDES:   "101308",  // grant or revoke a per-user exception
 
   // ── School Onboarding (the control room, before go-live) ───────────────────
   VIEW_ONBOARDING:         "200101",  // read the control room: checklist, counts, gate
@@ -242,6 +279,18 @@ export const P = {
   MODIFY_CLASS:            "300303",  // edit a class
   MANAGE_CLASSES:          "300308",  // class lifecycle and configuration
   ASSIGN_CLASS:            "300311",  // assign teachers/students to a class
+
+  // ── Academic Structure (departments, programs, levels) ─────────────────────
+  BROWSE_STRUCTURE:        "300401",  // view departments, programs and levels
+  CREATE_STRUCTURE:        "300402",  // add a department, program or level (incl. bulk levels)
+  MODIFY_STRUCTURE:        "300403",  // edit a department, program or level
+  MANAGE_STRUCTURE:        "300408",  // delete a department, program or level
+
+  // ── Subjects ───────────────────────────────────────────────────────────────
+  BROWSE_SUBJECTS:         "300501",  // view subjects and where they are offered
+  CREATE_SUBJECT:          "300502",  // add a subject
+  MODIFY_SUBJECT:          "300503",  // edit a subject, incl. the levels it is offered at
+  MANAGE_SUBJECTS:         "300508",  // delete a subject
 
 } as const;
 
