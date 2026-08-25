@@ -93,6 +93,18 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sec: #303A51;
   --color-pry-01: #DBE0EB;
+  /* The hairline every box is drawn with, and the surface behind the ones that
+     recede. Both were being USED - 65 `border-white-02` and 14 `bg-white-05`
+     across 21 files - and neither was ever defined, so Tailwind emitted nothing
+     and every one of those boxes rendered with no border at all. That is why
+     the drawers, the header and the sidebar all looked outline-less.
+
+     `white-02` is bound to `--border` rather than given its own hex, so the
+     hand-written classes and the `Input` / `Textarea` / `NativeSelect`
+     primitives (which use `border-border`) cannot drift apart - one line to
+     change, and every box in the app follows. */
+  --color-white-02: var(--border);
+  --color-white-05: #FBFBFA;
   --color-error: #E33131;
   --color-error-01: #f76659;
   --color-black-01: #212121;

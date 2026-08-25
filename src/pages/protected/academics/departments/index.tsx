@@ -25,6 +25,7 @@ import PromptModal from "@/components/modal/prompt-modal";
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
+import { CardActions, ClickableCard } from "@/components/custom/clickable-card";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useBranchLens } from "@/hooks/use-branch-lens";
@@ -463,7 +464,11 @@ function DepartmentCard({
   onDelete: () => void;
 }) {
   return (
-    <div className="h-fit w-full min-w-0 rounded-md bg-white px-4 py-3">
+    <ClickableCard
+      label={`Open ${dept.name}`}
+      // Edit is what a card press means here: the drawer IS the detail view.
+      onOpen={canEdit ? onEdit : () => {}}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h5 className="truncate text-base font-medium text-black-01">{dept.name}</h5>
@@ -477,6 +482,7 @@ function DepartmentCard({
             {dept.is_active ? "Active" : "Archived"}
           </Badge>
           {(canEdit || canManage) && (
+            <CardActions>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -514,6 +520,7 @@ function DepartmentCard({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+            </CardActions>
           )}
         </div>
       </div>
@@ -531,7 +538,7 @@ function DepartmentCard({
         <Stat label="Programmes" value={dept.program_count} />
         <Stat label="Subjects" value={dept.subject_count} />
       </div>
-    </div>
+    </ClickableCard>
   );
 }
 

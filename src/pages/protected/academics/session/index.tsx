@@ -42,6 +42,7 @@ import type {
 import { ExportButton } from "../components/export-button";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { SessionDrawer } from "./session-drawer";
+import { CardActions, ClickableCard } from "@/components/custom/clickable-card";
 import { SessionStatusChip } from "./session-chips";
 import { scopeOf, statusOf, TERM_TONE, termState } from "./session-format";
 
@@ -379,12 +380,11 @@ function SessionCard({
   const showMenu = (canEdit && !archived) || canManage;
 
   return (
-    <div
-      className={cn(
-        "h-fit w-full min-w-0 cursor-pointer rounded-md bg-white px-4 py-3 transition-all ease-linear hover:scale-98",
-        isActive && "border border-green-01",
-      )}
-      onClick={onOpen}
+    <ClickableCard
+      label={`Open ${session.name}`}
+      onOpen={onOpen}
+      // The live year keeps its green edge, which outranks the shared hairline.
+      className={cn(isActive && "border-green-01 hover:border-green-01")}
     >
       <div className="flex justify-between gap-3">
         <div className="min-w-0">
@@ -397,10 +397,7 @@ function SessionCard({
           </p>
         </div>
 
-        <div
-          className="inline-flex shrink-0 items-start gap-1.5"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <CardActions className="inline-flex shrink-0 items-start gap-1.5">
           <SessionStatusChip status={session.status} />
           {showMenu && (
             <DropdownMenu>
@@ -435,7 +432,7 @@ function SessionCard({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-        </div>
+        </CardActions>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -472,7 +469,7 @@ function SessionCard({
           </>
         )}
       </div>
-    </div>
+    </ClickableCard>
   );
 }
 

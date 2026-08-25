@@ -10,6 +10,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { parseApiError } from "@/utils/api-error";
@@ -227,7 +228,7 @@ export function SessionDrawer({
           <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
             Session name *
           </label>
-          <input
+          <Input
             value={draft.name}
             onChange={(e) => {
               setEditedName(true);
@@ -235,12 +236,7 @@ export function SessionDrawer({
             }}
             onBlur={() => editedName && setTouchedName(true)}
             placeholder="e.g. 2026/2027"
-            className={cn(
-              "w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-primary",
-              nameEmpty || refusal?.field === "name"
-                ? "border-error-01"
-                : "border-white-02",
-            )}
+            aria-invalid={nameEmpty || refusal?.field === "name" || undefined}
           />
           {nameEmpty && (
             <p className="mt-1 text-xs text-error-text">A name is required.</p>
@@ -378,11 +374,11 @@ export function SessionDrawer({
                     <span className="grid size-5 shrink-0 place-content-center rounded-full bg-gray-04 text-[11px] text-gray-06">
                       {i + 1}
                     </span>
-                    <input
+                    <Input
                       value={term.name}
                       onChange={(e) => setTerm(i, { name: e.target.value })}
                       placeholder="Term name"
-                      className="min-w-0 flex-1 rounded-md border border-white-02 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-primary"
+                      className="h-9.5 min-w-0 flex-1"
                     />
                     <button
                       type="button"

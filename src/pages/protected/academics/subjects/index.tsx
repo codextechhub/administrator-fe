@@ -23,6 +23,7 @@ import PromptModal from "@/components/modal/prompt-modal";
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
+import { CardActions, ClickableCard } from "@/components/custom/clickable-card";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useBranchLens } from "@/hooks/use-branch-lens";
@@ -438,10 +439,14 @@ function SubjectCard({
   onDelete: () => void;
 }) {
   return (
-    <div
+    <ClickableCard
+      label={`Open ${subject.name}`}
+      onOpen={canEdit ? onEdit : () => {}}
+      // The left edge marks core against elective, so it overrides the shared
+      // hairline on that one side only.
       className={cn(
-        "h-fit w-full min-w-0 rounded-md border-l-4 bg-white px-4 py-3",
-        subject.is_core ? "border-primary" : "border-white-02",
+        "border-l-4",
+        subject.is_core ? "border-l-primary" : "border-l-border",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -461,6 +466,7 @@ function SubjectCard({
             {subject.is_core ? "Core" : "Elective"}
           </Badge>
           {(canEdit || canManage) && (
+            <CardActions>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -486,6 +492,7 @@ function SubjectCard({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+            </CardActions>
           )}
         </div>
       </div>
@@ -510,7 +517,7 @@ function SubjectCard({
             : `${subject.level_count} levels`}
         </p>
       </div>
-    </div>
+    </ClickableCard>
   );
 }
 

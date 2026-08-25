@@ -20,6 +20,7 @@ import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { ScopeCell } from "@/pages/protected/academics/components/scope-cell";
+import { CardActions, ClickableCard } from "@/components/custom/clickable-card";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useBranchLens } from "@/hooks/use-branch-lens";
@@ -405,7 +406,10 @@ function ClassCard({
   onRestore: () => void;
 }) {
   return (
-    <div className="h-fit w-full min-w-0 rounded-md bg-white px-4 py-3">
+    <ClickableCard
+      label={`Open ${klass.name}`}
+      onOpen={canEdit ? onEdit : () => {}}
+    >
       <div className="mt-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h4 className="truncate font-medium">{klass.name}</h4>
@@ -449,7 +453,7 @@ function ClassCard({
         <Stat label="Subjects" value={String(klass.subject_count)} />
       </div>
 
-      <div className="mt-4 inline-flex flex-wrap items-center gap-3">
+      <CardActions className="mt-4 inline-flex flex-wrap items-center gap-3">
         {canEdit && (
           <Button
             size="sm"
@@ -473,8 +477,8 @@ function ClassCard({
               Restore
             </Button>
           ))}
-      </div>
-    </div>
+      </CardActions>
+    </ClickableCard>
   );
 }
 

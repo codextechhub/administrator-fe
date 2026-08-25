@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { SearchSelect } from "@/components/custom/search-select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { parseApiError } from "@/utils/api-error";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import type { AnyEntityWrite } from "@/redux/services/academics/academics-types";
@@ -249,7 +251,7 @@ export function EntityDrawer({
                   : ""
             }
           >
-            <input
+            <Input
               value={shownName}
               onChange={(e) => {
                 onNameEdited?.();
@@ -264,7 +266,7 @@ export function EntityDrawer({
               // Only once they have actually typed something here. See `touched`.
               onBlur={() => edited.name && setTouched((t) => ({ ...t, name: true }))}
               placeholder={copy.namePlaceholder}
-              className={inputClass(nameEmpty || refusal?.field === "name")}
+              aria-invalid={nameEmpty || refusal?.field === "name" || undefined}
             />
           </Field>
 
@@ -274,17 +276,15 @@ export function EntityDrawer({
               error={refusal?.field === "code" ? refusal.message : ""}
             >
               <div className="flex gap-2">
-                <input
+                <Input
                   value={draft.code}
                   onChange={(e) => {
                     setCodeIsOurs(false);
                     patch({ code: e.target.value.toUpperCase() });
                   }}
                   placeholder={copy.codePlaceholder}
-                  className={cn(
-                    inputClass(refusal?.field === "code"),
-                    "min-w-0 flex-1",
-                  )}
+                  aria-invalid={refusal?.field === "code" || undefined}
+                  className="min-w-0 flex-1"
                 />
                 <Button
                   variant="outline"
@@ -370,12 +370,12 @@ export function EntityDrawer({
 
           <div className="mt-5 border-t border-white-02 pt-4">
             <Field label="Description">
-              <textarea
+              <Textarea
                 rows={3}
                 value={draft.description}
                 onChange={(e) => patch({ description: e.target.value })}
                 placeholder="Optional"
-                className={cn(inputClass(false), "resize-y")}
+                className="resize-y"
               />
             </Field>
           </div>
@@ -398,13 +398,6 @@ export function EntityDrawer({
         </div>
       </SheetContent>
     </Sheet>
-  );
-}
-
-function inputClass(bad: boolean) {
-  return cn(
-    "w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-primary",
-    bad ? "border-error-01" : "border-white-02",
   );
 }
 

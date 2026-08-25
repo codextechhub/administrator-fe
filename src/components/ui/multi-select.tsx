@@ -682,7 +682,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
             onClick={handleTogglePopover}
             disabled={disabled}
             className={cn(
-              "flex p-1 rounded-md bg-white text-gray-02 hover:bg-white hover:border-primary min-h-10.5 h-auto items-center justify-between [&_svg]:pointer-events-auto shadow-none",
+              "flex p-1 rounded-md bg-white text-gray-02 border border-border hover:bg-white hover:border-primary focus-visible:border-primary/60 min-h-10.5 h-auto items-center justify-between [&_svg]:pointer-events-auto shadow-none",
               autoSize ? "w-auto" : "w-full",
               responsiveSettings.compactMode && "min-h-8 text-sm",
               screenSize === "mobile" && "min-h-12 text-base",
