@@ -1,153 +1,503 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn, formatMonthYearShort } from "@/lib/utils";
-import { routesPath } from "@/routes/routesPath";
-import { Check, Plus } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import {
+  Archive,
+  CalendarRange,
+  Check,
+  CircleCheck,
+  LayoutGrid,
+  Pencil,
+  Plus,
+  Rows3,
+  Search,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import PromptModal from "@/components/modal/prompt-modal";
+import CustomTable from "@/components/custom/custom-table";
+import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
+import PermissionGate from "@/components/custom/permission-gate";
+import { P } from "@/permissions";
+import { usePermissions } from "@/hooks/use-permissions";
+import { cn, formatMonthYearShort } from "@/lib/utils";
+import { parseApiError } from "@/utils/api-error";
+import { routesPath } from "@/routes/routesPath";
+import { useBranchLens } from "@/hooks/use-branch-lens";
+import {
+  useActivateSessionMutation,
+  useArchiveSessionMutation,
+  useGetSessionsQuery,
+} from "@/redux/services/academics/academics-api";
+import type {
+  AcademicSession,
+  SessionStatus,
+} from "@/redux/services/academics/academics-types";
+import { SessionDrawer } from "./session-drawer";
+import { SessionStatusChip } from "./session-chips";
+import { scopeOf, statusOf, TERM_TONE, termState } from "./session-format";
 
-export default function AcademicSession() {
+/**
+ * The school years this school has defined.
+ *
+ * The card is the one this screen already had - name, dates, status, term pills
+ * with their tick and their "· ongoing" - with the real API behind it instead
+ * of a local array. What changed is the footer: it used to read
+ * "3 branches · 1,284 students · 16 classes", and two of those three numbers
+ * have nothing behind them. There is no student model in the product yet, and a
+ * class count is only true of the year that is RUNNING - printing this year's
+ * classes under last year's name is a lie the old card told quietly.
+ *
+ * So the footer states the session's own shape, which every card can answer
+ * honestly: how many terms, and how many teaching weeks.
+ */
+export default function AcademicSessions() {
   const navigate = useNavigate();
+  const { branch } = useBranchLens();
+  const { hasPermission } = usePermissions();
+
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<SessionStatus | "all">("all");
+  const [view, setView] = useState<"cards" | "table">("cards");
+  const [page, setPage] = useState(1);
+
+  const [drawerFor, setDrawerFor] = useState<AcademicSession | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [confirm, setConfirm] = useState<Confirmation | null>(null);
+
+  const { data, isLoading, isError, refetch } = useGetSessionsQuery({
+    branch,
+    search,
+    status,
+    page,
+  });
+
+  const [activate, { isLoading: activating }] = useActivateSessionMutation();
+  const [archive, { isLoading: archiving }] = useArchiveSessionMutation();
+
+  const sessions = useMemo(() => data?.data ?? [], [data]);
+  const pagination = data?.pagination;
+  const activeName = sessions.find((s) => s.status === "ACTIVE")?.name;
+
+  const canEdit = hasPermission(P.MODIFY_SESSION);
+  const canManage = hasPermission(P.MANAGE_SESSIONS);
+
+  const openNew = () => {
+    setDrawerFor(null);
+    setDrawerOpen(true);
+  };
+  const openEdit = (session: AcademicSession) => {
+    setDrawerFor(session);
+    setDrawerOpen(true);
+  };
+
+  const runConfirm = async () => {
+    if (!confirm) return;
+    try {
+      const result =
+        confirm.kind === "activate"
+          ? await activate(confirm.session.id).unwrap()
+          : await archive(confirm.session.id).unwrap();
+      toast.success(result.message);
+    } catch (error) {
+      toast.error(parseApiError(error).message || "That could not be done.");
+    }
+    setConfirm(null);
+  };
+
+  if (isError) {
+    return (
+      <main className="px-5 pt-3 pb-8">
+        <OutlinedNotice
+          icon={CalendarRange}
+          title="We could not load your sessions"
+          body="Something went wrong on our side. Try again in a moment."
+          actionLabel="Try again"
+          onAction={() => refetch()}
+        />
+      </main>
+    );
+  }
+
   return (
-    <main className="px-4.5 py-6 space-y-7">
-      <div className="flex items-center justify-between">
-        <p className="text-black-01 text-lg font-medium">All Sessions</p>
-        <Button className="text-sm">
-          <Plus /> New Session
-        </Button>
-      </div>
-      <div className="grid lg:grid-cols-2 gap-6">
-        {dummyData.academic_sessions.map((item, idx) => (
-          <div
-            className={cn(
-              "h-fit bg-white rounded-md w-full px-4 py-3 cursor-pointer hover:scale-98 transition-all ease-linear",
-              item.status?.toLowerCase() === "active" &&
-                "border border-green-01",
-            )}
-            key={idx}
-            onClick={() => {
-              navigate(
-                routesPath.PROTECTED.ACADEMIC.SESSION_DETAILS_ID(item.id),
-              );
+    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+      {/* flex-wrap, so the toolbar stacks on a phone instead of squeezing the
+          search box to nothing. */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <div className="relative min-w-0 flex-1 basis-52">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
+          <input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
             }}
-          >
-            <div className="flex justify-between gap-3">
-              <div className="">
-                <h5 className="text-base font-medium text-black-01">
-                  {item.name} Academic Session
-                </h5>
-                <p className="text-xs text-gray-01">
-                  {formatMonthYearShort(item.start_date)} -{" "}
-                  {formatMonthYearShort(item.end_date)}
-                </p>
-              </div>
+            placeholder="Search sessions"
+            aria-label="Search sessions"
+            className="h-9 w-full rounded-full border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
+          />
+        </div>
 
-              <Badge
-                variant={
-                  item.status?.toLowerCase() === "active"
-                    ? "active"
-                    : item.status?.toLowerCase() === "completed"
-                      ? "amber"
-                      : "pending"
-                }
-                className="text-[11px] h-fit py-0 rounded-full uppercase"
-              >
-                {item.status}
-              </Badge>
-            </div>
+        <select
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value as SessionStatus | "all");
+            setPage(1);
+          }}
+          aria-label="Filter by status"
+          className="h-9 shrink-0 rounded-full border border-white-02 bg-white px-3 text-sm outline-none focus:border-primary"
+        >
+          <option value="all">All statuses</option>
+          <option value="ACTIVE">Active</option>
+          <option value="DRAFT">Draft</option>
+          <option value="ARCHIVED">Archived</option>
+        </select>
 
-            <div className="flex items-center gap-3 mt-3">
-              {item?.terms?.map((chi, id) => (
-                <Badge
-                  variant={
-                    chi?.status === "pending"
-                      ? "outline"
-                      : chi?.status === "ongoing"
-                        ? "pending"
-                        : "active"
-                  }
-                  key={id}
-                  className="h-fit text-xs py-0.5 rounded-full"
-                >
-                  {chi?.label}{" "}
-                  {chi?.status === "completed" ? (
-                    <Check className="ml-1" />
-                  ) : chi?.status === "ongoing" ? (
-                    " - ongoing"
-                  ) : (
-                    ""
-                  )}
-                </Badge>
-              ))}
-            </div>
+        <div className="inline-flex shrink-0 rounded-full border border-white-02 bg-white p-0.5">
+          <ViewButton
+            active={view === "cards"}
+            onClick={() => setView("cards")}
+            icon={LayoutGrid}
+            label="Cards"
+          />
+          <ViewButton
+            active={view === "table"}
+            onClick={() => setView("table")}
+            icon={Rows3}
+            label="Table"
+          />
+        </div>
 
-            <div className="flex items-center gap-3 mt-6 text-sm text-gray-01">
-              <p className="">{item?.metrics.branches} branches</p>{" "}
-              <span className="size-1 rounded-full block bg-gray-01" />
-              <p className="">
-                {item?.metrics.students.toLocaleString("en-NG")} students
-              </p>
-              <span className="size-1 rounded-full block bg-gray-01" />
-              <p className="">{item?.metrics.classes} classes</p>
-            </div>
-          </div>
-        ))}
+        <PermissionGate permission={P.CREATE_SESSION}>
+          <Button className="shrink-0 text-sm" onClick={openNew}>
+            <Plus /> New session
+          </Button>
+        </PermissionGate>
       </div>
+
+      {isLoading ? (
+        <div className="grid items-start gap-6 lg:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-44 w-full rounded-md" />
+          ))}
+        </div>
+      ) : !sessions.length ? (
+        <OutlinedNotice
+          icon={CalendarRange}
+          title={
+            search || status !== "all"
+              ? "No sessions match that"
+              : "No academic sessions yet"
+          }
+          body={
+            search || status !== "all"
+              ? "Try a different search, or clear the status filter."
+              : "The academic structure hangs off a school year. Create one, then make it active."
+          }
+          actionLabel={search || status !== "all" ? "Clear filters" : undefined}
+          onAction={
+            search || status !== "all"
+              ? () => {
+                  setSearch("");
+                  setStatus("all");
+                  setPage(1);
+                }
+              : undefined
+          }
+        />
+      ) : view === "cards" ? (
+        <div className="grid items-start gap-6 lg:grid-cols-2">
+          {sessions.map((session) => (
+            <SessionCard
+              key={session.id}
+              session={session}
+              canEdit={canEdit}
+              canManage={canManage}
+              onOpen={() =>
+                navigate(
+                  routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSION_DETAILS_ID(
+                    session.id,
+                  ),
+                )
+              }
+              onEdit={() => openEdit(session)}
+              onActivate={() => setConfirm({ kind: "activate", session })}
+              onArchive={() => setConfirm({ kind: "archive", session })}
+            />
+          ))}
+        </div>
+      ) : (
+        <CustomTable
+          tableHeaderList={["Session", "Starts", "Ends", "Terms", "Scope", "Status"]}
+          tableBodyList={sessions.map((s) => ({
+            id: s.id,
+            Session: s.name,
+            Starts: formatMonthYearShort(s.start_date),
+            Ends: formatMonthYearShort(s.end_date),
+            Terms: String(s.term_count),
+            Scope: scopeOf(s),
+            Status: statusOf(s.status).label,
+          }))}
+          onRowClick={(row: { id: number }) =>
+            navigate(
+              routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSION_DETAILS_ID(row.id),
+            )
+          }
+          currentPage={pagination?.currentPage ?? 1}
+          totalPage={pagination?.totalPages ?? 1}
+          onPageChange={(next) => setPage(Number(next) || 1)}
+          emptyText="No sessions"
+        />
+      )}
+
+      {view === "cards" && (pagination?.totalPages ?? 1) > 1 && (
+        <div className="flex items-center justify-between text-xs text-gray-05">
+          <span>
+            Page {pagination?.currentPage} of {pagination?.totalPages}
+          </span>
+          <div className="inline-flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!pagination?.previous}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!pagination?.next}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <SessionDrawer
+        open={drawerOpen}
+        session={drawerFor}
+        onClose={() => setDrawerOpen(false)}
+      />
+
+      <PromptModal
+        isOpen={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={runConfirm}
+        loading={activating || archiving}
+        canCancel
+        title={confirmTitle(confirm)}
+        description={confirmBody(confirm, activeName)}
+        onConfirmText={confirm?.kind === "activate" ? "Set as active" : "Archive session"}
+        containerClass="min-h-[320px] lg:w-[420px]"
+        srcClass="size-25"
+        src="/image/caution.png"
+        onConfirmClass={
+          confirm?.kind === "archive"
+            ? "bg-error-01 text-white shadow-xs hover:bg-error-01/90 focus-visible:ring-error-01/20"
+            : undefined
+        }
+      />
     </main>
   );
 }
 
-const dummyData = {
-  academic_sessions: [
-    {
-      id: "234VEFE43JFJ4FDWEK",
-      name: "2025 / 2026",
-      start_date: "2025-09-27T10:30:00.000Z",
-      end_date: "2026-07-27T10:30:00.000Z",
-      status: "Active",
-      terms: [
-        { label: "Term 1", status: "completed" },
-        { label: "Term 2", status: "ongoing" },
-        { label: "Term 3", status: "pending" },
-      ],
-      metrics: {
-        branches: 3,
-        students: 1284,
-        classes: 16,
-      },
-    },
-    {
-      id: "43REDMRR3R342323",
-      name: "2026 / 2027",
-      start_date: "2026-09-27T10:30:00.000Z",
-      end_date: "2027-07-27T10:30:00.000Z",
-      status: "Inactive",
-      terms: [
-        { label: "Term 1", status: "pending" },
-        { label: "Term 2", status: "pending" },
-        { label: "Term 3", status: "pending" },
-      ],
-      metrics: {
-        branches: 3,
-        students: 1284,
-        classes: 16,
-      },
-    },
-    {
-      id: "06GKFGRRV435VF",
-      name: "2024 / 2025",
-      start_date: "2024-09-27T10:30:00.000Z",
-      end_date: "2025-07-27T10:30:00.000Z",
-      status: "Completed",
-      terms: [
-        { label: "Term 1", status: "completed" },
-        { label: "Term 2", status: "completed" },
-        { label: "Term 3", status: "completed" },
-      ],
-      metrics: {
-        branches: 2,
-        students: 1101,
-        classes: 16,
-      },
-    },
-  ],
-};
+// ── The confirmations ───────────────────────────────────────────────────────
+
+type Confirmation = { kind: "activate" | "archive"; session: AcademicSession };
+
+function confirmTitle(confirm: Confirmation | null) {
+  if (!confirm) return "";
+  return confirm.kind === "activate"
+    ? `Make ${confirm.session.name} the active session?`
+    : `Archive ${confirm.session.name}?`;
+}
+
+/**
+ * What the school is actually agreeing to.
+ *
+ * Both of these are stated in consequences rather than in verbs, because both
+ * reach further than the row they are pressed on: activating one year archives
+ * another, and archiving the live one leaves the school with no active year at
+ * all until it sets one.
+ */
+function confirmBody(confirm: Confirmation | null, activeName?: string) {
+  if (!confirm) return "";
+  if (confirm.kind === "activate") {
+    return activeName && activeName !== confirm.session.name
+      ? `Only one session can be active at a time, so ${activeName} will stop being active. Everything built on top of a session follows the active one.`
+      : "Everything built on top of a session follows the active one.";
+  }
+  return confirm.session.status === "ACTIVE"
+    ? "This is your active session. Everything later built on a session depends on it, and archiving leaves the school with no active session until you set another one."
+    : "An archived session becomes read-only history. You can still open it, but nothing in it can be changed.";
+}
+
+// ── The card ────────────────────────────────────────────────────────────────
+
+function weeksBetween(start: string, end: string) {
+  if (!start || !end) return 0;
+  const days = (new Date(end).getTime() - new Date(start).getTime()) / 86400000;
+  return Math.max(1, Math.round(days / 7));
+}
+
+function SessionCard({
+  session,
+  canEdit,
+  canManage,
+  onOpen,
+  onEdit,
+  onActivate,
+  onArchive,
+}: {
+  session: AcademicSession;
+  canEdit: boolean;
+  canManage: boolean;
+  onOpen: () => void;
+  onEdit: () => void;
+  onActivate: () => void;
+  onArchive: () => void;
+}) {
+  const isActive = session.status === "ACTIVE";
+  const archived = session.status === "ARCHIVED";
+  const weeks = session.terms.reduce(
+    (total, t) => total + weeksBetween(t.start_date, t.end_date),
+    0,
+  );
+  // An archived year is read-only on the server, so its Edit is not offered
+  // rather than offered and refused.
+  const showMenu = (canEdit && !archived) || canManage;
+
+  return (
+    <div
+      className={cn(
+        "h-fit w-full min-w-0 cursor-pointer rounded-md bg-white px-4 py-3 transition-all ease-linear hover:scale-98",
+        isActive && "border border-green-01",
+      )}
+      onClick={onOpen}
+    >
+      <div className="flex justify-between gap-3">
+        <div className="min-w-0">
+          <h5 className="truncate text-base font-medium text-black-01">
+            {session.name} Academic Session
+          </h5>
+          <p className="text-xs text-gray-01">
+            {formatMonthYearShort(session.start_date)} -{" "}
+            {formatMonthYearShort(session.end_date)}
+          </p>
+        </div>
+
+        <div
+          className="inline-flex shrink-0 items-start gap-1.5"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <SessionStatusChip status={session.status} />
+          {showMenu && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`Actions for ${session.name}`}
+                  className="grid size-6 place-content-center rounded-full text-gray-06 hover:bg-gray-04"
+                >
+                  <span className="text-lg leading-none">⋯</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {canEdit && !archived && (
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Pencil className="size-4" />
+                    Edit session
+                  </DropdownMenuItem>
+                )}
+                {canManage && !isActive && (
+                  <DropdownMenuItem onClick={onActivate}>
+                    <CircleCheck className="size-4" />
+                    Set as active
+                  </DropdownMenuItem>
+                )}
+                {canManage && !archived && (
+                  <DropdownMenuItem variant="destructive" onClick={onArchive}>
+                    <Archive className="size-4" />
+                    Archive
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {session.terms.map((term) => {
+          const state = termState(term);
+          return (
+            <span
+              key={term.id}
+              className={cn(
+                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs",
+                TERM_TONE[state],
+              )}
+            >
+              {term.name.replace(" Term", "")}
+              {state === "completed" && <Check className="ml-1 size-3" />}
+              {state === "ongoing" && " · ongoing"}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* The session's own shape. See the note at the top of this file for why
+          it is not students and classes. */}
+      <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-01">
+        <p>
+          {session.term_count} {session.term_count === 1 ? "term" : "terms"}
+        </p>
+        <span className="block size-1 rounded-full bg-gray-01" />
+        <p>{weeks} teaching weeks</p>
+        {session.scope_label && (
+          <>
+            <span className="block size-1 rounded-full bg-gray-01" />
+            <p className="min-w-0 truncate">{scopeOf(session)}</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ViewButton({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ElementType;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={`${label} view`}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs whitespace-nowrap",
+        active ? "bg-pry-01 text-primary" : "text-gray-06 hover:text-black-01",
+      )}
+    >
+      <Icon className="size-3.5" />
+      {label}
+    </button>
+  );
+}
