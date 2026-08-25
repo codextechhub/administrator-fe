@@ -26,7 +26,7 @@ import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined
 import { CardActions, ClickableCard } from "@/components/custom/surface";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useBranchLens } from "@/hooks/use-branch-lens";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import {
@@ -44,6 +44,7 @@ import type {
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "../components/export-button";
+import { EmptyYear } from "@/pages/protected/academics/components/empty-year";
 import { blankDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 import { OfferedAt } from "./offered-at";
@@ -59,7 +60,7 @@ import { OfferedAt } from "./offered-at";
  * tap rather than six.
  */
 export default function Subjects() {
-  const { branch, applies: multiBranch } = useBranchLens();
+  const { lens, branch, multiBranch, readOnlyYear } = useAcademicsLens();
   const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState("");
@@ -77,12 +78,12 @@ export default function Subjects() {
   const [deptId, setDeptId] = useState<number | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetSubjectsQuery({
-    branch,
+    ...lens,
     search,
     is_core: type === "all" ? undefined : type,
     page,
   });
-  const { data: programData } = useGetProgramsQuery({ branch });
+  const { data: programData } = useGetProgramsQuery(lens);
   const { data: deptData } = useGetDepartmentsQuery({ branch });
 
   const [create, { isLoading: creating }] = useCreateSubjectMutation();
@@ -94,8 +95,11 @@ export default function Subjects() {
   const programs = useMemo(() => programData?.data ?? [], [programData]);
   const departments = useMemo(() => deptData?.data ?? [], [deptData]);
 
-  const canEdit = hasPermission(P.MODIFY_SUBJECT);
-  const canManage = hasPermission(P.MANAGE_SUBJECTS);
+  // An archived year is a record, and the server refuses every write into
+  // one. Withdrawing the controls is the honest half of that: an Edit that
+  // answers 409 is worse than no Edit at all.
+  const canEdit = hasPermission(P.MODIFY_SUBJECT) && !readOnlyYear;
+  const canManage = hasPermission(P.MANAGE_SUBJECTS) && !readOnlyYear;
   const filtered = !!search || type !== "all";
 
   // Seed the extras when the drawer is pointed somewhere new. Adjusted during
@@ -198,7 +202,7 @@ export default function Subjects() {
           }}
         />
 
-        <PermissionGate permission={P.CREATE_SUBJECT}>
+        <PermissionGate permission={P.CREATE_SUBJECT} disabled={readOnlyYear}>
           <Button className="shrink-0 text-sm" onClick={() => open(null)}>
             <Plus /> Add subject
           </Button>
@@ -212,24 +216,17 @@ export default function Subjects() {
           ))}
         </div>
       ) : !subjects.length ? (
-        <OutlinedNotice
+        <EmptyYear
           icon={BookOpen}
-          title={filtered ? "No subjects match that" : "No subjects yet"}
-          body={
-            filtered
-              ? "Try a different search, or change the type filter."
-              : "Subjects are what the school teaches, and each one names the levels it is taught at. Add the first."
-          }
-          actionLabel={filtered ? "Clear filters" : undefined}
-          onAction={
-            filtered
-              ? () => {
-                  setSearch("");
-                  setType("all");
-                  setPage(1);
-                }
-              : undefined
-          }
+          thing="subjects"
+          body="Subjects are what the school teaches, and each one names the levels it is taught at. Add the first."
+          filtered={filtered}
+          filteredBody="Try a different search, or change the type filter."
+          onClearFilters={() => {
+            setSearch("");
+            setType("all");
+            setPage(1);
+          }}
         />
       ) : view === "cards" ? (
         <div className="grid items-start gap-5 md:grid-cols-2 lg:grid-cols-3">

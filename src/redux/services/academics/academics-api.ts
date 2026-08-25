@@ -50,9 +50,13 @@ function branchParam(branch: BranchFilter): Record<string, string | number> {
 }
 
 function listParams(args: ListArgs = {}): Record<string, string | number> {
-  const { branch, search, is_active, page } = args;
+  const { branch, session, search, is_active, page } = args;
   return {
     ...branchParam(branch),
+    // Beside the branch for the same reason: a lens applied per screen is a
+    // lens one screen forgets, and forgetting the year silently answers about
+    // whichever year the school happens to be running.
+    ...(session ? { session } : {}),
     ...(search?.trim() ? { search: search.trim() } : {}),
     // Omitted means active-only on the server, which is what every screen's
     // default filter wants. "all" is the only value worth spelling out.
@@ -64,8 +68,18 @@ function listParams(args: ListArgs = {}): Record<string, string | number> {
 export const academicsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // ── Reads composed by the server, one call per screen ──────────────────
-    getAcademicOverview: builder.query<Envelope<AcademicOverview>, void>({
-      query: () => ({ url: `/academics/overview/`, method: "GET" }),
+    getAcademicOverview: builder.query<
+      Envelope<AcademicOverview>,
+      { branch?: BranchFilter; session?: number } | void
+    >({
+      query: (args) => ({
+        url: `/academics/overview/`,
+        method: "GET",
+        params: {
+          ...branchParam(args?.branch),
+          ...(args?.session ? { session: args.session } : {}),
+        },
+      }),
       providesTags: ["AcademicOverview"],
     }),
 
@@ -139,8 +153,35 @@ export const academicsApi = baseApi.injectEndpoints({
         method: "POST",
       }),
       // Activating one year archives another, so the whole list is stale - and
-      // the tree is labelled by the active year, so that goes too.
-      invalidatesTags: ["Sessions", "AcademicOverview", "AcademicStructure"],
+      // every screen defaults to the ACTIVE year, so its rows go too.
+      invalidatesTags: [
+        "Sessions", "AcademicOverview", "AcademicStructure", "Classes", "Subjects",
+      ],
+    }),
+
+    /**
+     * Seed a year's structure from another year's.
+     *
+     * The server refuses a year that has already been started (409) rather
+     * than merging, so this is safe to offer without a "are you sure" of its
+     * own - the only destructive reading of it is the one that cannot happen.
+     */
+    rollForwardSession: builder.mutation<
+      Envelope<{ levels: number; classes: number; subjects: number }>,
+      { id: number; from: number }
+    >({
+      query: ({ id, from }) => ({
+        url: `/academics/sessions/${id}/roll-forward/`,
+        method: "POST",
+        body: { from },
+      }),
+      // Everything moves: levels, classes and subjects all arrive at once, so
+      // every list tag goes, not just the structure one. Classes and Subjects
+      // carry tags of their own - leaving them out left the screen that
+      // launched the copy still showing its empty state after it succeeded.
+      invalidatesTags: [
+        "Sessions", "AcademicOverview", "AcademicStructure", "Classes", "Subjects",
+      ],
     }),
 
     archiveSession: builder.mutation<Envelope<AcademicSession>, number>({
@@ -148,7 +189,9 @@ export const academicsApi = baseApi.injectEndpoints({
         url: `/academics/sessions/${id}/archive/`,
         method: "POST",
       }),
-      invalidatesTags: ["Sessions", "AcademicOverview", "AcademicStructure"],
+      invalidatesTags: [
+        "Sessions", "AcademicOverview", "AcademicStructure", "Classes", "Subjects",
+      ],
     }),
 
     // ── Departments ────────────────────────────────────────────────────────
@@ -396,6 +439,7 @@ export const {
   useUpdateSessionMutation,
   useActivateSessionMutation,
   useArchiveSessionMutation,
+  useRollForwardSessionMutation,
   useGetDepartmentsQuery,
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,

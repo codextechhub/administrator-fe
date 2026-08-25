@@ -143,6 +143,7 @@ export interface Subject extends Scoped {
 export interface OverviewSession {
   id: number;
   name: string;
+  status: SessionStatus;
   start_date: string;
   end_date: string;
   percent_elapsed: number;
@@ -154,6 +155,14 @@ export interface OverviewSession {
 export interface AcademicOverview {
   /** Null when the school has no active year yet. */
   active_session: OverviewSession | null;
+  /**
+   * The year the reader is on, which is what every count below is about.
+   *
+   * The same block as `active_session` while the pill is on the live year.
+   * They part company the moment somebody looks back at last year, and the
+   * heading has to follow the counts rather than the school's current year.
+   */
+  viewed_session: OverviewSession | null;
   counts: {
     sessions: number;
     departments: number;
@@ -216,6 +225,15 @@ export type BranchFilter = number | "all" | "school" | undefined;
 
 export interface ListArgs {
   branch?: BranchFilter;
+  /**
+   * The academic year being looked at.
+   *
+   * Omitted means the school's live year, which is the server's own default -
+   * so a screen that forgets shows the right rows rather than every year's at
+   * once. Sent explicitly anyway, because the pill can point at a draft year
+   * the school is planning or an archived one it is reading back.
+   */
+  session?: number;
   search?: string;
   /** Defaults to active-only on the server when omitted. "all" includes archived. */
   is_active?: "true" | "false" | "all";

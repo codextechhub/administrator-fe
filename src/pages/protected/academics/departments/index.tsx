@@ -28,7 +28,7 @@ import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined
 import { CardActions, ClickableCard } from "@/components/custom/surface";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useBranchLens } from "@/hooks/use-branch-lens";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { parseApiError } from "@/utils/api-error";
 import {
   useCreateDepartmentMutation,
@@ -56,7 +56,7 @@ import { ScopeCell } from "../components/scope-cell";
  * takes it away from the others, and deleting one is final.
  */
 export default function Departments() {
-  const { branch, applies: multiBranch } = useBranchLens();
+  const { branch, multiBranch } = useAcademicsLens();
   const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState("");
@@ -68,6 +68,8 @@ export default function Departments() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
 
+  // Branch only, no year: a department is not per-year. Sciences outlives
+  // 2026/2027, and the levels and subjects hanging off it are what move.
   const { data, isLoading, isError, refetch } = useGetDepartmentsQuery({
     branch,
     search,

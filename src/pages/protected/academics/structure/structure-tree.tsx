@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Panel } from "@/components/custom/surface";
-import { useBranchLens } from "@/hooks/use-branch-lens";
-import { useSessionLens } from "@/hooks/use-session-lens";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { useGetStructureTreeQuery } from "@/redux/services/academics/academics-api";
 import type { TreeRow } from "@/redux/services/academics/academics-types";
 
@@ -45,8 +44,7 @@ function toNodes(rows: TreeRow[]): Node[] {
 }
 
 export function StructureTree() {
-  const { branch, applies: multiBranch } = useBranchLens();
-  const { current } = useSessionLens();
+  const { lens, multiBranch } = useAcademicsLens();
 
   // Once true it stays true: collapsing a level does not make the extra rows
   // expensive again, and refetching back down would drop the reader's state.
@@ -62,8 +60,7 @@ export function StructureTree() {
   const [expandAll, setExpandAll] = useState(false);
 
   const { data, isLoading, isFetching } = useGetStructureTreeQuery({
-    branch,
-    session: current?.id,
+    ...lens,
     full,
   });
 

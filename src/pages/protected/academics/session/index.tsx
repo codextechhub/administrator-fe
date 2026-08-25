@@ -5,6 +5,7 @@ import {
   CalendarRange,
   Check,
   CircleCheck,
+  CopyPlus,
   LayoutGrid,
   Pencil,
   Plus,
@@ -42,6 +43,7 @@ import type {
 import { ExportButton } from "../components/export-button";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { SessionDrawer } from "./session-drawer";
+import { RollForwardDialog } from "./roll-forward-dialog";
 import { CardActions, ClickableCard } from "@/components/custom/surface";
 import { SessionStatusChip } from "./session-chips";
 import { scopeOf, statusOf, TERM_TONE, termState } from "./session-format";
@@ -73,6 +75,7 @@ export default function AcademicSessions() {
   const [drawerFor, setDrawerFor] = useState<AcademicSession | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
+  const [seedFor, setSeedFor] = useState<AcademicSession | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetSessionsQuery({
     branch,
@@ -89,6 +92,9 @@ export default function AcademicSessions() {
   const activeName = sessions.find((s) => s.status === "ACTIVE")?.name;
 
   const canEdit = hasPermission(P.MODIFY_SESSION);
+  // The copy WRITES structure, so it answers to the structure key the server
+  // checks, not to "may edit this session".
+  const canSeed = hasPermission(P.CREATE_STRUCTURE);
   const canManage = hasPermission(P.MANAGE_SESSIONS);
 
   const openNew = () => {
@@ -231,6 +237,8 @@ export default function AcademicSessions() {
               }
               onEdit={() => openEdit(session)}
               onActivate={() => setConfirm({ kind: "activate", session })}
+              canSeed={canSeed}
+              onSeed={() => setSeedFor(session)}
               onArchive={() => setConfirm({ kind: "archive", session })}
             />
           ))}
@@ -286,6 +294,12 @@ export default function AcademicSessions() {
           </div>
         </div>
       )}
+
+      <RollForwardDialog
+        target={seedFor}
+        open={!!seedFor}
+        onClose={() => setSeedFor(null)}
+      />
 
       <SessionDrawer
         open={drawerOpen}
@@ -362,6 +376,8 @@ function SessionCard({
   onEdit,
   onActivate,
   onArchive,
+  canSeed,
+  onSeed,
 }: {
   session: AcademicSession;
   canEdit: boolean;
@@ -370,6 +386,8 @@ function SessionCard({
   onEdit: () => void;
   onActivate: () => void;
   onArchive: () => void;
+  canSeed: boolean;
+  onSeed: () => void;
 }) {
   const isActive = session.status === "ACTIVE";
   const archived = session.status === "ARCHIVED";
@@ -379,7 +397,7 @@ function SessionCard({
   );
   // An archived year is read-only on the server, so its Edit is not offered
   // rather than offered and refused.
-  const showMenu = (canEdit && !archived) || canManage;
+  const showMenu = ((canEdit || canSeed) && !archived) || canManage;
 
   return (
     <ClickableCard
@@ -423,6 +441,12 @@ function SessionCard({
                   <DropdownMenuItem onClick={onActivate}>
                     <CircleCheck className="size-4" />
                     Set as active
+                  </DropdownMenuItem>
+                )}
+                {canSeed && !archived && (
+                  <DropdownMenuItem onClick={onSeed}>
+                    <CopyPlus className="size-4" />
+                    Copy structure in
                   </DropdownMenuItem>
                 )}
                 {canManage && !archived && (

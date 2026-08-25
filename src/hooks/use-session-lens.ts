@@ -10,11 +10,14 @@ import type { AcademicSession } from "@/redux/services/academics/academics-types
 // ─────────────────────────────────────────────────────────────────────────────
 // The session lens.
 //
-// It LABELS, it does not filter. Nothing in the academic structure ties a class
-// or a subject to a year, so changing the year changes the heading on the tree
-// and which session the detail screen opens - and nothing else. The backend
-// says the same thing in StructureTreeView's docstring. Stated here because a
-// reader would reasonably assume otherwise and "fix" it into a filter.
+// It FILTERS. Levels, classes and subjects each belong to one year, so the year
+// chosen here decides which rows every academics screen is looking at - and
+// which year a new one is written into. It used to be a caption over rows from
+// every year at once; that is what the session FK on those three models fixed.
+//
+// Screens do not read this hook directly. They read `useAcademicsLens`, which
+// hands back the branch and the year together as one object to spread into a
+// query, so a screen cannot filter by branch and quietly forget the year.
 //
 // Defaults to the ACTIVE year, not the first row: a school with a draft year
 // for next term should still land on the one it is running.

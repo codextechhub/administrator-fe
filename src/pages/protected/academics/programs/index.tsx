@@ -23,7 +23,7 @@ import PermissionGate from "@/components/custom/permission-gate";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useBranchLens } from "@/hooks/use-branch-lens";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import {
@@ -45,6 +45,7 @@ import { Panel } from "@/components/custom/surface";
 import { BulkLevelsDrawer } from "./bulk-levels-drawer";
 import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "../components/export-button";
+import { EmptyYear } from "@/pages/protected/academics/components/empty-year";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 
@@ -64,7 +65,7 @@ import { ScopeCell } from "../components/scope-cell";
  * offering a choice the server would refuse.
  */
 export default function Programs() {
-  const { branch, applies: multiBranch } = useBranchLens();
+  const { lens, branch, multiBranch, readOnlyYear } = useAcademicsLens();
   const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState("");
@@ -81,7 +82,7 @@ export default function Programs() {
   const [bulkFor, setBulkFor] = useState<Program | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetProgramsQuery({
-    branch,
+    ...lens,
     search,
     page,
   });
@@ -95,12 +96,19 @@ export default function Programs() {
   const [deleteLevel, { isLoading: dl }] = useDeleteLevelMutation();
 
   const programs = useMemo(() => data?.data ?? [], [data]);
+  // Every programme empty, and not because of a search: the year itself has
+  // not been started. One level anywhere is enough to disprove it.
+  const noLevelsThisYear =
+    !search && programs.length > 0 && programs.every((p) => !p.levels?.length);
   const pagination = data?.pagination;
   const departments = useMemo(() => deptData?.data ?? [], [deptData]);
 
-  const canEdit = hasPermission(P.MODIFY_STRUCTURE);
-  const canCreate = hasPermission(P.CREATE_STRUCTURE);
-  const canManage = hasPermission(P.MANAGE_STRUCTURE);
+  // An archived year is a record, and the server refuses every write into
+  // one. Withdrawing the controls is the honest half of that: an Edit that
+  // answers 409 is worse than no Edit at all.
+  const canEdit = hasPermission(P.MODIFY_STRUCTURE) && !readOnlyYear;
+  const canCreate = hasPermission(P.CREATE_STRUCTURE) && !readOnlyYear;
+  const canManage = hasPermission(P.MANAGE_STRUCTURE) && !readOnlyYear;
 
   const allOpen = programs.length > 0 && programs.every((p) => open[p.id]);
   const toggleAll = () =>
@@ -221,7 +229,7 @@ export default function Programs() {
           params={{ search, branch: branch === "all" ? undefined : branch }}
         />
 
-        <PermissionGate permission={P.CREATE_STRUCTURE}>
+        <PermissionGate permission={P.CREATE_STRUCTURE} disabled={readOnlyYear}>
           <Button className="shrink-0 text-sm" onClick={() => setProgramDrawer("new")}>
             <Plus /> Add programme
           </Button>
@@ -245,6 +253,19 @@ export default function Programs() {
           }
           actionLabel={search ? "Clear search" : undefined}
           onAction={search ? () => setSearch("") : undefined}
+        />
+      ) : noLevelsThisYear ? (
+        // Programmes are not per-year - Junior Secondary is Junior Secondary -
+        // but the LEVELS inside them are. A school that has just drafted next
+        // year sees every programme with nothing in it, which reads as loss
+        // rather than as a year that has not been started.
+        <EmptyYear
+          icon={ListTree}
+          thing="levels"
+          body="Levels are the rungs pupils move through inside a programme. Open a programme and add its first level."
+          filtered={false}
+          filteredBody=""
+          onClearFilters={() => setSearch("")}
         />
       ) : (
         <div className="grid gap-3">

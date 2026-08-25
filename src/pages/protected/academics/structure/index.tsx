@@ -16,7 +16,7 @@ import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined
 import { cn, formatMonthYearShort } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
 import { useGetAcademicOverviewQuery } from "@/redux/services/academics/academics-api";
-import { useBranchLens } from "@/hooks/use-branch-lens";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import type {
   AcademicOverview,
   OverviewSession,
@@ -33,17 +33,15 @@ import { StructureTree } from "./structure-tree";
  * from the five list endpoints would make a page of numbers cost five round
  * trips and paginate lists nobody is reading.
  *
- * **The counts do not yet follow the branch pill.** `OverviewView` takes no
- * `branch` argument, so what it returns is every branch the reader can see. The
- * lens IS passed below, so the numbers start narrowing the day the server
- * accepts it; until then no per-branch split is claimed on screen, because a
- * number that ignores the filter above it is worse than no number.
+ * The counts answer to both pills. `OverviewView` reads the branch and the
+ * year, so switching either changes the numbers rather than leaving a total
+ * sitting under a filter it ignores.
  */
 export default function AcademicStructureOverview() {
-  const { branch, applies: multiBranch } = useBranchLens();
+  const { lens, branch, multiBranch } = useAcademicsLens();
   const [view, setView] = useState<"list" | "tree">("list");
 
-  const { data, isLoading, isError, refetch } = useGetAcademicOverviewQuery();
+  const { data, isLoading, isError, refetch } = useGetAcademicOverviewQuery(lens);
   const overview = data?.data;
 
   if (isLoading) {
@@ -74,7 +72,15 @@ export default function AcademicStructureOverview() {
     );
   }
 
-  const { active_session: session, counts, branches_without_a_session: orphans } = overview;
+  // The year being READ, not the year being run - the counts below are its.
+  // They are the same block until somebody looks back at last year.
+  const {
+    viewed_session: viewed,
+    active_session: active,
+    counts,
+    branches_without_a_session: orphans,
+  } = overview;
+  const session = viewed ?? active;
 
   return (
     <main className="grid min-w-0 grid-cols-1 content-start gap-6 px-5 pt-3 pb-8">
@@ -160,8 +166,18 @@ function SessionHero({
       ? `${session.next_term} is next`
       : "Session complete";
 
+  // A draft year has not started and an archived one has finished, so the
+  // green "Active" edge would be a lie on either. The hero states what the
+  // year IS, because the counts underneath are that year's.
+  const live = session.status === "ACTIVE";
+  const tone = live
+    ? "border-green-01"
+    : session.status === "ARCHIVED"
+      ? "border-gray-04"
+      : "border-yellow-01";
+
   return (
-    <section className="rounded-md border-l-4 border-green-01 bg-white px-5 py-4">
+    <section className={cn("rounded-md border-l-4 bg-white px-5 py-4", tone)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="truncate text-lg font-medium text-black-01">
@@ -172,15 +188,18 @@ function SessionHero({
             {formatMonthYearShort(session.end_date)} · {termLine}
           </p>
         </div>
-        <Badge variant="active" className="h-fit rounded-full py-0 text-[11px] uppercase">
-          Active
+        <Badge
+          variant={live ? "active" : "secondary"}
+          className="h-fit rounded-full py-0 text-[11px] uppercase"
+        >
+          {live ? "Active" : session.status === "ARCHIVED" ? "Archived" : "Draft"}
         </Badge>
       </div>
 
       <div className="mt-4">
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-04">
           <div
-            className="h-full rounded-full bg-green-01"
+            className={cn("h-full rounded-full", live ? "bg-green-01" : "bg-gray-01")}
             style={{ width: `${session.percent_elapsed}%` }}
           />
         </div>

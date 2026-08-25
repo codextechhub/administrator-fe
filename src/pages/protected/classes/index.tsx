@@ -20,10 +20,11 @@ import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { ScopeCell } from "@/pages/protected/academics/components/scope-cell";
+import { EmptyYear } from "@/pages/protected/academics/components/empty-year";
 import { CardActions, ClickableCard } from "@/components/custom/surface";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useBranchLens } from "@/hooks/use-branch-lens";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import {
@@ -60,7 +61,7 @@ import { GenerateArmsDrawer } from "./generate-arms-drawer";
  * precisely because no route can reach that refusal. Archive is the lifecycle.
  */
 export default function Classes() {
-  const { branch, applies: multiBranch } = useBranchLens();
+  const { lens, branch, multiBranch, readOnlyYear } = useAcademicsLens();
   const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState("");
@@ -75,7 +76,7 @@ export default function Classes() {
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetClassesQuery({
-    branch,
+    ...lens,
     search,
     is_active: status,
     level: levelFilter === "all" ? undefined : levelFilter,
@@ -83,7 +84,7 @@ export default function Classes() {
   });
   // Levels come from the programmes call, which already nests them - one
   // request rather than a second flat list of the same rows.
-  const { data: programData } = useGetProgramsQuery({ branch });
+  const { data: programData } = useGetProgramsQuery(lens);
 
   const [create, { isLoading: creating }] = useCreateClassMutation();
   const [update, { isLoading: updating }] = useUpdateClassMutation();
@@ -97,8 +98,11 @@ export default function Classes() {
     [programData],
   );
 
-  const canEdit = hasPermission(P.MODIFY_CLASS);
-  const canManage = hasPermission(P.MANAGE_CLASSES);
+  // An archived year is a record, and the server refuses every write into
+  // one. Withdrawing the controls is the honest half of that: an Edit that
+  // answers 409 is worse than no Edit at all.
+  const canEdit = hasPermission(P.MODIFY_CLASS) && !readOnlyYear;
+  const canManage = hasPermission(P.MANAGE_CLASSES) && !readOnlyYear;
   const filtered = !!search || status !== "true" || levelFilter !== "all";
 
   const saveClass = async (body: ClassWrite) => {
@@ -204,7 +208,7 @@ export default function Classes() {
           }}
         />
 
-        <PermissionGate permission={P.CREATE_CLASS}>
+        <PermissionGate permission={P.CREATE_CLASS} disabled={readOnlyYear}>
           <Button
             variant="outline"
             className="shrink-0 border-primary text-sm text-primary"
@@ -232,25 +236,18 @@ export default function Classes() {
           ))}
         </div>
       ) : !classes.length ? (
-        <OutlinedNotice
+        <EmptyYear
           icon={GraduationCap}
-          title={filtered ? "No classes match that" : "No classes yet"}
-          body={
-            filtered
-              ? "Try a different search, or change the level and status filters."
-              : "A class is a level plus an arm. Generate a set of arms for a level, or add one class at a time."
-          }
-          actionLabel={filtered ? "Clear filters" : undefined}
-          onAction={
-            filtered
-              ? () => {
-                  setSearch("");
-                  setStatus("true");
-                  setLevelFilter("all");
-                  setPage(1);
-                }
-              : undefined
-          }
+          thing="classes"
+          body="A class is a level plus an arm. Generate a set of arms for a level, or add one class at a time."
+          filtered={filtered}
+          filteredBody="Try a different search, or change the level and status filters."
+          onClearFilters={() => {
+            setSearch("");
+            setStatus("true");
+            setLevelFilter("all");
+            setPage(1);
+          }}
         />
       ) : view === "cards" ? (
         <div className="grid items-start gap-6 md:grid-cols-2 lg:grid-cols-3">
