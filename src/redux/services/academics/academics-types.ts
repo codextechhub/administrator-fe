@@ -80,6 +80,13 @@ export interface Level extends Scoped {
   next_level: number | null;
   next_level_name: string | null;
   class_count: number;
+  /**
+   * Subjects offered at this level.
+   *
+   * Read by the delete confirmation: offerings CASCADE with the level, so a
+   * screen that did not say how many would remove them unannounced.
+   */
+  subject_count: number;
 }
 
 export interface Program extends Scoped {

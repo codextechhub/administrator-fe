@@ -463,7 +463,13 @@ function confirmBody(c: Confirmation | null) {
       ? `${c.program.name} applies to the whole school and will be removed everywhere. This cannot be undone.`
       : `${c.program.name} at ${c.program.branch_name} will be removed. This cannot be undone.`;
   }
-  return `${c.level.name} will be removed from ${c.program.name}. This cannot be undone.`;
+  // Offerings cascade with the level, so the confirmation says so. A cascade
+  // the reader was not told about is indistinguishable from data loss.
+  const offered =
+    c.level.subject_count > 0
+      ? ` ${c.level.subject_count === 1 ? "One subject is" : `${c.level.subject_count} subjects are`} offered at it and will stop being offered here - the ${c.level.subject_count === 1 ? "subject itself stays" : "subjects themselves stay"}.`
+      : "";
+  return `${c.level.name} will be removed from ${c.program.name}.${offered} This cannot be undone.`;
 }
 
 // ── One programme, with its levels ─────────────────────────────────────────
