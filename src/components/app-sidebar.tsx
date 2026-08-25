@@ -15,7 +15,14 @@ import { HomeIcon, TeamMgtIcon } from "@/assets/navbar-svg";
 import { NavMain } from "./nav-main";
 import { routesPath } from "@/routes/routesPath";
 import { useLocation } from "react-router";
-import { BookOpen, DollarSign, ListChecks, Rocket, Settings } from "lucide-react";
+import {
+  BookOpen,
+  CalendarRange,
+  DollarSign,
+  ListChecks,
+  Rocket,
+  Settings,
+} from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P, type PermissionCode } from "@/permissions";
 import { useAppSelector } from "@/redux/store";
@@ -157,39 +164,75 @@ export function AppSidebar({
     ],
     academics: [
       {
-        title: "Academic Management",
+        // Academic Structure is the module: the overview and everything that
+        // hangs off it. Submenus appear as their screens land - a nav item that
+        // 404s is a door drawn on a wall, so Departments, Programmes, Subjects
+        // and Assignments join this list in the phases that build them.
+        title: "Academic Structure",
         url: "#",
         icon: BookOpen,
-        isActive: location.includes(routesPath.PROTECTED.ACADEMIC.INDEX),
-        childActive: location.includes(routesPath.PROTECTED.ACADEMIC.INDEX),
-        // Group is visible when the user can browse either sessions or the
-        // calendar; individual children are gated below via `subPermission`.
-        permission: [P.BROWSE_SESSIONS, P.BROWSE_CALENDAR],
-        permissionMode: "any",
-        items: [
-          {
-            title: "Academic Session",
-            url: routesPath.PROTECTED.ACADEMIC.SESSION,
-            isActive: location.includes(routesPath.PROTECTED.ACADEMIC.SESSION),
-          },
-          {
-            title: "Academic Calender",
-            url: routesPath.PROTECTED.ACADEMIC.CALENDER,
-            isActive: location.includes(routesPath.PROTECTED.ACADEMIC.CALENDER),
-          },
-        ].filter((sub) =>
-          sub.title === "Academic Session"
-            ? hasPermission(P.BROWSE_SESSIONS)
-            : hasPermission(P.BROWSE_CALENDAR),
+        isActive: location.startsWith(
+          routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
         ),
+        childActive: location.startsWith(
+          routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
+        ),
+        // The group opens for anyone who can read any part of the structure;
+        // each child is gated on its own key below.
+        permission: [P.BROWSE_STRUCTURE, P.BROWSE_SESSIONS, P.BROWSE_CLASSES],
+        permissionMode: "any",
+        items: (
+          [
+            {
+              title: "Overview",
+              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
+              // Exact match: every child below starts with this path, so
+              // `includes` would light Overview on all of them.
+              isActive:
+                location === routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
+              perm: P.BROWSE_STRUCTURE,
+            },
+            {
+              title: "Sessions & Terms",
+              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS,
+              isActive: location.startsWith(
+                routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS,
+              ),
+              perm: P.BROWSE_SESSIONS,
+            },
+            {
+              title: "Departments",
+              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.DEPARTMENTS,
+              isActive: location.startsWith(
+                routesPath.PROTECTED.ACADEMIC_STRUCTURE.DEPARTMENTS,
+              ),
+              perm: P.BROWSE_STRUCTURE,
+            },
+            {
+              title: "Classes & Arms",
+              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES,
+              isActive: location.startsWith(
+                routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES,
+              ),
+              perm: P.BROWSE_CLASSES,
+            },
+          ] as { title: string; url: string; isActive: boolean; perm: PermissionCode }[]
+        )
+          .filter((sub) => hasPermission(sub.perm))
+          // `perm` is this file's gate, not part of the NavItem shape.
+          .map((sub) => ({ title: sub.title, url: sub.url, isActive: sub.isActive })),
       },
       {
-        title: "Classes",
-        url: routesPath.PROTECTED.CLASSES.INDEX,
-        icon: TeamMgtIcon,
-        isActive: location.startsWith(routesPath.PROTECTED.CLASSES.INDEX),
+        // Its own module now, not a child of academics management. Its screens
+        // are unchanged pending their own design pass.
+        title: "Academic Calendar",
+        url: routesPath.PROTECTED.ACADEMIC_CALENDAR.INDEX,
+        icon: CalendarRange,
+        isActive: location.startsWith(
+          routesPath.PROTECTED.ACADEMIC_CALENDAR.INDEX,
+        ),
         childActive: false,
-        permission: P.BROWSE_CLASSES,
+        permission: P.BROWSE_CALENDAR,
       },
     ],
     finance: [

@@ -1,0 +1,282 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Shapes returned by /v1/academics/.
+//
+// Two rules from the backend's own serializers run through all of them, and the
+// types say so rather than leaving a reader to discover it:
+//
+//   1. The branch dimension RECEDES at a single-branch school. `branch`,
+//      `branch_name` and `scope_label` are dropped from the payload entirely -
+//      not nulled - so every one of them is optional here. A screen must treat
+//      "absent" as "this school has one branch", never as "no branch set".
+//
+//   2. A null `branch` on a row that HAS the field is a first-class value
+//      meaning school-wide. It is never "nobody filled this in".
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Present on every catalogue row at a multi-branch school; absent otherwise. */
+export interface Scoped {
+  /** Null means school-wide. Absent means the school has one branch. */
+  branch?: number | null;
+  branch_name?: string | null;
+  /** "School-wide", or the branch's name. */
+  scope_label?: string;
+}
+
+export type SessionStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
+
+export interface Term {
+  id: number;
+  name: string;
+  order_index: number;
+  start_date: string;
+  end_date: string;
+  is_archived: boolean;
+}
+
+/** Derived from today's date by the server; never stored, so it cannot drift. */
+export type TermState = "completed" | "ongoing" | "pending";
+
+export interface AcademicSession {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+  status: SessionStatus;
+  activated_at: string | null;
+  archived_at: string | null;
+  /** Absent at a single-branch school. */
+  is_school_wide?: boolean;
+  terms: Term[];
+  term_count: number;
+  /** The branches this year runs at. Empty list means the whole school. */
+  branches?: { id: number; name: string }[];
+  /** "The whole school", or the named branches. */
+  scope_label?: string;
+}
+
+export interface Department extends Scoped {
+  id: number;
+  name: string;
+  code: string;
+  description: string;
+  is_active: boolean;
+  program_count: number;
+  subject_count: number;
+}
+
+export interface Level extends Scoped {
+  id: number;
+  name: string;
+  code: string;
+  order_index: number;
+  is_active: boolean;
+  program: number;
+  program_name: string;
+  /**
+   * Null means the level is terminal OR that promotion has not been wired.
+   * The API cannot tell those apart, so no screen may read null as "terminal".
+   */
+  next_level: number | null;
+  next_level_name: string | null;
+  class_count: number;
+}
+
+export interface Program extends Scoped {
+  id: number;
+  name: string;
+  code: string;
+  order_index: number;
+  is_active: boolean;
+  department: number | null;
+  department_name: string | null;
+  levels: Level[];
+  level_count: number;
+}
+
+export interface SchoolClass extends Scoped {
+  id: number;
+  name: string;
+  code: string;
+  arm: string;
+  capacity: number | null;
+  is_active: boolean;
+  level: number;
+  level_name: string;
+  /** Subjects taught at this class's level - a real per-class figure. */
+  subject_count: number;
+}
+
+export interface SubjectOffering {
+  id: number;
+  level: number;
+  level_name: string;
+  is_core: boolean | null;
+}
+
+export interface Subject extends Scoped {
+  id: number;
+  name: string;
+  code: string;
+  description: string;
+  is_core: boolean;
+  is_active: boolean;
+  department: number | null;
+  department_name: string | null;
+  offerings: SubjectOffering[];
+  level_count: number;
+  /** A run of levels collapsed for a card: "JSS1-SSS3", or "Not set". */
+  offered_label: string;
+}
+
+// ── Overview ────────────────────────────────────────────────────────────────
+
+export interface OverviewSession {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+  percent_elapsed: number;
+  current_term: string | null;
+  next_term: string | null;
+  terms: (Omit<Term, "is_archived"> & { state: TermState })[];
+}
+
+export interface AcademicOverview {
+  /** Null when the school has no active year yet. */
+  active_session: OverviewSession | null;
+  counts: {
+    sessions: number;
+    departments: number;
+    programs: number;
+    levels: number;
+    classes: number;
+    subjects: number;
+  };
+  /**
+   * Branches in no live year at all. Only ever non-empty once a school has split
+   * its calendar by branch - there is no correct year to guess for a branch
+   * opened afterwards, so the server reports it rather than defaulting it.
+   */
+  branches_without_a_session: { id: number; name: string }[];
+}
+
+// ── Structure tree ──────────────────────────────────────────────────────────
+
+export interface TreeRow {
+  /** "session", "p:12", "l:44", "c:9", "c:9:s:3" - stable, so it keys expansion. */
+  id: string;
+  /** Note the server's spelling: "Programme", not "Program". */
+  kind: "Session" | "Programme" | "Level" | "Class" | "Subject";
+  label: string;
+  /** 0 session, 1 programme, 2 level, 3 class, 4 subject. */
+  depth: number;
+  /** "3 levels", "No classes", "Core" - whatever this row contains. */
+  contains: string;
+  /** Level rows only. */
+  class_count?: number;
+  subject_count?: number;
+  /** Both absent at a single-branch school, and on the session row. */
+  scope_label?: string;
+  /** True when the row belongs to the whole school rather than one branch. */
+  is_shared?: boolean;
+}
+
+export interface StructureTree {
+  /** Labels the tree; does NOT filter it - nothing here ties a class to a year. */
+  session: { id: number; name: string } | null;
+  depth: "full" | "levels";
+  /**
+   * A flat pre-order list, not a nested structure. A row has children when the
+   * NEXT row's depth is greater than its own - the server sends no flag for it,
+   * so `hasChildren` is derived (see academics-tree.ts).
+   */
+  rows: TreeRow[];
+}
+
+// ── Query arguments ─────────────────────────────────────────────────────────
+
+/**
+ * The branch lens, as every academics list receives it.
+ *
+ * "all" and undefined both mean "do not filter" and are dropped from the query
+ * string. `"school"` asks for school-wide rows only - the backend's own spelling
+ * for `branch__isnull=True`.
+ */
+export type BranchFilter = number | "all" | "school" | undefined;
+
+export interface ListArgs {
+  branch?: BranchFilter;
+  search?: string;
+  /** Defaults to active-only on the server when omitted. "all" includes archived. */
+  is_active?: "true" | "false" | "all";
+  page?: number;
+}
+
+export interface ClassListArgs extends ListArgs {
+  level?: number;
+}
+
+export interface SubjectListArgs extends ListArgs {
+  is_core?: "true" | "false";
+}
+
+export interface SessionListArgs {
+  branch?: BranchFilter;
+  search?: string;
+  status?: SessionStatus | "all";
+  page?: number;
+}
+
+// ── Write payloads ──────────────────────────────────────────────────────────
+
+export interface TermWrite {
+  id?: number;
+  name: string;
+  order_index: number;
+  start_date: string;
+  end_date: string;
+}
+
+/**
+ * A session and everything about it, in one call.
+ *
+ * The drawer has one Save button, and the server takes it that way on purpose:
+ * a session created by one request and its terms by three leaves a half-built
+ * year on the school's screen the moment the second one fails.
+ */
+export interface SessionWrite {
+  name: string;
+  start_date: string;
+  end_date: string;
+  terms?: TermWrite[];
+  /** Empty (or omitted) means the year the whole school runs. */
+  branch_ids?: number[];
+}
+
+/** The refusal the drawer renders verbatim under the field that caused it. */
+export interface DuplicateDetail {
+  field: "name" | "code";
+  /** The row that blocked this one. */
+  conflict: string;
+  /** Its branch name, or "School-wide". */
+  scope_label: string;
+}
+
+/**
+ * What the entity drawer writes.
+ *
+ * One shape for departments, programmes, levels, classes and subjects, because
+ * the drawer is one form. Each write endpoint ignores the fields that do not
+ * apply to it, so a caller never has to assemble a different body per kind.
+ *
+ * `branch: null` is school-wide and is sent EXPLICITLY. Omitting the key means
+ * "leave it as it was" on a PATCH, which is a different answer - see the
+ * backend's `UNSET` in services/scoping.py, which exists for exactly this.
+ */
+export interface EntityWrite {
+  name?: string;
+  code?: string;
+  description?: string;
+  branch?: number | null;
+  is_active?: boolean;
+}

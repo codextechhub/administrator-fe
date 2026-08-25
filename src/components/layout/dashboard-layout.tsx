@@ -29,6 +29,7 @@ import {
 import { NotLiveNotice } from "@/pages/protected/onboarding/components/not-live-notice";
 import { OnboardingStatusStrip } from "@/pages/protected/onboarding/components/onboarding-status-strip";
 import { AppSearch } from "./app-search";
+import { LensStrip } from "./lens-pills";
 import { NotificationsBell } from "@/components/custom/notifications-bell";
 import { SupportSheet } from "@/components/layout/support-sheet";
 import { SUPPORT_OPEN_EVENT } from "@/components/layout/support-open";
@@ -58,6 +59,27 @@ export type DashboardHandle = {
    * contract applies to branch, applied for a different reason.
    */
   onboarding?: boolean;
+  /**
+   * Put the branch and session pills in the header.
+   *
+   * Opt-in per route rather than global, because a lens belongs to the screens
+   * that actually read it. A session pill over the student roster would be a
+   * control that changes nothing, and a branch pill on a screen that does not
+   * filter by branch is worse: it looks like it narrowed the page.
+   */
+  lens?: boolean;
+  /**
+   * This screen is open to a school that has NOT gone live.
+   *
+   * The frontend mirror of the backend's `pending_tenant_surface`. Without it
+   * every non-onboarding route is closed to a pending school, which is right
+   * for most of the app and wrong for academic structure: building it is a
+   * REQUIRED onboarding task, so a school locked out of it can never go live.
+   *
+   * Absence means closed, deliberately - a route added later is not admitted by
+   * default, which is the same fail-closed rule the backend applies.
+   */
+  pendingSurface?: boolean;
 };
 
 export default function DashboardLayout() {
@@ -66,7 +88,13 @@ export default function DashboardLayout() {
   // Deepest matched route wins, so a nested screen can override its parent's
   // header without the parent knowing about it.
   const matches = useMatches();
-  const { title, hasBack = false, onboarding: onboardingRoute = false } = matches.reduce<DashboardHandle>(
+  const {
+    title,
+    hasBack = false,
+    onboarding: onboardingRoute = false,
+    lens: showLens = false,
+    pendingSurface = false,
+  } = matches.reduce<DashboardHandle>(
     (acc, m) => ({ ...acc, ...((m.handle as DashboardHandle | undefined) ?? {}) }),
     {},
   );
@@ -86,7 +114,7 @@ export default function DashboardLayout() {
   // A LIVE school gets the whole app back even on the control room, which after
   // go-live is a read-only record rather than home base.
   const onboarding = tenantIsPending;
-  const pageIsClosed = tenantIsPending && !onboardingRoute;
+  const pageIsClosed = tenantIsPending && !onboardingRoute && !pendingSurface;
 
   useTokenRefresh();
   const { handleLogout, isLoggingOut } = useLogout();
@@ -192,6 +220,7 @@ export default function DashboardLayout() {
                 clusters is out of flow now, so nothing else absorbs the slack
                 and the controls would otherwise sit against the title. */}
             <div className="ml-auto inline-flex shrink-0 items-center gap-2.5">
+
               {/* The action palette. It launches actions and jumps to screens;
                   there is no search endpoint to find records with. The field
                   itself is centred on the header (absolute, so it is not a
@@ -292,6 +321,11 @@ export default function DashboardLayout() {
               the expiry warning can run to three lines on a phone, and pinning
               all of that would eat the fold on every onboarding screen. */}
           {onboardingRoute && <OnboardingStatusStrip />}
+
+          {/* Below the sticky block, not inside it: the header's centre is the
+              search box, which is absolutely positioned, so a lens added to the
+              header's right-hand cluster runs underneath it. */}
+          {showLens && !pageIsClosed && <LensStrip />}
 
           {canProxy && (
             <ProxyUserDialog

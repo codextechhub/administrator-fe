@@ -40,19 +40,32 @@ export const routesPath = {
     STUDENTS: { INDEX: "/students" },
     TEACHERS: { INDEX: "/teachers" },
     ADMINISTRATORS: { INDEX: "/administrators" },
-    ACADEMIC: {
-      INDEX: "/academic",
-      SESSION: "/academic/session",
-      SESSION_DETAILS_ID: (id: string) => `/academic/session/${id}`,
-      SESSION_DETAILS: "/academic/session/:id",
-      CALENDER: "/academic/calender",
-      CALENDER_DETAILS_ID: (id: string) => `/academic/calender/${id}`,
-      CALENDER_DETAILS: "/academic/calender/:id",
+    // Academic Structure. One module, one URL prefix: the overview and every
+    // screen that hangs off it. Sessions and classes moved under here from
+    // /academic/session and /classes when the module was reorganised - they are
+    // parts of the structure, not siblings of it.
+    ACADEMIC_STRUCTURE: {
+      INDEX: "/academic-structure",
+      SESSIONS: "/academic-structure/sessions",
+      SESSION_DETAILS: "/academic-structure/sessions/:id",
+      SESSION_DETAILS_ID: (id: string | number) =>
+        `/academic-structure/sessions/${id}`,
+      DEPARTMENTS: "/academic-structure/departments",
+      PROGRAMS: "/academic-structure/programs",
+      CLASSES: "/academic-structure/classes",
+      CLASS_DETAILS: "/academic-structure/classes/:id",
+      CLASS_DETAILS_ID: (id: string | number) =>
+        `/academic-structure/classes/${id}`,
+      SUBJECTS: "/academic-structure/subjects",
+      ASSIGNMENTS: "/academic-structure/assignments",
     },
-    CLASSES: {
-      INDEX: "/classes",
-      CLASS_DETAILS_ID: (id: string) => `/classes/${id}`,
-      CLASS_DETAILS: "/classes/:id",
+    // The academic calendar is its OWN module now, not a child of academic
+    // management. Spelled correctly here; the old /academic/calender paths
+    // redirect. Its screens are unchanged pending their own design pass.
+    ACADEMIC_CALENDAR: {
+      INDEX: "/academic-calendar",
+      DETAILS: "/academic-calendar/:id",
+      DETAILS_ID: (id: string | number) => `/academic-calendar/${id}`,
     },
     FEES: { INDEX: "/school-fees" },
     SETTINGS: { INDEX: "/settings" },

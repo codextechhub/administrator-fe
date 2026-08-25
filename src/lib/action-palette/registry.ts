@@ -101,38 +101,58 @@ export const ACTIONS: ActionDef[] = [
 
   // ── Academics ──────────────────────────────────────────────────────────────
   {
+    id: "view-academic-structure",
+    label: "View academic structure",
+    aliases: ["structure", "overview", "programmes", "programs", "levels"],
+    section: "Academics",
+    group: "Academic structure",
+    kind: "view",
+    gate: { perm: P.BROWSE_STRUCTURE },
+    run: { to: R.ACADEMIC_STRUCTURE.INDEX },
+  },
+  {
     id: "view-academic-session",
     label: "View academic session",
     aliases: ["sessions", "terms", "school year"],
     section: "Academics",
-    group: "Academic management",
+    group: "Academic structure",
     kind: "view",
-    // The sidebar's Academic Management group opens on either academics key,
-    // but this child is gated on sessions alone - and so is the child link.
+    // The sidebar's Academic Structure group opens on any academics key, but
+    // this child is gated on sessions alone - and so is the child link.
     gate: { perm: P.BROWSE_SESSIONS },
-    run: { to: R.ACADEMIC.SESSION },
+    run: { to: R.ACADEMIC_STRUCTURE.SESSIONS },
+  },
+  {
+    id: "view-departments",
+    label: "View departments",
+    aliases: ["faculties", "faculty", "department"],
+    section: "Academics",
+    group: "Academic structure",
+    kind: "view",
+    gate: { perm: P.BROWSE_STRUCTURE },
+    run: { to: R.ACADEMIC_STRUCTURE.DEPARTMENTS },
   },
   {
     id: "view-academic-calendar",
     label: "View academic calendar",
-    // "calender" is not a typo here: the sidebar item and the URL both spell it
-    // that way, so it is what a person who has seen the app will type.
+    // "calender" stays an alias: the old URL spelled it that way for months, so
+    // it is what somebody who has used the app may still type.
     aliases: ["calendar", "calender", "events", "holidays"],
     section: "Academics",
-    group: "Academic management",
+    group: "Academic calendar",
     kind: "view",
     gate: { perm: P.BROWSE_CALENDAR },
-    run: { to: R.ACADEMIC.CALENDER },
+    run: { to: R.ACADEMIC_CALENDAR.INDEX },
   },
   {
     id: "view-classes",
     label: "View classes",
     aliases: ["class list", "class rosters"],
     section: "Academics",
-    group: "Classes",
+    group: "Academic structure",
     kind: "view",
     gate: { perm: P.BROWSE_CLASSES },
-    run: { to: R.CLASSES.INDEX },
+    run: { to: R.ACADEMIC_STRUCTURE.CLASSES },
   },
 
   // ── Onboarding ─────────────────────────────────────────────────────────────

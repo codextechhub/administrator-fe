@@ -1,42 +1,97 @@
 import { lazy } from "react";
-import { type RouteObject } from "react-router";
+import { Navigate, type RouteObject } from "react-router";
 import { routesPath } from "../routesPath";
 import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 
 // Route-level code splitting: each area page loads on first visit instead of
 // shipping in the main bundle. Suspense fallback lives in routes/lazy-root.tsx.
-const AcademicCalender = lazy(() => import("@/pages/protected/academics/calender"));
-const CalenderDetails = lazy(
-  () => import("@/pages/protected/academics/calender/calender-details"),
+const AcademicStructureOverview = lazy(
+  () => import("@/pages/protected/academics/structure"),
 );
 const AcademicSession = lazy(() => import("@/pages/protected/academics/session"));
 const SessionDetails = lazy(
   () => import("@/pages/protected/academics/session/session-details"),
 );
+const Departments = lazy(() => import("@/pages/protected/academics/departments"));
+const AcademicCalendar = lazy(() => import("@/pages/protected/academics/calender"));
+const CalendarDetails = lazy(
+  () => import("@/pages/protected/academics/calender/calender-details"),
+);
 
+const S = routesPath.PROTECTED.ACADEMIC_STRUCTURE;
+const C = routesPath.PROTECTED.ACADEMIC_CALENDAR;
+
+/** Old paths that now point somewhere else. See the note beside the list. */
+export function redirects(pairs: [from: string, to: string][]): RouteObject[] {
+  return pairs.map(([from, to]) => ({
+    path: from,
+    element: <Navigate to={to} replace />,
+    handle: { pendingSurface: true } satisfies DashboardHandle,
+  }));
+}
+
+// `lens: true` puts the branch and session pills in the header. Only the
+// Academic Structure screens read those lenses, so only they ask for them - a
+// session pill over the student roster would be a filter that does nothing.
 export const academicRoutes = [
   {
-    path: routesPath.PROTECTED.ACADEMIC.CALENDER,
-    Component: AcademicCalender,
-    handle: { title: "Academic Calender" } satisfies DashboardHandle,
+    path: S.INDEX,
+    Component: AcademicStructureOverview,
+    handle: { title: "Academic Structure", lens: true, pendingSurface: true } satisfies DashboardHandle,
   },
   {
-    path: routesPath.PROTECTED.ACADEMIC.CALENDER_DETAILS,
-    Component: CalenderDetails,
-    // Detail screens kept their parent's title and only added a back button.
+    path: S.SESSIONS,
+    Component: AcademicSession,
+    handle: { title: "Sessions & Terms", lens: true, pendingSurface: true } satisfies DashboardHandle,
+  },
+  {
+    path: S.SESSION_DETAILS,
+    // Detail screens keep their parent's title and only add a back button.
+    Component: SessionDetails,
     handle: {
-      title: "Academic Calender",
+      title: "Sessions & Terms",
       hasBack: true,
+      lens: true,
+      pendingSurface: true,
     } satisfies DashboardHandle,
   },
+
   {
-    path: routesPath.PROTECTED.ACADEMIC.SESSION,
-    Component: AcademicSession,
-    handle: { title: "Academic Session" } satisfies DashboardHandle,
+    path: S.DEPARTMENTS,
+    Component: Departments,
+    handle: {
+      title: "Departments",
+      lens: true,
+      pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+
+  // The academic calendar is its own module now, not a child of academics
+  // management. Its screens are unchanged pending their own design pass, so no
+  // lens: nothing on them reads one yet.
+  {
+    path: C.INDEX,
+    Component: AcademicCalendar,
+    handle: { title: "Academic Calendar" } satisfies DashboardHandle,
   },
   {
-    path: routesPath.PROTECTED.ACADEMIC.SESSION_DETAILS,
-    Component: SessionDetails,
-    handle: { title: "Session Details", hasBack: true } satisfies DashboardHandle,
+    path: C.DETAILS,
+    Component: CalendarDetails,
+    handle: { title: "Academic Calendar", hasBack: true } satisfies DashboardHandle,
   },
+
+  // The module moved. Anything bookmarked at the old paths lands where the
+  // screen actually lives rather than on a blank route.
+  //
+  // `pendingSurface` on a REDIRECT is not a permission decision - it is what
+  // stops the layout answering first. The closed-school notice renders above the
+  // outlet, so without this a pending school following an old bookmark gets
+  // "this part of XVS opens when your school goes live" and the redirect never
+  // runs. A redirect shows nothing and grants nothing; whatever it lands on
+  // makes its own decision.
+  ...redirects([
+    ["/academic", S.INDEX],
+    ["/academic/session", S.SESSIONS],
+    ["/academic/calender", C.INDEX],
+  ]),
 ] as RouteObject[];

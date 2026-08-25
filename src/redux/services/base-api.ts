@@ -386,6 +386,12 @@ export const baseApi = createApi({
     "Sessions",
     "Calendar",
     "Classes",
+    // Departments, programmes and levels are one tag: they are one screen group
+    // to a school, and adding a level changes a programme's row, so splitting
+    // them would mean every write invalidating the other two anyway.
+    "AcademicStructure",
+    "Subjects",
+    "AcademicOverview",
     "Fees",
     "Roles",
     "ProxySessions",
