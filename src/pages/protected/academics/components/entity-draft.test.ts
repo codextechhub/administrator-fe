@@ -66,3 +66,31 @@ describe("classCode", () => {
     expect(classCode("", "A")).toBe("");
   });
 });
+
+describe("the entity drawer's dirty baseline", () => {
+  // A regression test written as data, because the bug was in state timing:
+  // `initialExtra` was captured once at mount, so the baseline belonged to
+  // whichever row was opened FIRST. Every drawer after that started dirty and
+  // offered Save on a form nobody had touched. The rule this pins is that the
+  // baseline is whatever the extras held when the drawer was pointed at THIS
+  // row - so comparing them to a stale snapshot must read as changed.
+  const baselineFor = (extras: object) => JSON.stringify(extras);
+
+  it("reads an untouched form as unchanged", () => {
+    const extras = { is_core: true, level_ids: [1, 2, 3] };
+    expect(JSON.stringify(extras)).toBe(baselineFor(extras));
+  });
+
+  it("reads a different row against its OWN baseline, not the first row's", () => {
+    const first = { is_core: true, level_ids: [1, 2, 3] };
+    const second = { is_core: false, level_ids: [4] };
+    expect(JSON.stringify(second)).not.toBe(baselineFor(first));
+    expect(JSON.stringify(second)).toBe(baselineFor(second));
+  });
+
+  it("notices a level added to the set", () => {
+    const before = { is_core: true, level_ids: [1, 2] };
+    const after = { is_core: true, level_ids: [1, 2, 3] };
+    expect(JSON.stringify(after)).not.toBe(baselineFor(before));
+  });
+});

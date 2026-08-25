@@ -224,6 +224,14 @@ export function AppSidebar({
               ),
               perm: P.BROWSE_CLASSES,
             },
+            {
+              title: "Subjects",
+              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.SUBJECTS,
+              isActive: location.startsWith(
+                routesPath.PROTECTED.ACADEMIC_STRUCTURE.SUBJECTS,
+              ),
+              perm: P.BROWSE_SUBJECTS,
+            },
           ] as { title: string; url: string; isActive: boolean; perm: PermissionCode }[]
         )
           .filter((sub) => hasPermission(sub.perm))

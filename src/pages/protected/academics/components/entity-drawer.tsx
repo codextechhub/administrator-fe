@@ -11,10 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import { useBranchLens } from "@/hooks/use-branch-lens";
-// ClassWrite is EntityWrite plus the class-only fields. Typing the drawer on
-// the widest shape lets one component serve all five kinds without each of them
-// widening it again.
-import type { ClassWrite } from "@/redux/services/academics/academics-types";
+import type { AnyEntityWrite } from "@/redux/services/academics/academics-types";
 import {
   codeFromName,
   type EntityCopy,
@@ -70,7 +67,7 @@ export function EntityDrawer({
   saving: boolean;
   onClose: () => void;
   /** Resolve to the caller's mutation. Rejections are read for a refusal. */
-  onSave: (body: ClassWrite) => Promise<unknown>;
+  onSave: (body: AnyEntityWrite) => Promise<unknown>;
   /** Kind-specific controls (a department picker, offered-at levels, an arm). */
   children?: (draft: EntityDraft) => React.ReactNode;
   /**
@@ -82,7 +79,7 @@ export function EntityDrawer({
    * Save is ONE call: a programme whose department arrived in a second request
    * is a programme that can end up in half of what was asked for.
    */
-  extraBody?: ClassWrite;
+  extraBody?: AnyEntityWrite;
   /** False while a kind-specific control is incomplete. */
   extrasValid?: boolean;
   /**
@@ -129,6 +126,9 @@ export function EntityDrawer({
   // row's values for a frame - see the same note in session-drawer.
   const openedFor = open ? JSON.stringify(initial) : "shut";
   const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
+  const [initialExtra, setInitialExtra] = useState(() =>
+    JSON.stringify(extraBody ?? {}),
+  );
   if (openedFor !== lastOpenedFor) {
     setLastOpenedFor(openedFor);
     if (open) {
@@ -136,6 +136,7 @@ export function EntityDrawer({
       setTouched({});
       setRefusal(null);
       setCodeIsOurs(!initial.code);
+      setInitialExtra(JSON.stringify(extraBody ?? {}));
     }
   }
 
@@ -170,7 +171,11 @@ export function EntityDrawer({
   const valid = !!shownName.trim() && !nameEmpty && !branchMissing && extrasValid;
   // The extras count as changes too, or picking a department on an otherwise
   // untouched form would leave Save greyed out.
-  const [initialExtra] = useState(() => JSON.stringify(extraBody ?? {}));
+  //
+  // Re-baselined every time the drawer is pointed somewhere new, below. Taken
+  // once at mount - as it was - the baseline belonged to whichever row was
+  // opened FIRST, so every drawer after that started dirty and offered Save on
+  // a form nobody had touched.
   const dirty =
     JSON.stringify({ ...draft, name: shownName, branch: effectiveBranch }) !==
       JSON.stringify({ ...initial, branch: lock ? lock.id : initial.branch }) ||

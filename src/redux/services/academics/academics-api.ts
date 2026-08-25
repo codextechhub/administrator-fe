@@ -19,6 +19,7 @@ import type {
   StructureTree,
   Subject,
   SubjectListArgs,
+  SubjectWrite,
 } from "./academics-types";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -335,6 +336,54 @@ export const academicsApi = baseApi.injectEndpoints({
       },
       providesTags: ["Subjects"],
     }),
+    createSubject: builder.mutation<Envelope<Subject>, SubjectWrite>({
+      query: (body) => ({ url: `/academics/subjects/`, method: "POST", body }),
+      invalidatesTags: ["Subjects", "AcademicStructure", "AcademicOverview"],
+    }),
+
+    updateSubject: builder.mutation<
+      Envelope<Subject>,
+      { id: number } & SubjectWrite
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/academics/subjects/${id}/`,
+        method: "PATCH",
+        body,
+      }),
+      // Offerings change what a CLASS reports as its subject count, and what
+      // the level rows in the accordion say, so both go with the subject list.
+      invalidatesTags: [
+        "Subjects", "AcademicStructure", "AcademicOverview", "Classes",
+      ],
+    }),
+
+    deleteSubject: builder.mutation<Envelope<null>, number>({
+      query: (id) => ({ url: `/academics/subjects/${id}/`, method: "DELETE" }),
+      invalidatesTags: [
+        "Subjects", "AcademicStructure", "AcademicOverview", "Classes",
+      ],
+    }),
+
+    /**
+     * Replace where a subject is offered, on its own.
+     *
+     * The drawer does not use this - it sends `level_ids` with the rest so Save
+     * is one call. This is for a screen that changes only the offerings, and
+     * exists because the endpoint does.
+     */
+    setSubjectOfferings: builder.mutation<
+      Envelope<Subject>,
+      { id: number; level_ids: number[] }
+    >({
+      query: ({ id, level_ids }) => ({
+        url: `/academics/subjects/${id}/offerings/`,
+        method: "PUT",
+        body: { level_ids },
+      }),
+      invalidatesTags: [
+        "Subjects", "AcademicStructure", "AcademicOverview", "Classes",
+      ],
+    }),
   }),
 });
 
@@ -366,4 +415,8 @@ export const {
   useArchiveClassMutation,
   useRestoreClassMutation,
   useGetSubjectsQuery,
+  useCreateSubjectMutation,
+  useUpdateSubjectMutation,
+  useDeleteSubjectMutation,
+  useSetSubjectOfferingsMutation,
 } = academicsApi;

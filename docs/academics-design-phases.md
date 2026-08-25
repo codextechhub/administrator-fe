@@ -711,11 +711,36 @@ precisely because no route can reach that refusal.
    over it - the same ours-versus-theirs rule the code field learned in phase 3,
    applied to the name.
 
-### Phase 6 - Subjects
+### Phase 6 - Subjects - **SHIPPED**
 
-New screen. Cards and table, core/elective filter, the offered-at picker grouped
-by programme with per-group All/Clear, and delete. Writes offerings through
-`PUT /subjects/<id>/offerings/`.
+Built and driven against the real API at 1440px and 390px. Zero console errors,
+zero horizontal page overflow, 246 frontend and 180 backend tests green.
+
+Cards and table, search, the core/elective filter, pagination, delete, and the
+drawer with its department picker, its core toggle and the **offered-at picker
+grouped by programme**.
+
+The grouping is doing work rather than tidying: a school with sixteen levels
+reads as four short rows instead of a wall of chips, and "Mathematics is taught
+right through Primary" is one tap on that programme's All rather than six taps
+on six chips. Each group carries its own count and its own All/Clear.
+
+The offerings travel in the drawer's single save (`level_ids` alongside
+everything else) rather than through the separate `PUT /offerings/` endpoint,
+which is kept in the service for a screen that changes only offerings. The
+server takes the list as a REPLACEMENT, not a diff, so the drawer never works
+out what changed and a level left unticked is a level the subject is no longer
+offered at - there is no third state.
+
+The delete confirmation names the cascade, the way the level one does:
+*"Yoruba at Brightfield Schools Annex will be removed. It will stop being taught
+at all 3 levels it is offered at."*
+
+**One thing the build turned up:** the drawer offered Save on forms nobody had
+touched. The extras' dirty baseline was captured once at mount, so it belonged
+to whichever row was opened FIRST - every drawer after that started dirty. It is
+re-baselined whenever the drawer is pointed somewhere new, and a test pins the
+rule.
 
 ### Phase 7 - Assignments, and the Export buttons
 

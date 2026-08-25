@@ -340,6 +340,7 @@ function SpineList({
       body: "What is taught, and the levels it is offered at.",
       count: `${counts.subjects}${scoped}`,
       icon: BookOpen,
+      to: P.SUBJECTS,
     },
     {
       title: "Assignments",

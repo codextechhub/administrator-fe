@@ -1,0 +1,537 @@
+import { useMemo, useState } from "react";
+import {
+  BookOpen,
+  LayoutGrid,
+  Pencil,
+  Pin,
+  Plus,
+  Rows3,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import PromptModal from "@/components/modal/prompt-modal";
+import CustomTable from "@/components/custom/custom-table";
+import PermissionGate from "@/components/custom/permission-gate";
+import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
+import { P } from "@/permissions";
+import { usePermissions } from "@/hooks/use-permissions";
+import { useBranchLens } from "@/hooks/use-branch-lens";
+import { cn } from "@/lib/utils";
+import { parseApiError } from "@/utils/api-error";
+import {
+  useCreateSubjectMutation,
+  useDeleteSubjectMutation,
+  useGetDepartmentsQuery,
+  useGetProgramsQuery,
+  useGetSubjectsQuery,
+  useUpdateSubjectMutation,
+} from "@/redux/services/academics/academics-api";
+import type {
+  Subject,
+  SubjectWrite,
+} from "@/redux/services/academics/academics-types";
+import { EntityDrawer } from "../components/entity-drawer";
+import { blankDraft } from "../components/entity-draft";
+import { ScopeCell } from "../components/scope-cell";
+import { OfferedAt } from "./offered-at";
+
+/**
+ * What is taught, and the levels it is offered at.
+ *
+ * The offerings are the screen's point rather than a detail on it: a subject
+ * that exists but is offered nowhere is a row that does nothing, and the count
+ * a class reports as its subjects is derived from these. So the drawer sends
+ * `level_ids` with everything else - one Save, one call - and the picker is
+ * grouped by programme, because "taught right through Primary" should be one
+ * tap rather than six.
+ */
+export default function Subjects() {
+  const { branch, applies: multiBranch } = useBranchLens();
+  const { hasPermission } = usePermissions();
+
+  const [search, setSearch] = useState("");
+  const [type, setType] = useState<"all" | "true" | "false">("all");
+  const [view, setView] = useState<"cards" | "table">("cards");
+  const [page, setPage] = useState(1);
+
+  const [editing, setEditing] = useState<Subject | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [confirm, setConfirm] = useState<Subject | null>(null);
+
+  // The drawer's two extra fields, owned here so they travel in its one save.
+  const [isCore, setIsCore] = useState(true);
+  const [levelIds, setLevelIds] = useState<number[]>([]);
+  const [deptId, setDeptId] = useState<number | null>(null);
+
+  const { data, isLoading, isError, refetch } = useGetSubjectsQuery({
+    branch,
+    search,
+    is_core: type === "all" ? undefined : type,
+    page,
+  });
+  const { data: programData } = useGetProgramsQuery({ branch });
+  const { data: deptData } = useGetDepartmentsQuery({ branch });
+
+  const [create, { isLoading: creating }] = useCreateSubjectMutation();
+  const [update, { isLoading: updating }] = useUpdateSubjectMutation();
+  const [remove, { isLoading: removing }] = useDeleteSubjectMutation();
+
+  const subjects = useMemo(() => data?.data ?? [], [data]);
+  const pagination = data?.pagination;
+  const programs = useMemo(() => programData?.data ?? [], [programData]);
+  const departments = useMemo(() => deptData?.data ?? [], [deptData]);
+
+  const canEdit = hasPermission(P.MODIFY_SUBJECT);
+  const canManage = hasPermission(P.MANAGE_SUBJECTS);
+  const filtered = !!search || type !== "all";
+
+  // Seed the extras when the drawer is pointed somewhere new. Adjusted during
+  // render, so the picker already shows the subject's levels on first paint.
+  const drawerKey = drawerOpen ? String(editing?.id ?? "new") : "shut";
+  const [lastKey, setLastKey] = useState(drawerKey);
+  if (drawerKey !== lastKey) {
+    setLastKey(drawerKey);
+    if (drawerOpen) {
+      setIsCore(editing?.is_core ?? true);
+      setLevelIds((editing?.offerings ?? []).map((o) => o.level));
+      setDeptId(editing?.department ?? null);
+    }
+  }
+
+  const open = (subject: Subject | null) => {
+    setEditing(subject);
+    setDrawerOpen(true);
+  };
+
+  const save = async (body: SubjectWrite) => {
+    const result = editing
+      ? await update({ id: editing.id, ...body }).unwrap()
+      : await create(body).unwrap();
+    toast.success(result.message);
+  };
+
+  const runDelete = async () => {
+    if (!confirm) return;
+    try {
+      const result = await remove(confirm.id).unwrap();
+      toast.success(result.message);
+    } catch (error) {
+      toast.error(parseApiError(error).message || "That could not be deleted.");
+    }
+    setConfirm(null);
+  };
+
+  if (isError) {
+    return (
+      <main className="px-5 pt-3 pb-8">
+        <OutlinedNotice
+          icon={BookOpen}
+          title="We could not load your subjects"
+          body="Something went wrong on our side. Try again in a moment."
+          actionLabel="Try again"
+          onAction={() => refetch()}
+        />
+      </main>
+    );
+  }
+
+  return (
+    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <div className="relative min-w-0 flex-1 basis-52">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
+          <input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search subjects"
+            aria-label="Search subjects"
+            className="h-9 w-full rounded-full border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
+          />
+        </div>
+
+        <select
+          value={type}
+          onChange={(e) => {
+            setType(e.target.value as "all" | "true" | "false");
+            setPage(1);
+          }}
+          aria-label="Filter by type"
+          className="h-9 shrink-0 rounded-full border border-white-02 bg-white px-3 text-sm outline-none focus:border-primary"
+        >
+          <option value="all">All subjects</option>
+          <option value="true">Core only</option>
+          <option value="false">Electives only</option>
+        </select>
+
+        <div className="inline-flex shrink-0 rounded-full border border-white-02 bg-white p-0.5">
+          <ViewButton
+            active={view === "cards"}
+            onClick={() => setView("cards")}
+            icon={LayoutGrid}
+            label="Cards"
+          />
+          <ViewButton
+            active={view === "table"}
+            onClick={() => setView("table")}
+            icon={Rows3}
+            label="Table"
+          />
+        </div>
+
+        <PermissionGate permission={P.CREATE_SUBJECT}>
+          <Button className="shrink-0 text-sm" onClick={() => open(null)}>
+            <Plus /> Add subject
+          </Button>
+        </PermissionGate>
+      </div>
+
+      {isLoading ? (
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-44 w-full rounded-md" />
+          ))}
+        </div>
+      ) : !subjects.length ? (
+        <OutlinedNotice
+          icon={BookOpen}
+          title={filtered ? "No subjects match that" : "No subjects yet"}
+          body={
+            filtered
+              ? "Try a different search, or change the type filter."
+              : "Subjects are what the school teaches, and each one names the levels it is taught at. Add the first."
+          }
+          actionLabel={filtered ? "Clear filters" : undefined}
+          onAction={
+            filtered
+              ? () => {
+                  setSearch("");
+                  setType("all");
+                  setPage(1);
+                }
+              : undefined
+          }
+        />
+      ) : view === "cards" ? (
+        <div className="grid items-start gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {subjects.map((subject) => (
+            <SubjectCard
+              key={subject.id}
+              subject={subject}
+              multiBranch={multiBranch}
+              canEdit={canEdit}
+              canManage={canManage}
+              onEdit={() => open(subject)}
+              onDelete={() => setConfirm(subject)}
+            />
+          ))}
+        </div>
+      ) : (
+        <CustomTable
+          tableHeaderList={[
+            "Subject",
+            "Code",
+            "Department",
+            "Type",
+            "Offered at",
+            ...(multiBranch ? ["Scope"] : []),
+          ]}
+          tableBodyList={subjects.map((s) => ({
+            id: s.id,
+            Subject: s.name,
+            Code: s.code,
+            Department: s.department_name ?? "-",
+            Type: s.is_core ? "Core" : "Elective",
+            "Offered at": s.offered_label,
+            ...(multiBranch ? { Scope: s.scope_label ?? "School-wide" } : {}),
+          }))}
+          onRowClick={(row: { id: number }) => {
+            const subject = subjects.find((s) => s.id === row.id);
+            if (subject && canEdit) open(subject);
+          }}
+          currentPage={pagination?.currentPage ?? 1}
+          totalPage={pagination?.totalPages ?? 1}
+          onPageChange={(next) => setPage(Number(next) || 1)}
+          emptyText="No subjects"
+        />
+      )}
+
+      {view === "cards" && (pagination?.totalPages ?? 1) > 1 && (
+        <div className="flex items-center justify-between text-xs text-gray-05">
+          <span>
+            Page {pagination?.currentPage} of {pagination?.totalPages}
+          </span>
+          <div className="inline-flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!pagination?.previous}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!pagination?.next}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <EntityDrawer
+        open={drawerOpen}
+        editing={!!editing}
+        saving={creating || updating}
+        initial={
+          editing
+            ? {
+                name: editing.name,
+                code: editing.code,
+                description: editing.description ?? "",
+                branch: editing.branch ?? null,
+              }
+            : blankDraft(branch === "all" ? null : branch)
+        }
+        extraBody={{
+          is_core: isCore,
+          level_ids: levelIds,
+          department: deptId,
+        }}
+        copy={{
+          title: editing ? `Edit ${editing.name}` : "Add subject",
+          subtitle: "Subjects are taught at one or more levels.",
+          nameLabel: "Subject name",
+          namePlaceholder: "e.g. Mathematics",
+          codePlaceholder: "e.g. MTH",
+          scopeHint:
+            "A subject offered school-wide is available at every branch that has these levels.",
+        }}
+        onClose={() => setDrawerOpen(false)}
+        onSave={save}
+      >
+        {() => (
+          <>
+            <div className="mt-4">
+              <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
+                Department
+              </label>
+              <select
+                value={deptId ?? ""}
+                onChange={(e) =>
+                  setDeptId(e.target.value ? Number(e.target.value) : null)
+                }
+                aria-label="Department"
+                className="w-full rounded-lg border border-white-02 px-3 py-2.5 text-sm outline-none focus:border-primary"
+              >
+                <option value="">No department</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <label className="mt-4 flex cursor-pointer items-start gap-2.5">
+              <input
+                type="checkbox"
+                checked={isCore}
+                onChange={(e) => setIsCore(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-[var(--color-primary,#4A659D)]"
+              />
+              <span className="min-w-0">
+                <span className="block text-[13px] font-medium text-gray-06">
+                  Core subject
+                </span>
+                <span className="block text-xs text-gray-05 text-pretty">
+                  Core subjects are taken by every pupil at the levels they are
+                  offered. Electives are chosen.
+                </span>
+              </span>
+            </label>
+
+            <OfferedAt
+              programs={programs}
+              selected={levelIds}
+              onChange={setLevelIds}
+            />
+          </>
+        )}
+      </EntityDrawer>
+
+      <PromptModal
+        isOpen={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={runDelete}
+        loading={removing}
+        canCancel
+        title={`Delete ${confirm?.name}?`}
+        description={deleteBody(confirm)}
+        onConfirmText="Delete"
+        containerClass="min-h-[320px] lg:w-[420px]"
+        srcClass="size-25"
+        src="/image/caution.png"
+        onConfirmClass="bg-error-01 text-white shadow-xs hover:bg-error-01/90 focus-visible:ring-error-01/20"
+      />
+    </main>
+  );
+}
+
+/**
+ * What deleting a subject actually removes.
+ *
+ * Its offerings cascade with it, and that is the part a school would not guess:
+ * the subject stops being taught at every level at once. Named for the same
+ * reason the level delete names its offerings - a cascade nobody is told about
+ * is indistinguishable from data loss.
+ */
+function deleteBody(subject: Subject | null) {
+  if (!subject) return "";
+  const where =
+    subject.branch == null
+      ? `${subject.name} is offered school-wide and will be removed from every branch.`
+      : `${subject.name} at ${subject.branch_name} will be removed.`;
+  const levels =
+    subject.level_count > 0
+      ? ` It will stop being taught at ${subject.level_count === 1 ? "the level" : `all ${subject.level_count} levels`} it is offered at.`
+      : "";
+  return `${where}${levels} This cannot be undone.`;
+}
+
+// ── The card ────────────────────────────────────────────────────────────────
+
+function SubjectCard({
+  subject,
+  multiBranch,
+  canEdit,
+  canManage,
+  onEdit,
+  onDelete,
+}: {
+  subject: Subject;
+  multiBranch: boolean;
+  canEdit: boolean;
+  canManage: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "h-fit w-full min-w-0 rounded-md border-l-4 bg-white px-4 py-3",
+        subject.is_core ? "border-primary" : "border-white-02",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h5 className="truncate text-base font-medium text-black-01">
+            {subject.name}
+          </h5>
+          <p className="truncate text-xs text-gray-05">
+            {subject.code} · {subject.department_name ?? "No department"}
+          </p>
+        </div>
+        <div className="inline-flex shrink-0 items-center gap-1.5">
+          <Badge
+            variant={subject.is_core ? "blue" : "inactive"}
+            className="h-fit rounded-full py-0 text-[11px] uppercase"
+          >
+            {subject.is_core ? "Core" : "Elective"}
+          </Badge>
+          {(canEdit || canManage) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`Actions for ${subject.name}`}
+                  className="grid size-6 place-content-center rounded-full text-gray-06 hover:bg-gray-04"
+                >
+                  <span className="text-lg leading-none">⋯</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                {canEdit && (
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Pencil className="size-4" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
+                {canManage && (
+                  <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                    <Trash2 className="size-4" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+
+      {multiBranch && (
+        <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-05">
+          <Pin className="size-3 shrink-0" />
+          <ScopeCell label={subject.scope_label} shared={subject.branch == null} />
+        </div>
+      )}
+
+      <hr className="my-3 border-white-02" />
+
+      <div>
+        <p className="text-xs text-gray-05">Offered at</p>
+        <p className="mt-0.5 truncate text-sm font-medium text-black-01">
+          {subject.offered_label}
+        </p>
+        <p className="mt-0.5 text-xs text-gray-05">
+          {subject.level_count === 1
+            ? "1 level"
+            : `${subject.level_count} levels`}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ViewButton({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ElementType;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={`${label} view`}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs whitespace-nowrap",
+        active ? "bg-pry-01 text-primary" : "text-gray-06 hover:text-black-01",
+      )}
+    >
+      <Icon className="size-3.5" />
+      {label}
+    </button>
+  );
+}

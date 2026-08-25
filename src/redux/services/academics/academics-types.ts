@@ -226,11 +226,33 @@ export interface ClassListArgs extends ListArgs {
   level?: number;
 }
 
+export interface SubjectWrite extends EntityWrite {
+  is_core?: boolean;
+  /**
+   * The complete set of levels this subject is offered at.
+   *
+   * A replacement, not a diff - the server writes exactly this list - so the
+   * drawer never has to work out what changed, and a level it forgot to mention
+   * is a level the subject is no longer offered at. Sent inline with the rest,
+   * so Save stays one call.
+   */
+  level_ids?: number[];
+}
+
 export interface ClassWrite extends EntityWrite {
   level?: number;
   arm?: string;
   capacity?: number | null;
 }
+
+/**
+ * Everything the shared entity drawer can send, for any of the five kinds.
+ *
+ * The union rather than five overloads: each write endpoint ignores the fields
+ * that do not apply to it, so one body type keeps the drawer generic and stops
+ * each screen widening it again.
+ */
+export type AnyEntityWrite = EntityWrite & Partial<ClassWrite> & Partial<SubjectWrite>;
 
 export interface SubjectListArgs extends ListArgs {
   is_core?: "true" | "false";
