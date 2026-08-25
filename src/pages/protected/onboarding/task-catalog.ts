@@ -80,9 +80,17 @@ const CATALOG: Record<string, TaskMeta> = {
     icon: GraduationCap,
     description:
       "Sessions, terms, departments, programmes, levels and classes for your school year.",
+    // Still attested: no backend can judge whether a school's structure is
+    // FINISHED, so the tick is the school's word. But the work itself is open -
+    // every academics view declares `pending_tenant_surface`, deliberately,
+    // because a school that cannot build its structure can never go live. The
+    // card used to say the module opened at go-live; that was true before the
+    // module existed and would now send a school looking for a door that is
+    // already unlocked.
     attested: true,
-    closedNote:
-      "Academic structure has its own module, which opens when your school goes live.",
+    route: routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
+    openLabel: "Open structure",
+    openPermission: P.BROWSE_STRUCTURE,
   },
   INITIAL_DATA: {
     icon: Upload,

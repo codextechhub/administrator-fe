@@ -1,0 +1,364 @@
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import { parseApiError } from "@/utils/api-error";
+import { useBranchLens } from "@/hooks/use-branch-lens";
+import type { EntityWrite } from "@/redux/services/academics/academics-types";
+import {
+  codeFromName,
+  type EntityCopy,
+  type EntityDraft,
+} from "./entity-draft";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// One drawer for every catalogue entity: department, programme, level, class,
+// subject.
+//
+// One form because they ARE one form - a name, a code and where it applies -
+// and five copies of it would drift the moment one of them gained a field. The
+// kinds differ in their labels, in the extra controls they need, and in nothing
+// else; the extras arrive as `children` rather than as five branches inside
+// this file.
+//
+// Two rules live here rather than in each screen:
+//
+// **Scope is stated, not offered, where it is not a choice.** An account tied
+// to one branch cannot create something school-wide, and a level inside a
+// branch-only programme cannot be wider than its parent. In both cases the
+// server would refuse a wider write, so a radio would be a control that lies.
+// `lockedTo` replaces it with a sentence saying which branch and why.
+//
+// **The server's duplicate refusal lands under the field it names.** The API
+// answers DUPLICATE_NAME or DUPLICATE_CODE with a sentence written for this
+// screen, and `detail.field` says which box was wrong. A toast would put it
+// where the reader is not looking and take it away before they look up.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function EntityDrawer({
+  open,
+  copy,
+  initial,
+  editing,
+  saving,
+  onClose,
+  onSave,
+  children,
+  extrasValid = true,
+}: {
+  open: boolean;
+  copy: EntityCopy;
+  /** The row being edited, or a blank draft to create one. */
+  initial: EntityDraft;
+  /** True when this is an edit: changes the Save label and nothing else. */
+  editing: boolean;
+  saving: boolean;
+  onClose: () => void;
+  /** Resolve to the caller's mutation. Rejections are read for a refusal. */
+  onSave: (body: EntityWrite) => Promise<unknown>;
+  /** Kind-specific controls (offered-at levels, arm, and so on). */
+  children?: (draft: EntityDraft) => React.ReactNode;
+  /** False while a kind-specific control is incomplete. */
+  extrasValid?: boolean;
+}) {
+  const { applies: multiBranch, isTied, branch: tiedBranch, branches, label: tiedLabel } =
+    useBranchLens();
+
+  const [draft, setDraft] = useState<EntityDraft>(initial);
+  const [touched, setTouched] = useState<{ name?: boolean; code?: boolean }>({});
+  /**
+   * Whether the code in the box is OURS or THEIRS.
+   *
+   * A code we generated follows the name, because it was only ever a guess at
+   * what the name implies. A code the person typed is left alone, because it is
+   * an answer. Without the distinction, generating SCI from "Sciences", hitting
+   * the duplicate refusal and then renaming to "Technical Studies" leaves SCI
+   * behind and fails again for the same reason - which is exactly what it did.
+   */
+  const [codeIsOurs, setCodeIsOurs] = useState(!initial.code);
+  const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(null);
+
+  // Re-seed when the drawer is pointed at a different row. Adjusted during
+  // render rather than in an effect, so the form never paints the previous
+  // row's values for a frame - see the same note in session-drawer.
+  const openedFor = open ? JSON.stringify(initial) : "shut";
+  const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
+  if (openedFor !== lastOpenedFor) {
+    setLastOpenedFor(openedFor);
+    if (open) {
+      setDraft(initial);
+      setTouched({});
+      setRefusal(null);
+      setCodeIsOurs(!initial.code);
+    }
+  }
+
+  const patch = (next: Partial<EntityDraft>) => {
+    setDraft((d) => ({ ...d, ...next }));
+    setRefusal(null);
+  };
+
+  // A tied account cannot widen scope; the server enforces it, so offering the
+  // choice would render a control that quietly does nothing.
+  const lockedTo = isTied && tiedBranch !== "all" ? (tiedBranch as number) : null;
+  const lockedName = lockedTo != null ? tiedLabel : "";
+  const effectiveBranch = lockedTo ?? draft.branch;
+
+  const nameEmpty = !!touched.name && !draft.name.trim();
+  const branchMissing = multiBranch && draft.branch === -1;
+
+  const valid =
+    !!draft.name.trim() && !nameEmpty && !branchMissing && extrasValid;
+  const dirty = JSON.stringify({ ...draft, branch: effectiveBranch }) !==
+    JSON.stringify({ ...initial, branch: lockedTo ?? initial.branch });
+
+  const save = async () => {
+    try {
+      await onSave({
+        name: draft.name.trim(),
+        // Left empty on purpose: the server generates one, and its rule is the
+        // one that has to hold.
+        code: draft.code.trim() || undefined,
+        description: draft.description,
+        // Sent explicitly, including null. Omitting it on a PATCH means "leave
+        // it alone", which is not what picking school-wide means.
+        branch: multiBranch ? effectiveBranch : null,
+      });
+      onClose();
+    } catch (error) {
+      const parsed = parseApiError(error);
+      if (parsed.code === "DUPLICATE_NAME" || parsed.code === "DUPLICATE_CODE") {
+        const field = String(parsed.detail.field ?? "name");
+        setTouched((t) => ({ ...t, [field]: true }));
+        setRefusal({ field, message: parsed.message });
+        return;
+      }
+      // Anything else - a scope conflict, a validation error - is already a
+      // sentence written for this reader, so it is shown rather than swallowed.
+      setRefusal({ field: "", message: parsed.message || "That could not be saved." });
+    }
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 bg-white p-0 sm:max-w-lg"
+      >
+        <SheetHeader className="border-b border-border px-5 pb-4 pt-5 pr-12 text-left">
+          <SheetTitle className="truncate font-mont text-base">{copy.title}</SheetTitle>
+          <SheetDescription className="text-[13px] text-gray-01 text-pretty">
+            {copy.subtitle}
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+          <Field
+            label={`${copy.nameLabel} *`}
+            error={
+              nameEmpty
+                ? "A name is required."
+                : refusal?.field === "name"
+                  ? refusal.message
+                  : ""
+            }
+          >
+            <input
+              value={draft.name}
+              onChange={(e) =>
+                patch({
+                  name: e.target.value,
+                  ...(codeIsOurs && draft.code
+                    ? { code: codeFromName(e.target.value) }
+                    : {}),
+                })
+              }
+              onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+              placeholder={copy.namePlaceholder}
+              className={inputClass(nameEmpty || refusal?.field === "name")}
+            />
+          </Field>
+
+          <div className="mt-4">
+            <Field
+              label="Code"
+              error={refusal?.field === "code" ? refusal.message : ""}
+            >
+              <div className="flex gap-2">
+                <input
+                  value={draft.code}
+                  onChange={(e) => {
+                    setCodeIsOurs(false);
+                    patch({ code: e.target.value.toUpperCase() });
+                  }}
+                  placeholder={copy.codePlaceholder}
+                  className={cn(
+                    inputClass(refusal?.field === "code"),
+                    "min-w-0 flex-1",
+                  )}
+                />
+                <Button
+                  variant="outline"
+                  className="shrink-0 border-primary text-primary"
+                  disabled={!draft.name.trim()}
+                  onClick={() => {
+                    setCodeIsOurs(true);
+                    patch({ code: codeFromName(draft.name) });
+                  }}
+                >
+                  Generate
+                </Button>
+              </div>
+            </Field>
+            <p className="mt-1 text-xs text-gray-05">
+              Leave it blank and one is built from the name.
+            </p>
+          </div>
+
+          {children?.(draft)}
+
+          {/* Absent at a single-branch school, where every row is school-wide
+              and a control with one answer is a question nobody can act on. */}
+          {multiBranch && (
+            <div className="mt-5 border-t border-white-02 pt-4">
+              <p className="mb-2 text-[13px] font-medium text-gray-06">Applies to *</p>
+
+              {lockedTo != null ? (
+                <div className="rounded-lg border border-white-02 bg-white-05 px-3 py-2.5">
+                  <p className="text-sm text-black-01">{lockedName}</p>
+                  <p className="mt-0.5 text-xs text-gray-05 text-pretty">
+                    Your account is tied to this branch, so anything you create
+                    belongs to it.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <ScopeOption
+                      on={draft.branch === null}
+                      label="The whole school"
+                      onClick={() => patch({ branch: null })}
+                    />
+                    <ScopeOption
+                      on={draft.branch !== null}
+                      label="One branch"
+                      onClick={() =>
+                        patch({ branch: draft.branch ?? branches[0]?.id ?? -1 })
+                      }
+                    />
+                  </div>
+                  {draft.branch !== null && (
+                    <select
+                      value={draft.branch ?? ""}
+                      onChange={(e) => patch({ branch: Number(e.target.value) })}
+                      aria-label="Branch"
+                      className="mt-2 w-full rounded-lg border border-white-02 px-3 py-2.5 text-sm outline-none focus:border-primary"
+                    >
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </>
+              )}
+
+              <p className="mt-2 text-xs text-gray-05 text-pretty">
+                {copy.scopeHint}
+              </p>
+            </div>
+          )}
+
+          <div className="mt-5 border-t border-white-02 pt-4">
+            <Field label="Description">
+              <textarea
+                rows={3}
+                value={draft.description}
+                onChange={(e) => patch({ description: e.target.value })}
+                placeholder="Optional"
+                className={cn(inputClass(false), "resize-y")}
+              />
+            </Field>
+          </div>
+
+          {refusal && !refusal.field && (
+            <p className="mt-4 text-xs text-error-text text-pretty">
+              {refusal.message}
+            </p>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
+          <Button variant="ghost" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={save} disabled={!valid || !dirty || saving}>
+            {saving && <Loader2 className="size-4 animate-spin" />}
+            {editing ? "Save changes" : "Create"}
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function inputClass(bad: boolean) {
+  return cn(
+    "w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-primary",
+    bad ? "border-error-01" : "border-white-02",
+  );
+}
+
+export function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
+        {label}
+      </label>
+      {children}
+      {error && (
+        <p className="mt-1.5 text-xs text-error-text text-pretty">{error}</p>
+      )}
+    </div>
+  );
+}
+
+function ScopeOption({
+  on,
+  label,
+  onClick,
+}: {
+  on: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={cn(
+        "rounded-lg border px-3 py-2 text-left text-sm",
+        on ? "border-primary bg-pry-01 text-primary" : "border-white-02 text-gray-06",
+      )}
+    >
+      {label}
+    </button>
+  );
+}

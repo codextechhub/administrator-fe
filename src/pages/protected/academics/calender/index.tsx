@@ -20,7 +20,7 @@ export default function AcademicCalender() {
             key={idx}
             onClick={() => {
               navigate(
-                routesPath.PROTECTED.ACADEMIC.CALENDER_DETAILS_ID(item.id),
+                routesPath.PROTECTED.ACADEMIC_CALENDAR.DETAILS_ID(item.id),
               );
             }}
           >

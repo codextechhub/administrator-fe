@@ -65,7 +65,7 @@ export default function Classes() {
               <Button
                 onClick={() => {
                   navigate(
-                    routesPath.PROTECTED.CLASSES.CLASS_DETAILS_ID(item.id),
+                    routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASS_DETAILS_ID(item.id),
                   );
                 }}
                 size="sm"
