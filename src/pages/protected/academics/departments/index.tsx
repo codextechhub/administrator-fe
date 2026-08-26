@@ -9,7 +9,6 @@ import {
   RotateCcw,
   Rows3,
   Search,
-  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +31,8 @@ import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { parseApiError } from "@/utils/api-error";
 import {
   useCreateDepartmentMutation,
-  useDeleteDepartmentMutation,
+  useArchiveDepartmentMutation,
+  useRestoreDepartmentMutation,
   useGetDepartmentsQuery,
   useUpdateDepartmentMutation,
 } from "@/redux/services/academics/academics-api";
@@ -79,7 +79,8 @@ export default function Departments() {
 
   const [create, { isLoading: creating }] = useCreateDepartmentMutation();
   const [update, { isLoading: updating }] = useUpdateDepartmentMutation();
-  const [remove, { isLoading: removing }] = useDeleteDepartmentMutation();
+  const [archive, { isLoading: archiving }] = useArchiveDepartmentMutation();
+  const [restore, { isLoading: restoring }] = useRestoreDepartmentMutation();
 
   const departments = useMemo(() => data?.data ?? [], [data]);
   const pagination = data?.pagination;
@@ -106,7 +107,6 @@ export default function Departments() {
             onEdit={() => openEdit(dept)}
             onArchive={() => setConfirm({ kind: "archive", department: dept })}
             onRestore={() => setConfirm({ kind: "restore", department: dept })}
-            onDelete={() => setConfirm({ kind: "delete", department: dept })}
           />
         ))}
       </div>
@@ -190,25 +190,14 @@ export default function Departments() {
         }).unwrap();
         toast.success(result.message);
         confirm.resolve();
-      } else if (confirm.kind === "delete") {
-        const result = await remove(confirm.department.id).unwrap();
-        toast.success(result.message);
       } else {
-        const result = await update({
-          id: confirm.department.id,
-          is_active: confirm.kind === "restore",
-        }).unwrap();
+        const run = confirm.kind === "restore" ? restore : archive;
+        const result = await run(confirm.department.id).unwrap();
         toast.success(result.message);
       }
       setConfirm(null);
     } catch (error) {
       const parsed = parseApiError(error);
-      // Its own modal rather than a toast: the reader has to go and move
-      // those programmes before this can succeed.
-      if (parsed.code === "PROTECTED_REFERENCE" && confirm.kind === "delete") {
-        setConfirm({ kind: "blocked", department: confirm.department, message: parsed.message });
-        return;
-      }
       toast.error(parsed.message || "That could not be done.");
       if (confirm.kind === "narrow") confirm.reject(error);
       setConfirm(null);
@@ -365,9 +354,9 @@ export default function Departments() {
           if (confirm?.kind === "narrow") confirm.reject(new Error("cancelled"));
           setConfirm(null);
         }}
-        onConfirm={confirm?.kind === "blocked" ? () => setConfirm(null) : runConfirm}
-        loading={updating || removing}
-        canCancel={confirm?.kind !== "blocked"}
+        onConfirm={runConfirm}
+        loading={updating || archiving || restoring}
+        canCancel
         title={confirmTitle(confirm)}
         description={confirmBody(confirm)}
         onConfirmText={confirmAction(confirm)}
@@ -375,7 +364,7 @@ export default function Departments() {
         srcClass="size-25"
         src="/image/caution.png"
         onConfirmClass={
-          confirm?.kind === "delete" || confirm?.kind === "narrow"
+          confirm?.kind === "narrow"
             ? "bg-error-01 text-white shadow-xs hover:bg-error-01/90 focus-visible:ring-error-01/20"
             : undefined
         }
@@ -387,8 +376,7 @@ export default function Departments() {
 // ── The confirmations ───────────────────────────────────────────────────────
 
 type Confirmation =
-  | { kind: "archive" | "restore" | "delete"; department: Department }
-  | { kind: "blocked"; department: Department; message: string }
+  | { kind: "archive" | "restore"; department: Department }
   | {
       kind: "narrow";
       department: Department;
@@ -404,10 +392,6 @@ function confirmTitle(c: Confirmation | null) {
       return `Archive ${c.department.name}?`;
     case "restore":
       return `Restore ${c.department.name}?`;
-    case "delete":
-      return `Delete ${c.department.name}?`;
-    case "blocked":
-      return `Cannot delete ${c.department.name}`;
     case "narrow":
       return `Narrow ${c.department.name} to one branch?`;
   }
@@ -420,13 +404,6 @@ function confirmBody(c: Confirmation | null) {
       return "An archived department stops appearing when anyone picks one. Nothing already mapped to it is moved, and you can restore it at any time.";
     case "restore":
       return `${c.department.name} will appear again wherever a department can be picked.`;
-    case "delete":
-      return c.department.branch == null
-        ? `${c.department.name} applies to the whole school and will be removed everywhere. This cannot be undone - archive it instead if you may want it back.`
-        : `${c.department.name} at ${c.department.branch_name} will be removed. This cannot be undone.`;
-    case "blocked":
-      // The server's own sentence: it counts the programmes and says what to do.
-      return c.message;
     case "narrow":
       return `Every other branch will stop seeing ${c.department.name}. Anything already mapped to it there stays, but nobody at those branches can use it again.`;
   }
@@ -439,10 +416,6 @@ function confirmAction(c: Confirmation | null) {
       return "Archive";
     case "restore":
       return "Restore";
-    case "delete":
-      return "Delete";
-    case "blocked":
-      return "Got it";
     case "narrow":
       return "Narrow scope";
   }
@@ -458,7 +431,6 @@ function DepartmentCard({
   onEdit,
   onArchive,
   onRestore,
-  onDelete,
 }: {
   dept: Department;
   multiBranch: boolean;
@@ -467,7 +439,6 @@ function DepartmentCard({
   onEdit: () => void;
   onArchive: () => void;
   onRestore: () => void;
-  onDelete: () => void;
 }) {
   return (
     <ClickableCard
@@ -516,12 +487,6 @@ function DepartmentCard({
                   <DropdownMenuItem onClick={onRestore}>
                     <RotateCcw className="size-4" />
                     Restore
-                  </DropdownMenuItem>
-                )}
-                {canManage && (
-                  <DropdownMenuItem variant="destructive" onClick={onDelete}>
-                    <Trash2 className="size-4" />
-                    Delete
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>

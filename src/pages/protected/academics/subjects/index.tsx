@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import {
+  Archive,
+  RotateCcw,
   BookOpen,
   LayoutGrid,
   Pencil,
@@ -7,7 +9,6 @@ import {
   Plus,
   Rows3,
   Search,
-  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +32,8 @@ import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import {
   useCreateSubjectMutation,
-  useDeleteSubjectMutation,
+  useArchiveSubjectMutation,
+  useRestoreSubjectMutation,
   useGetDepartmentsQuery,
   useGetProgramsQuery,
   useGetSubjectsQuery,
@@ -88,7 +90,8 @@ export default function Subjects() {
 
   const [create, { isLoading: creating }] = useCreateSubjectMutation();
   const [update, { isLoading: updating }] = useUpdateSubjectMutation();
-  const [remove, { isLoading: removing }] = useDeleteSubjectMutation();
+  const [archive, { isLoading: archiving }] = useArchiveSubjectMutation();
+  const [restore, { isLoading: restoring }] = useRestoreSubjectMutation();
 
   const subjects = useMemo(() => data?.data ?? [], [data]);
   const pagination = data?.pagination;
@@ -129,7 +132,8 @@ export default function Subjects() {
   const runDelete = async () => {
     if (!confirm) return;
     try {
-      const result = await remove(confirm.id).unwrap();
+      const run = confirm.is_active ? archive : restore;
+      const result = await run(confirm.id).unwrap();
       toast.success(result.message);
     } catch (error) {
       toast.error(parseApiError(error).message || "That could not be deleted.");
@@ -383,39 +387,42 @@ export default function Subjects() {
         isOpen={!!confirm}
         onClose={() => setConfirm(null)}
         onConfirm={runDelete}
-        loading={removing}
+        loading={archiving || restoring}
         canCancel
-        title={`Delete ${confirm?.name}?`}
-        description={deleteBody(confirm)}
-        onConfirmText="Delete"
+        title={
+          confirm?.is_active
+            ? `Archive ${confirm?.name}?`
+            : `Restore ${confirm?.name}?`
+        }
+        description={archiveBody(confirm)}
+        onConfirmText={confirm?.is_active ? "Archive" : "Restore"}
         containerClass="min-h-[320px] lg:w-[420px]"
         srcClass="size-25"
         src="/image/caution.png"
-        onConfirmClass="bg-error-01 text-white shadow-xs hover:bg-error-01/90 focus-visible:ring-error-01/20"
       />
     </main>
   );
 }
 
 /**
- * What deleting a subject actually removes.
+ * What archiving a subject does, which is less than deleting used to.
  *
- * Its offerings cascade with it, and that is the part a school would not guess:
- * the subject stops being taught at every level at once. Named for the same
- * reason the level delete names its offerings - a cascade nobody is told about
- * is indistinguishable from data loss.
+ * A delete cascaded its offerings away, so the record of where it had been
+ * taught went with it. Archiving keeps them: the subject stops being offered
+ * when anyone picks one, and comes back unchanged on request. Said plainly,
+ * because a reader who met "delete" on this screen before will expect the old
+ * consequences.
  */
-function deleteBody(subject: Subject | null) {
+function archiveBody(subject: Subject | null) {
   if (!subject) return "";
-  const where =
-    subject.branch == null
-      ? `${subject.name} is offered school-wide and will be removed from every branch.`
-      : `${subject.name} at ${subject.branch_name} will be removed.`;
+  if (!subject.is_active) {
+    return `${subject.name} will appear again wherever a subject can be picked, still offered at the levels it was.`;
+  }
   const levels =
     subject.level_count > 0
-      ? ` It will stop being taught at ${subject.level_count === 1 ? "the level" : `all ${subject.level_count} levels`} it is offered at.`
+      ? ` The ${subject.level_count === 1 ? "level it is taught at stays" : `${subject.level_count} levels it is taught at stay`} exactly as ${subject.level_count === 1 ? "it is" : "they are"}.`
       : "";
-  return `${where}${levels} This cannot be undone.`;
+  return `${subject.name} stops appearing when anyone picks a subject.${levels} You can restore it at any time.`;
 }
 
 // ── The card ────────────────────────────────────────────────────────────────
@@ -482,9 +489,18 @@ function SubjectCard({
                   </DropdownMenuItem>
                 )}
                 {canManage && (
-                  <DropdownMenuItem variant="destructive" onClick={onDelete}>
-                    <Trash2 className="size-4" />
-                    Delete
+                  <DropdownMenuItem onClick={onDelete}>
+                    {subject.is_active ? (
+                      <>
+                        <Archive className="size-4" />
+                        Archive
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="size-4" />
+                        Restore
+                      </>
+                    )}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>

@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import {
+  Archive,
+  RotateCcw,
   ChevronDown,
   ChevronRight,
   ListTree,
@@ -7,7 +9,6 @@ import {
   Plus,
   Rows3,
   Search,
-  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -29,8 +30,10 @@ import { parseApiError } from "@/utils/api-error";
 import {
   useCreateLevelMutation,
   useCreateProgramMutation,
-  useDeleteLevelMutation,
-  useDeleteProgramMutation,
+  useArchiveLevelMutation,
+  useRestoreLevelMutation,
+  useArchiveProgramMutation,
+  useRestoreProgramMutation,
   useGetDepartmentsQuery,
   useGetProgramsQuery,
   useUpdateLevelMutation,
@@ -79,29 +82,36 @@ export default function Programs() {
     { program: Program; level: Level | null } | null
   >(null);
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
+  // Without this an archived programme is unreachable, and archive becomes a
+  // delete with extra steps.
+  const [showArchived, setShowArchived] = useState<"true" | "false" | "all">("true");
   const [bulkFor, setBulkFor] = useState<Program | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetProgramsQuery({
     ...lens,
     search,
+    is_active: showArchived,
     page,
   });
   const { data: deptData } = useGetDepartmentsQuery({ branch });
 
   const [createProgram, { isLoading: cp }] = useCreateProgramMutation();
   const [updateProgram, { isLoading: up }] = useUpdateProgramMutation();
-  const [deleteProgram, { isLoading: dp }] = useDeleteProgramMutation();
+  const [archiveProgram, { isLoading: dp }] = useArchiveProgramMutation();
+  const [restoreProgram] = useRestoreProgramMutation();
   const [createLevel, { isLoading: cl }] = useCreateLevelMutation();
   const [updateLevel, { isLoading: ul }] = useUpdateLevelMutation();
-  const [deleteLevel, { isLoading: dl }] = useDeleteLevelMutation();
+  const [archiveLevel, { isLoading: dl }] = useArchiveLevelMutation();
+  const [restoreLevel] = useRestoreLevelMutation();
 
   const programs = useMemo(() => data?.data ?? [], [data]);
   // Every programme empty, and not because of a search: the year has not
   // been started. One level anywhere disproves it. Empty programmes still
   // list, showing zero - a programme has no year of its own to be absent
   // from.
+  const filtered = !!search || showArchived !== "true";
   const noLevelsThisYear =
-    !search && programs.length > 0 && programs.every((p) => !p.levels?.length);
+    !filtered && programs.length > 0 && programs.every((p) => !p.levels?.length);
   const pagination = data?.pagination;
   const departments = useMemo(() => deptData?.data ?? [], [deptData]);
 
@@ -122,12 +132,20 @@ export default function Programs() {
     canManage,
     onToggle: () => setOpen((o) => ({ ...o, [program.id]: !o[program.id] })),
     onEdit: () => setProgramDrawer(program),
-    onDelete: () => setConfirm({ kind: "deleteProgram" as const, program }),
+    onArchive: () =>
+      setConfirm({
+        kind: program.is_active ? ("archiveProgram" as const) : ("restoreProgram" as const),
+        program,
+      }),
     onAddLevel: () => setLevelDrawer({ program, level: null }),
     onBulkLevels: () => setBulkFor(program),
     onEditLevel: (level: Level) => setLevelDrawer({ program, level }),
-    onDeleteLevel: (level: Level) =>
-      setConfirm({ kind: "deleteLevel" as const, program, level }),
+    onArchiveLevel: (level: Level) =>
+      setConfirm({
+        kind: level.is_active ? ("archiveLevel" as const) : ("restoreLevel" as const),
+        program,
+        level,
+      }),
   });
 
 
@@ -160,32 +178,20 @@ export default function Programs() {
   };
 
   const runConfirm = async () => {
-    if (!confirm || confirm.kind === "blocked") return setConfirm(null);
+    if (!confirm) return;
+    const run = {
+      archiveProgram: () => archiveProgram(confirm.program.id),
+      restoreProgram: () => restoreProgram(confirm.program.id),
+      archiveLevel: () => archiveLevel((confirm as LevelConfirmation).level.id),
+      restoreLevel: () => restoreLevel((confirm as LevelConfirmation).level.id),
+    }[confirm.kind];
     try {
-      const result =
-        confirm.kind === "deleteProgram"
-          ? await deleteProgram(confirm.program.id).unwrap()
-          : await deleteLevel(confirm.level.id).unwrap();
+      const result = await run().unwrap();
       toast.success(result.message);
-      setConfirm(null);
     } catch (error) {
-      const parsed = parseApiError(error);
-      // Its own modal rather than a toast: the reader has to go and move
-      // those rows before this can succeed.
-      if (parsed.code === "PROTECTED_REFERENCE") {
-        setConfirm({
-          kind: "blocked",
-          title:
-            confirm.kind === "deleteProgram"
-              ? `Cannot delete ${confirm.program.name}`
-              : `Cannot delete ${confirm.level.name}`,
-          message: parsed.message,
-        });
-        return;
-      }
-      toast.error(parsed.message || "That could not be done.");
-      setConfirm(null);
+      toast.error(parseApiError(error).message || "That could not be done.");
     }
+    setConfirm(null);
   };
 
   if (isError) {
@@ -233,6 +239,20 @@ export default function Programs() {
           />
         </div>
 
+        <select
+          value={showArchived}
+          onChange={(e) => {
+            setShowArchived(e.target.value as "true" | "false" | "all");
+            setPage(1);
+          }}
+          aria-label="Filter by status"
+          className="h-9 shrink-0 rounded-full border border-white-02 bg-white px-3 text-sm outline-none focus:border-primary"
+        >
+          <option value="true">Active</option>
+          <option value="false">Archived</option>
+          <option value="all">All statuses</option>
+        </select>
+
         <Button
           size="sm"
           variant="outline"
@@ -265,14 +285,22 @@ export default function Programs() {
       ) : !programs.length ? (
         <OutlinedNotice
           icon={ListTree}
-          title={search ? "No programmes match that" : "No programmes yet"}
+          title={filtered ? "No programmes match that" : "No programmes yet"}
           body={
-            search
-              ? "Try a different search - this looks at level names too."
+            filtered
+              ? "Try a different search, or change the status filter - the search looks at level names too."
               : "Programmes group the levels pupils move through: Nursery, Primary, Junior Secondary. Add the first one."
           }
-          actionLabel={search ? "Clear search" : undefined}
-          onAction={search ? () => setSearch("") : undefined}
+          actionLabel={filtered ? "Clear filters" : undefined}
+          onAction={
+            filtered
+              ? () => {
+                  setSearch("");
+                  setShowArchived("true");
+                  setPage(1);
+                }
+              : undefined
+          }
         />
       ) : (
         <div className="grid gap-3">
@@ -401,15 +429,15 @@ export default function Programs() {
         onClose={() => setConfirm(null)}
         onConfirm={runConfirm}
         loading={dp || dl}
-        canCancel={confirm?.kind !== "blocked"}
+        canCancel
         title={confirmTitle(confirm)}
         description={confirmBody(confirm)}
-        onConfirmText={confirm?.kind === "blocked" ? "Got it" : "Delete"}
+        onConfirmText={confirm?.kind.startsWith("archive") ? "Archive" : "Restore"}
         containerClass="min-h-[320px] lg:w-[420px]"
         srcClass="size-25"
         src="/image/caution.png"
         onConfirmClass={
-          confirm && confirm.kind !== "blocked"
+          confirm
             ? "bg-error-01 text-white shadow-xs hover:bg-error-01/90 focus-visible:ring-error-01/20"
             : undefined
         }
@@ -474,33 +502,47 @@ function DepartmentPicker({
 
 // ── Confirmations ──────────────────────────────────────────────────────────
 
+type LevelConfirmation = {
+  kind: "archiveLevel" | "restoreLevel";
+  program: Program;
+  level: Level;
+};
+
 type Confirmation =
-  | { kind: "deleteProgram"; program: Program }
-  | { kind: "deleteLevel"; program: Program; level: Level }
-  | { kind: "blocked"; title: string; message: string };
+  | { kind: "archiveProgram" | "restoreProgram"; program: Program }
+  | LevelConfirmation;
+
+function subjectOf(c: Confirmation) {
+  return c.kind.endsWith("Level") ? (c as LevelConfirmation).level : c.program;
+}
 
 function confirmTitle(c: Confirmation | null) {
   if (!c) return "";
-  if (c.kind === "blocked") return c.title;
-  if (c.kind === "deleteProgram") return `Delete ${c.program.name}?`;
-  return `Delete ${c.level.name}?`;
+  const verb = c.kind.startsWith("archive") ? "Archive" : "Restore";
+  return `${verb} ${subjectOf(c).name}?`;
 }
 
+/**
+ * What archiving actually does, which is less than a delete used to.
+ *
+ * Nothing moves and nothing is removed: the row stops being offered wherever
+ * one is picked, and it comes back on request. Said plainly, because a reader
+ * who has met "delete" on this screen before will expect the old consequences.
+ */
 function confirmBody(c: Confirmation | null) {
   if (!c) return "";
-  if (c.kind === "blocked") return c.message;
-  if (c.kind === "deleteProgram") {
-    return c.program.branch == null
-      ? `${c.program.name} applies to the whole school and will be removed everywhere. This cannot be undone.`
-      : `${c.program.name} at ${c.program.branch_name} will be removed. This cannot be undone.`;
+  if (c.kind === "restoreProgram" || c.kind === "restoreLevel") {
+    return `${subjectOf(c).name} will appear again wherever it can be picked.`;
   }
-  // Offerings cascade with the level, so the confirmation says so. A cascade
-  // the reader was not told about is indistinguishable from data loss.
+  if (c.kind === "archiveProgram") {
+    return `${c.program.name} stops appearing when anyone picks a programme. Its levels stay exactly where they are, and you can restore it at any time.`;
+  }
+  const { level, program } = c as LevelConfirmation;
   const offered =
-    c.level.subject_count > 0
-      ? ` ${c.level.subject_count === 1 ? "One subject is" : `${c.level.subject_count} subjects are`} offered at it and will stop being offered here - the ${c.level.subject_count === 1 ? "subject itself stays" : "subjects themselves stay"}.`
+    level.subject_count > 0
+      ? ` The ${level.subject_count === 1 ? "subject" : `${level.subject_count} subjects`} taught at it ${level.subject_count === 1 ? "stays" : "stay"} offered here.`
       : "";
-  return `${c.level.name} will be removed from ${c.program.name}.${offered} This cannot be undone.`;
+  return `${level.name} stops appearing when anyone picks a level in ${program.name}. Its classes stay where they are.${offered} You can restore it at any time.`;
 }
 
 // ── One programme, with its levels ─────────────────────────────────────────
@@ -514,11 +556,11 @@ function ProgramRow({
   canManage,
   onToggle,
   onEdit,
-  onDelete,
+  onArchive,
   onAddLevel,
   onBulkLevels,
   onEditLevel,
-  onDeleteLevel,
+  onArchiveLevel,
 }: {
   program: Program;
   open: boolean;
@@ -528,11 +570,11 @@ function ProgramRow({
   canManage: boolean;
   onToggle: () => void;
   onEdit: () => void;
-  onDelete: () => void;
+  onArchive: () => void;
   onAddLevel: () => void;
   onBulkLevels: () => void;
   onEditLevel: (level: Level) => void;
-  onDeleteLevel: (level: Level) => void;
+  onArchiveLevel: (level: Level) => void;
 }) {
   const levels = program.levels ?? [];
   return (
@@ -604,9 +646,18 @@ function ProgramRow({
                   </DropdownMenuItem>
                 )}
                 {canManage && (
-                  <DropdownMenuItem variant="destructive" onClick={onDelete}>
-                    <Trash2 className="size-4" />
-                    Delete
+                  <DropdownMenuItem onClick={onArchive}>
+                    {program.is_active ? (
+                      <>
+                        <Archive className="size-4" />
+                        Archive
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="size-4" />
+                        Restore
+                      </>
+                    )}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -665,11 +716,15 @@ function ProgramRow({
                   {canManage && (
                     <button
                       type="button"
-                      aria-label={`Delete ${level.name}`}
-                      onClick={() => onDeleteLevel(level)}
-                      className="grid size-7 place-content-center rounded-md text-gray-06 hover:bg-gray-04 hover:text-error-01"
+                      aria-label={`${level.is_active ? "Archive" : "Restore"} ${level.name}`}
+                      onClick={() => onArchiveLevel(level)}
+                      className="grid size-7 place-content-center rounded-md text-gray-06 hover:bg-gray-04 hover:text-black-01"
                     >
-                      <Trash2 className="size-3.5" />
+                      {level.is_active ? (
+                        <Archive className="size-3.5" />
+                      ) : (
+                        <RotateCcw className="size-3.5" />
+                      )}
                     </button>
                   )}
                 </div>

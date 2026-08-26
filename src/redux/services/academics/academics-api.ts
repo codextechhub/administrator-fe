@@ -222,13 +222,19 @@ export const academicsApi = baseApi.injectEndpoints({
       invalidatesTags: ["AcademicStructure", "AcademicOverview"],
     }),
 
-    deleteDepartment: builder.mutation<Envelope<null>, number>({
+    archiveDepartment: builder.mutation<Envelope<null>, number>({
       query: (id) => ({
-        url: `/academics/departments/${id}/`,
-        method: "DELETE",
+        url: `/academics/departments/${id}/archive/`,
+        method: "POST",
       }),
-      // Subjects carry a department, so a deletion changes what their cards
-      // print even though it does not delete them.
+      invalidatesTags: ["AcademicStructure", "AcademicOverview", "Subjects"],
+    }),
+
+    restoreDepartment: builder.mutation<Envelope<null>, number>({
+      query: (id) => ({
+        url: `/academics/departments/${id}/restore/`,
+        method: "POST",
+      }),
       invalidatesTags: ["AcademicStructure", "AcademicOverview", "Subjects"],
     }),
 
@@ -259,9 +265,20 @@ export const academicsApi = baseApi.injectEndpoints({
       invalidatesTags: ["AcademicStructure", "AcademicOverview"],
     }),
 
-    deleteProgram: builder.mutation<Envelope<null>, number>({
-      query: (id) => ({ url: `/academics/programs/${id}/`, method: "DELETE" }),
-      invalidatesTags: ["AcademicStructure", "AcademicOverview"],
+    archiveProgram: builder.mutation<Envelope<null>, number>({
+      query: (id) => ({
+        url: `/academics/programs/${id}/archive/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["AcademicStructure", "AcademicOverview", "Classes", "Subjects"],
+    }),
+
+    restoreProgram: builder.mutation<Envelope<null>, number>({
+      query: (id) => ({
+        url: `/academics/programs/${id}/restore/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["AcademicStructure", "AcademicOverview", "Classes", "Subjects"],
     }),
 
     // The parent is in the path, not the body: the server reads its branch
@@ -301,13 +318,20 @@ export const academicsApi = baseApi.injectEndpoints({
       ],
     }),
 
-    deleteLevel: builder.mutation<Envelope<null>, number>({
-      query: (id) => ({ url: `/academics/levels/${id}/`, method: "DELETE" }),
-      // Deleting a level CASCADES its subject offerings, so the subject cards
-      // that named it are wrong the moment this returns.
-      invalidatesTags: [
-        "AcademicStructure", "AcademicOverview", "Classes", "Subjects",
-      ],
+    archiveLevel: builder.mutation<Envelope<null>, number>({
+      query: (id) => ({
+        url: `/academics/levels/${id}/archive/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["AcademicStructure", "AcademicOverview", "Classes", "Subjects"],
+    }),
+
+    restoreLevel: builder.mutation<Envelope<null>, number>({
+      query: (id) => ({
+        url: `/academics/levels/${id}/restore/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["AcademicStructure", "AcademicOverview", "Classes", "Subjects"],
     }),
 
     // ── Classes ────────────────────────────────────────────────────────────
@@ -401,11 +425,20 @@ export const academicsApi = baseApi.injectEndpoints({
       ],
     }),
 
-    deleteSubject: builder.mutation<Envelope<null>, number>({
-      query: (id) => ({ url: `/academics/subjects/${id}/`, method: "DELETE" }),
-      invalidatesTags: [
-        "Subjects", "AcademicStructure", "AcademicOverview", "Classes",
-      ],
+    archiveSubject: builder.mutation<Envelope<null>, number>({
+      query: (id) => ({
+        url: `/academics/subjects/${id}/archive/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Subjects", "AcademicStructure", "AcademicOverview"],
+    }),
+
+    restoreSubject: builder.mutation<Envelope<null>, number>({
+      query: (id) => ({
+        url: `/academics/subjects/${id}/restore/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Subjects", "AcademicStructure", "AcademicOverview"],
     }),
 
     /**
@@ -444,15 +477,18 @@ export const {
   useGetDepartmentsQuery,
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
-  useDeleteDepartmentMutation,
+  useArchiveDepartmentMutation,
+  useRestoreDepartmentMutation,
   useGetProgramsQuery,
   useCreateProgramMutation,
   useUpdateProgramMutation,
-  useDeleteProgramMutation,
+  useArchiveProgramMutation,
+  useRestoreProgramMutation,
   useCreateLevelMutation,
   useBulkCreateLevelsMutation,
   useUpdateLevelMutation,
-  useDeleteLevelMutation,
+  useArchiveLevelMutation,
+  useRestoreLevelMutation,
   useGetClassesQuery,
   useCreateClassMutation,
   useUpdateClassMutation,
@@ -462,6 +498,7 @@ export const {
   useGetSubjectsQuery,
   useCreateSubjectMutation,
   useUpdateSubjectMutation,
-  useDeleteSubjectMutation,
+  useArchiveSubjectMutation,
+  useRestoreSubjectMutation,
   useSetSubjectOfferingsMutation,
 } = academicsApi;
