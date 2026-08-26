@@ -69,6 +69,17 @@ export default function Classes() {
   const [status, setStatus] = useState<"true" | "false" | "all">("true");
   const [view, setView] = useState<"cards" | "table">("cards");
   const [page, setPage] = useState(1);
+  // A level id belongs to ONE year, so it cannot survive a year switch: JSS1
+  // in 2026/2027 is a different row from JSS1 in 2025/2026, and carrying the
+  // old id across leaves the dropdown showing a level this year does not have
+  // while the list filters by it and comes back empty. The page number goes
+  // with it - page 3 of last year is rarely page 3 of this one.
+  const [lastSession, setLastSession] = useState(lens.session);
+  if (lens.session !== lastSession) {
+    setLastSession(lens.session);
+    setLevelFilter("all");
+    setPage(1);
+  }
 
   const [editing, setEditing] = useState<SchoolClass | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
