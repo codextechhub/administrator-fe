@@ -42,7 +42,6 @@ import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "../components/export-button";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
-import { DormantFold } from "@/pages/protected/academics/components/dormant-fold";
 
 /**
  * Faculty groupings that programmes and subjects hang off.
@@ -57,7 +56,7 @@ import { DormantFold } from "@/pages/protected/academics/components/dormant-fold
  * takes it away from the others, and deleting one is final.
  */
 export default function Departments() {
-  const { lens, branch, multiBranch, readOnlyYear } = useAcademicsLens();
+  const { lens, branch, multiBranch } = useAcademicsLens();
   const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState("");
@@ -68,7 +67,6 @@ export default function Departments() {
   const [editing, setEditing] = useState<Department | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
-  const [dormantOpen, setDormantOpen] = useState(false);
 
   // The year travels with the branch, but only so the server can say whether
   // each department was RUNNING that year. The list itself stays whole: a
@@ -96,18 +94,10 @@ export default function Departments() {
     setEditing(null);
     setDrawerOpen(true);
   };
-  // Running under the year being read, and not. The counts are that year's,
-  // so this is read off them rather than asked for separately.
-  const running = useMemo(
-    () => departments.filter((d) => d.running_this_year),
-    [departments],
-  );
-  const dormant = useMemo(
-    () => departments.filter((d) => !d.running_this_year),
-    [departments],
-  );
-
-  const renderList = (rows: Department[], opts?: { paginate?: boolean }) =>
+  // Every department, in one list, whether or not the year being read has
+  // anything under it. A department outlives the years it ran in, and its
+  // counts already say which of the two this is.
+  const renderList = (rows: Department[]) =>
     view === "cards" ? (
       <div className="grid items-start gap-5 md:grid-cols-2 lg:grid-cols-3">
         {rows.map((dept) => (
@@ -146,10 +136,8 @@ export default function Departments() {
         onRowClick={(dept: Department) => {
           if (dept && canEdit) openEdit(dept);
         }}
-        // The fold is a slice of the page that is already loaded, so paging
-        // it would page the whole list from inside a corner of itself.
-        currentPage={opts?.paginate === false ? 1 : pagination?.currentPage ?? 1}
-        totalPage={opts?.paginate === false ? 1 : pagination?.totalPages ?? 1}
+        currentPage={pagination?.currentPage ?? 1}
+        totalPage={pagination?.totalPages ?? 1}
         onPageChange={(next) => setPage(Number(next) || 1)}
         emptyText="No departments"
       />
@@ -193,9 +181,6 @@ export default function Departments() {
     const result = editing
       ? await update({ id: editing.id, ...body }).unwrap()
       : await create(body).unwrap();
-    // A new department has nothing under it yet, so it lands in the fold -
-    // which, closed, reads as the department never having been created.
-    if (!editing) setDormantOpen(true);
     toast.success(result.message);
   };
 
@@ -333,23 +318,7 @@ export default function Departments() {
           }
         />
       ) : (
-        <div className="grid min-w-0 grid-cols-1 gap-5">
-          {renderList(running)}
-
-          {/* Same rule as Programmes & Levels: a department the school ran
-              nothing under this year is folded away, not deleted, and the
-              year it DID run still lists it. Withheld on an archived year,
-              where there is nothing to start. */}
-          {!readOnlyYear && (
-            <DormantFold
-              count={dormant.length}
-              open={dormantOpen}
-              onOpenChange={setDormantOpen}
-            >
-              {renderList(dormant, { paginate: false })}
-            </DormantFold>
-          )}
-        </div>
+        renderList(departments)
       )}
 
       {view === "cards" && (pagination?.totalPages ?? 1) > 1 && (

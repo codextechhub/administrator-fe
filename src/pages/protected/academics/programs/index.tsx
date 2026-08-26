@@ -46,7 +46,6 @@ import { BulkLevelsDrawer } from "./bulk-levels-drawer";
 import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "../components/export-button";
 import { EmptyYear } from "@/pages/protected/academics/components/empty-year";
-import { DormantFold } from "@/pages/protected/academics/components/dormant-fold";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 
@@ -81,9 +80,6 @@ export default function Programs() {
   >(null);
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
   const [bulkFor, setBulkFor] = useState<Program | null>(null);
-  // Closed by default: a programme with nothing in it this year is not what
-  // the reader came to see.
-  const [dormantOpen, setDormantOpen] = useState(false);
 
   const { data, isLoading, isError, refetch } = useGetProgramsQuery({
     ...lens,
@@ -100,21 +96,16 @@ export default function Programs() {
   const [deleteLevel, { isLoading: dl }] = useDeleteLevelMutation();
 
   const programs = useMemo(() => data?.data ?? [], [data]);
-  // A programme has no year of its own, so "we stopped running Commercial" is
-  // not a delete and must not be an archive: both reach backwards and take the
-  // year it DID run with them. It is expressed by having no levels in the new
-  // year, and this is where that is read.
-  const running = useMemo(
-    () => programs.filter((p) => (p.levels?.length ?? 0) > 0),
-    [programs],
-  );
-  const dormant = useMemo(
-    () => programs.filter((p) => !p.levels?.length),
-    [programs],
-  );
   // Every programme empty, and not because of a search: the year itself has
   // not been started. One level anywhere is enough to disprove it.
-  const noLevelsThisYear = !search && programs.length > 0 && !running.length;
+  //
+  // A programme with no levels in the year being read is still LISTED with the
+  // rest, showing zero. It has no year of its own, so "we stopped running
+  // Commercial" is not a delete and must not be an archive - both reach
+  // backwards and take the year it did run with them. It is simply a
+  // programme with nothing in it this year, and the row says so.
+  const noLevelsThisYear =
+    !search && programs.length > 0 && programs.every((p) => !p.levels?.length);
   const pagination = data?.pagination;
   const departments = useMemo(() => deptData?.data ?? [], [deptData]);
 
@@ -161,10 +152,6 @@ export default function Programs() {
     const result = editing
       ? await updateProgram({ id: editing.id, ...body }).unwrap()
       : await createProgram(body).unwrap();
-    // A new programme has no levels, so it lands in the fold - which, closed,
-    // reads as the programme never having been created. Open it and it is
-    // visible exactly where it went, next to the Add level it now needs.
-    if (!editing) setDormantOpen(true);
     toast.success(result.message);
   };
 
@@ -310,22 +297,9 @@ export default function Programs() {
             />
           )}
 
-          {running.map((program) => (
+          {programs.map((program) => (
             <ProgramRow {...rowProps(program)} key={program.id} />
           ))}
-
-          {/* Withheld on an archived year, where there is nothing to start. */}
-          {!readOnlyYear && (
-            <DormantFold
-              count={dormant.length}
-              open={dormantOpen}
-              onOpenChange={setDormantOpen}
-            >
-              {dormant.map((program) => (
-                <ProgramRow {...rowProps(program)} key={program.id} />
-              ))}
-            </DormantFold>
-          )}
         </div>
       )}
 
