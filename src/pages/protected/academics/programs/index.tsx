@@ -80,6 +80,9 @@ export default function Programs() {
   >(null);
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
   const [bulkFor, setBulkFor] = useState<Program | null>(null);
+  // Closed by default: a programme with nothing in it this year is not what
+  // the reader came to see.
+  const [dormantOpen, setDormantOpen] = useState(false);
 
   const { data, isLoading, isError, refetch } = useGetProgramsQuery({
     ...lens,
@@ -96,10 +99,21 @@ export default function Programs() {
   const [deleteLevel, { isLoading: dl }] = useDeleteLevelMutation();
 
   const programs = useMemo(() => data?.data ?? [], [data]);
+  // A programme has no year of its own, so "we stopped running Commercial" is
+  // not a delete and must not be an archive: both reach backwards and take the
+  // year it DID run with them. It is expressed by having no levels in the new
+  // year, and this is where that is read.
+  const running = useMemo(
+    () => programs.filter((p) => (p.levels?.length ?? 0) > 0),
+    [programs],
+  );
+  const dormant = useMemo(
+    () => programs.filter((p) => !p.levels?.length),
+    [programs],
+  );
   // Every programme empty, and not because of a search: the year itself has
   // not been started. One level anywhere is enough to disprove it.
-  const noLevelsThisYear =
-    !search && programs.length > 0 && programs.every((p) => !p.levels?.length);
+  const noLevelsThisYear = !search && programs.length > 0 && !running.length;
   const pagination = data?.pagination;
   const departments = useMemo(() => deptData?.data ?? [], [deptData]);
 
@@ -109,6 +123,26 @@ export default function Programs() {
   const canEdit = hasPermission(P.MODIFY_STRUCTURE) && !readOnlyYear;
   const canCreate = hasPermission(P.CREATE_STRUCTURE) && !readOnlyYear;
   const canManage = hasPermission(P.MANAGE_STRUCTURE) && !readOnlyYear;
+
+  // One place the row's wiring is written, so the two lists below cannot
+  // drift apart in what a row can do.
+  const rowProps = (program: Program) => ({
+    program,
+    open: !!open[program.id],
+    multiBranch,
+    canEdit,
+    canCreate,
+    canManage,
+    onToggle: () => setOpen((o) => ({ ...o, [program.id]: !o[program.id] })),
+    onEdit: () => setProgramDrawer(program),
+    onDelete: () => setConfirm({ kind: "deleteProgram" as const, program }),
+    onAddLevel: () => setLevelDrawer({ program, level: null }),
+    onBulkLevels: () => setBulkFor(program),
+    onEditLevel: (level: Level) => setLevelDrawer({ program, level }),
+    onDeleteLevel: (level: Level) =>
+      setConfirm({ kind: "deleteLevel" as const, program, level }),
+  });
+
 
   const allOpen = programs.length > 0 && programs.every((p) => open[p.id]);
   const toggleAll = () =>
@@ -254,43 +288,54 @@ export default function Programs() {
           actionLabel={search ? "Clear search" : undefined}
           onAction={search ? () => setSearch("") : undefined}
         />
-      ) : noLevelsThisYear ? (
-        // Programmes are not per-year - Junior Secondary is Junior Secondary -
-        // but the LEVELS inside them are. A school that has just drafted next
-        // year sees every programme with nothing in it, which reads as loss
-        // rather than as a year that has not been started.
-        <EmptyYear
-          icon={ListTree}
-          thing="levels"
-          body="Levels are the rungs pupils move through inside a programme. Open a programme and add its first level."
-          filtered={false}
-          filteredBody=""
-          onClearFilters={() => setSearch("")}
-        />
       ) : (
         <div className="grid gap-3">
-          {programs.map((program) => (
-            <ProgramRow
-              key={program.id}
-              program={program}
-              open={!!open[program.id]}
-              multiBranch={multiBranch}
-              canEdit={canEdit}
-              canCreate={canCreate}
-              canManage={canManage}
-              onToggle={() =>
-                setOpen((o) => ({ ...o, [program.id]: !o[program.id] }))
-              }
-              onEdit={() => setProgramDrawer(program)}
-              onDelete={() => setConfirm({ kind: "deleteProgram", program })}
-              onAddLevel={() => setLevelDrawer({ program, level: null })}
-              onBulkLevels={() => setBulkFor(program)}
-              onEditLevel={(level) => setLevelDrawer({ program, level })}
-              onDeleteLevel={(level) =>
-                setConfirm({ kind: "deleteLevel", program, level })
-              }
+          {/* Programmes are not per-year - Junior Secondary is Junior
+              Secondary - but the LEVELS inside them are. A school that has
+              just drafted next year sees every programme with nothing in it,
+              which reads as loss rather than as a year not yet started. */}
+          {noLevelsThisYear && (
+            <EmptyYear
+              icon={ListTree}
+              thing="levels"
+              body="Levels are the rungs pupils move through inside a programme. Open a programme below and add its first level."
+              filtered={false}
+              filteredBody=""
+              onClearFilters={() => setSearch("")}
             />
+          )}
+
+          {running.map((program) => (
+            <ProgramRow {...rowProps(program)} key={program.id} />
           ))}
+
+          {/* The programmes the school is not running this year. Present, not
+              deleted: the year they DID run still shows them, and one tap
+              here starts them again. Withheld on an archived year, where
+              there is nothing to start. */}
+          {dormant.length > 0 && !readOnlyYear && (
+            <div className="grid gap-3">
+              <button
+                type="button"
+                onClick={() => setDormantOpen((o) => !o)}
+                aria-expanded={dormantOpen}
+                className="flex items-center gap-2 px-1 pt-2 text-left text-[13px] text-gray-05 hover:text-black-01"
+              >
+                <ChevronRight
+                  className={cn(
+                    "size-3.5 transition-transform",
+                    dormantOpen && "rotate-90",
+                  )}
+                />
+                No levels yet
+                <span className="text-gray-05">({dormant.length})</span>
+              </button>
+              {dormantOpen &&
+                dormant.map((program) => (
+                  <ProgramRow {...rowProps(program)} key={program.id} />
+                ))}
+            </div>
+          )}
         </div>
       )}
 

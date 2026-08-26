@@ -56,7 +56,7 @@ import { ScopeCell } from "../components/scope-cell";
  * takes it away from the others, and deleting one is final.
  */
 export default function Departments() {
-  const { branch, multiBranch } = useAcademicsLens();
+  const { lens, branch, multiBranch, sessionName } = useAcademicsLens();
   const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState("");
@@ -68,10 +68,12 @@ export default function Departments() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
 
-  // Branch only, no year: a department is not per-year. Sciences outlives
-  // 2026/2027, and the levels and subjects hanging off it are what move.
+  // The year travels with the branch, but only so the server can say whether
+  // each department was RUNNING that year. The list itself stays whole: a
+  // department is the school's filing, not the year's, and folding one away
+  // would make it unreachable on the year you want to start it in.
   const { data, isLoading, isError, refetch } = useGetDepartmentsQuery({
-    branch,
+    ...lens,
     search,
     is_active: showArchived,
     page,
@@ -272,6 +274,7 @@ export default function Departments() {
             <DepartmentCard
               key={dept.id}
               dept={dept}
+              sessionName={sessionName}
               multiBranch={multiBranch}
               canEdit={canEdit}
               canManage={canManage}
@@ -447,6 +450,7 @@ function confirmAction(c: Confirmation | null) {
 
 function DepartmentCard({
   dept,
+  sessionName,
   multiBranch,
   canEdit,
   canManage,
@@ -456,6 +460,7 @@ function DepartmentCard({
   onDelete,
 }: {
   dept: Department;
+  sessionName: string | null;
   multiBranch: boolean;
   canEdit: boolean;
   canManage: boolean;
@@ -531,6 +536,15 @@ function DepartmentCard({
           <Pin className="size-3 shrink-0" />
           <ScopeCell label={dept.scope_label} shared={dept.branch == null} />
         </div>
+      )}
+
+      {/* Said quietly rather than hidden. A school that dropped Commercial
+          this year has not deleted it, and the year it ran still shows it -
+          so the card states which of the two this is. */}
+      {!dept.running_this_year && sessionName && (
+        <p className="mt-2 text-xs text-gray-05">
+          Nothing running in {sessionName}
+        </p>
       )}
 
       <hr className="my-3 border-white-02" />

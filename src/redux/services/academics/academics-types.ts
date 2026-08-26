@@ -62,6 +62,15 @@ export interface Department extends Scoped {
   is_active: boolean;
   program_count: number;
   subject_count: number;
+  /**
+   * Whether the school ran this department in the year being read.
+   *
+   * Derived by the server from the levels and subjects in that year, not
+   * stored: Sciences is Sciences across time, and what varies is whether it
+   * was running. So scrapping Commercial is leaving it out of the new year,
+   * and the year it DID run still shows it.
+   */
+  running_this_year: boolean;
 }
 
 export interface Level extends Scoped {
