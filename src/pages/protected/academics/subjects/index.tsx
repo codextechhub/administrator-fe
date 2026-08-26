@@ -199,6 +199,8 @@ export default function Subjects() {
             search,
             is_core: type,
             branch: branch === "all" ? undefined : branch,
+            // The rows belong to one year, so the file has to as well.
+            session: lens.session,
           }}
         />
 

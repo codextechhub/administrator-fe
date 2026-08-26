@@ -299,12 +299,20 @@ export const academicsApi = baseApi.injectEndpoints({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["AcademicStructure", "AcademicOverview", "Classes"],
+      // Subjects too: a subject card names the levels it is offered at, so
+      // renaming JSS1 leaves every one of them printing the old name.
+      invalidatesTags: [
+        "AcademicStructure", "AcademicOverview", "Classes", "Subjects",
+      ],
     }),
 
     deleteLevel: builder.mutation<Envelope<null>, number>({
       query: (id) => ({ url: `/academics/levels/${id}/`, method: "DELETE" }),
-      invalidatesTags: ["AcademicStructure", "AcademicOverview", "Classes"],
+      // Deleting a level CASCADES its subject offerings, so the subject cards
+      // that named it are wrong the moment this returns.
+      invalidatesTags: [
+        "AcademicStructure", "AcademicOverview", "Classes", "Subjects",
+      ],
     }),
 
     // ── Classes ────────────────────────────────────────────────────────────

@@ -216,6 +216,8 @@ export default function Classes() {
             is_active: status,
             level: levelFilter === "all" ? undefined : levelFilter,
             branch: branch === "all" ? undefined : branch,
+            // The rows belong to one year, so the file has to as well.
+            session: lens.session,
           }}
         />
 

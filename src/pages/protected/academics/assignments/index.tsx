@@ -1,6 +1,7 @@
 import { GraduationCap, UsersRound } from "lucide-react";
 import { Panel } from "@/components/custom/surface";
 import { useGetAcademicOverviewQuery } from "@/redux/services/academics/academics-api";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 
 /**
  * Class teachers, and who sits in each class.
@@ -19,7 +20,12 @@ import { useGetAcademicOverviewQuery } from "@/redux/services/academics/academic
  * only one of them can be acted on.
  */
 export default function Assignments() {
-  const { data } = useGetAcademicOverviewQuery();
+  // The lens, like every other academics screen. Without it this count came
+  // from whichever year the server picked, so the sentence "there are 8
+  // classes ready" could describe a different year from the one in the pill -
+  // and it read from a second cache entry, refetching the same overview.
+  const { lens, sessionName } = useAcademicsLens();
+  const { data } = useGetAcademicOverviewQuery(lens);
   const classes = data?.data.counts.classes ?? 0;
 
   const panels = [
@@ -29,7 +35,7 @@ export default function Assignments() {
       sub: "The teacher responsible for each class.",
       why:
         classes > 0
-          ? `There ${classes === 1 ? "is 1 class" : `are ${classes} classes`} ready, but no staff records to assign to them. Teachers arrive with the staff import, or when they accept an invitation.`
+          ? `There ${classes === 1 ? "is 1 class" : `are ${classes} classes`} ready${sessionName ? ` in ${sessionName}` : ""}, but no staff records to assign to them. Teachers arrive with the staff import, or when they accept an invitation.`
           : "Teachers are assigned to classes here. Both have to exist first.",
       unlock: "Opens once at least one member of staff exists.",
     },
@@ -47,8 +53,11 @@ export default function Assignments() {
       <div>
         <h2 className="text-base font-medium text-black-01">Assignments</h2>
         <p className="mt-1 max-w-2xl text-sm text-gray-01 text-pretty">
-          Who teaches each class, and who sits in it. Both depend on records that
-          live outside this module, so neither can be filled in from here yet.
+          Who teaches each class, and who sits in it. Both depend on records
+          that live outside this module, so neither can be filled in from here
+          yet. Both will answer to the year in the menu when they do: a class
+          belongs to one year, so who taught JSS1 A is a question about a
+          particular year rather than about the class alone.
         </p>
       </div>
 
