@@ -46,6 +46,7 @@ import { BulkLevelsDrawer } from "./bulk-levels-drawer";
 import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "../components/export-button";
 import { EmptyYear } from "@/pages/protected/academics/components/empty-year";
+import { DormantFold } from "@/pages/protected/academics/components/dormant-fold";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 
@@ -160,6 +161,10 @@ export default function Programs() {
     const result = editing
       ? await updateProgram({ id: editing.id, ...body }).unwrap()
       : await createProgram(body).unwrap();
+    // A new programme has no levels, so it lands in the fold - which, closed,
+    // reads as the programme never having been created. Open it and it is
+    // visible exactly where it went, next to the Add level it now needs.
+    if (!editing) setDormantOpen(true);
     toast.success(result.message);
   };
 
@@ -309,32 +314,17 @@ export default function Programs() {
             <ProgramRow {...rowProps(program)} key={program.id} />
           ))}
 
-          {/* The programmes the school is not running this year. Present, not
-              deleted: the year they DID run still shows them, and one tap
-              here starts them again. Withheld on an archived year, where
-              there is nothing to start. */}
-          {dormant.length > 0 && !readOnlyYear && (
-            <div className="grid gap-3">
-              <button
-                type="button"
-                onClick={() => setDormantOpen((o) => !o)}
-                aria-expanded={dormantOpen}
-                className="flex items-center gap-2 px-1 pt-2 text-left text-[13px] text-gray-05 hover:text-black-01"
-              >
-                <ChevronRight
-                  className={cn(
-                    "size-3.5 transition-transform",
-                    dormantOpen && "rotate-90",
-                  )}
-                />
-                No levels yet
-                <span className="text-gray-05">({dormant.length})</span>
-              </button>
-              {dormantOpen &&
-                dormant.map((program) => (
-                  <ProgramRow {...rowProps(program)} key={program.id} />
-                ))}
-            </div>
+          {/* Withheld on an archived year, where there is nothing to start. */}
+          {!readOnlyYear && (
+            <DormantFold
+              count={dormant.length}
+              open={dormantOpen}
+              onOpenChange={setDormantOpen}
+            >
+              {dormant.map((program) => (
+                <ProgramRow {...rowProps(program)} key={program.id} />
+              ))}
+            </DormantFold>
           )}
         </div>
       )}

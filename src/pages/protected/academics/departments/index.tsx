@@ -42,6 +42,7 @@ import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "../components/export-button";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
+import { DormantFold } from "@/pages/protected/academics/components/dormant-fold";
 
 /**
  * Faculty groupings that programmes and subjects hang off.
@@ -56,7 +57,7 @@ import { ScopeCell } from "../components/scope-cell";
  * takes it away from the others, and deleting one is final.
  */
 export default function Departments() {
-  const { lens, branch, multiBranch, sessionName } = useAcademicsLens();
+  const { lens, branch, multiBranch, readOnlyYear } = useAcademicsLens();
   const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState("");
@@ -67,6 +68,7 @@ export default function Departments() {
   const [editing, setEditing] = useState<Department | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
+  const [dormantOpen, setDormantOpen] = useState(false);
 
   // The year travels with the branch, but only so the server can say whether
   // each department was RUNNING that year. The list itself stays whole: a
@@ -94,6 +96,65 @@ export default function Departments() {
     setEditing(null);
     setDrawerOpen(true);
   };
+  // Running under the year being read, and not. The counts are that year's,
+  // so this is read off them rather than asked for separately.
+  const running = useMemo(
+    () => departments.filter((d) => d.running_this_year),
+    [departments],
+  );
+  const dormant = useMemo(
+    () => departments.filter((d) => !d.running_this_year),
+    [departments],
+  );
+
+  const renderList = (rows: Department[], opts?: { paginate?: boolean }) =>
+    view === "cards" ? (
+      <div className="grid items-start gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {rows.map((dept) => (
+          <DepartmentCard
+            key={dept.id}
+            dept={dept}
+            multiBranch={multiBranch}
+            canEdit={canEdit}
+            canManage={canManage}
+            onEdit={() => openEdit(dept)}
+            onArchive={() => setConfirm({ kind: "archive", department: dept })}
+            onRestore={() => setConfirm({ kind: "restore", department: dept })}
+            onDelete={() => setConfirm({ kind: "delete", department: dept })}
+          />
+        ))}
+      </div>
+    ) : (
+      <CustomTable
+        tableHeaderList={[
+          "Department",
+          "Code",
+          ...(multiBranch ? ["Scope"] : []),
+          "Programmes",
+          "Subjects",
+          "Status",
+        ]}
+        defaultBodyList={rows}
+        tableBodyList={rows.map((d) => ({
+          Department: d.name,
+          Code: d.code,
+          ...(multiBranch ? { Scope: d.scope_label ?? "School-wide" } : {}),
+          Programmes: String(d.program_count),
+          Subjects: String(d.subject_count),
+          Status: d.is_active ? "Active" : "Archived",
+        }))}
+        onRowClick={(dept: Department) => {
+          if (dept && canEdit) openEdit(dept);
+        }}
+        // The fold is a slice of the page that is already loaded, so paging
+        // it would page the whole list from inside a corner of itself.
+        currentPage={opts?.paginate === false ? 1 : pagination?.currentPage ?? 1}
+        totalPage={opts?.paginate === false ? 1 : pagination?.totalPages ?? 1}
+        onPageChange={(next) => setPage(Number(next) || 1)}
+        emptyText="No departments"
+      />
+    );
+
   const openEdit = (dept: Department) => {
     setEditing(dept);
     setDrawerOpen(true);
@@ -132,6 +193,9 @@ export default function Departments() {
     const result = editing
       ? await update({ id: editing.id, ...body }).unwrap()
       : await create(body).unwrap();
+    // A new department has nothing under it yet, so it lands in the fold -
+    // which, closed, reads as the department never having been created.
+    if (!editing) setDormantOpen(true);
     toast.success(result.message);
   };
 
@@ -268,50 +332,24 @@ export default function Departments() {
               : undefined
           }
         />
-      ) : view === "cards" ? (
-        <div className="grid items-start gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {departments.map((dept) => (
-            <DepartmentCard
-              key={dept.id}
-              dept={dept}
-              sessionName={sessionName}
-              multiBranch={multiBranch}
-              canEdit={canEdit}
-              canManage={canManage}
-              onEdit={() => openEdit(dept)}
-              onArchive={() => setConfirm({ kind: "archive", department: dept })}
-              onRestore={() => setConfirm({ kind: "restore", department: dept })}
-              onDelete={() => setConfirm({ kind: "delete", department: dept })}
-            />
-          ))}
-        </div>
       ) : (
-        <CustomTable
-          tableHeaderList={[
-            "Department",
-            "Code",
-            ...(multiBranch ? ["Scope"] : []),
-            "Programmes",
-            "Subjects",
-            "Status",
-          ]}
-          defaultBodyList={departments}
-          tableBodyList={departments.map((d) => ({
-            Department: d.name,
-            Code: d.code,
-            ...(multiBranch ? { Scope: d.scope_label ?? "School-wide" } : {}),
-            Programmes: String(d.program_count),
-            Subjects: String(d.subject_count),
-            Status: d.is_active ? "Active" : "Archived",
-          }))}
-          onRowClick={(dept: Department) => {
-            if (dept && canEdit) openEdit(dept);
-          }}
-          currentPage={pagination?.currentPage ?? 1}
-          totalPage={pagination?.totalPages ?? 1}
-          onPageChange={(next) => setPage(Number(next) || 1)}
-          emptyText="No departments"
-        />
+        <div className="grid min-w-0 grid-cols-1 gap-5">
+          {renderList(running)}
+
+          {/* Same rule as Programmes & Levels: a department the school ran
+              nothing under this year is folded away, not deleted, and the
+              year it DID run still lists it. Withheld on an archived year,
+              where there is nothing to start. */}
+          {!readOnlyYear && (
+            <DormantFold
+              count={dormant.length}
+              open={dormantOpen}
+              onOpenChange={setDormantOpen}
+            >
+              {renderList(dormant, { paginate: false })}
+            </DormantFold>
+          )}
+        </div>
       )}
 
       {view === "cards" && (pagination?.totalPages ?? 1) > 1 && (
@@ -450,7 +488,6 @@ function confirmAction(c: Confirmation | null) {
 
 function DepartmentCard({
   dept,
-  sessionName,
   multiBranch,
   canEdit,
   canManage,
@@ -460,7 +497,6 @@ function DepartmentCard({
   onDelete,
 }: {
   dept: Department;
-  sessionName: string | null;
   multiBranch: boolean;
   canEdit: boolean;
   canManage: boolean;
@@ -536,15 +572,6 @@ function DepartmentCard({
           <Pin className="size-3 shrink-0" />
           <ScopeCell label={dept.scope_label} shared={dept.branch == null} />
         </div>
-      )}
-
-      {/* Said quietly rather than hidden. A school that dropped Commercial
-          this year has not deleted it, and the year it ran still shows it -
-          so the card states which of the two this is. */}
-      {!dept.running_this_year && sessionName && (
-        <p className="mt-2 text-xs text-gray-05">
-          Nothing running in {sessionName}
-        </p>
       )}
 
       <hr className="my-3 border-white-02" />
