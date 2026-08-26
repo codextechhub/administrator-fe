@@ -96,22 +96,17 @@ export default function Programs() {
   const [deleteLevel, { isLoading: dl }] = useDeleteLevelMutation();
 
   const programs = useMemo(() => data?.data ?? [], [data]);
-  // Every programme empty, and not because of a search: the year itself has
-  // not been started. One level anywhere is enough to disprove it.
-  //
-  // A programme with no levels in the year being read is still LISTED with the
-  // rest, showing zero. It has no year of its own, so "we stopped running
-  // Commercial" is not a delete and must not be an archive - both reach
-  // backwards and take the year it did run with them. It is simply a
-  // programme with nothing in it this year, and the row says so.
+  // Every programme empty, and not because of a search: the year has not
+  // been started. One level anywhere disproves it. Empty programmes still
+  // list, showing zero - a programme has no year of its own to be absent
+  // from.
   const noLevelsThisYear =
     !search && programs.length > 0 && programs.every((p) => !p.levels?.length);
   const pagination = data?.pagination;
   const departments = useMemo(() => deptData?.data ?? [], [deptData]);
 
-  // An archived year is a record, and the server refuses every write into
-  // one. Withdrawing the controls is the honest half of that: an Edit that
-  // answers 409 is worse than no Edit at all.
+  // The server refuses every write into an archived year, so an Edit here
+  // would only answer 409.
   const canEdit = hasPermission(P.MODIFY_STRUCTURE) && !readOnlyYear;
   const canCreate = hasPermission(P.CREATE_STRUCTURE) && !readOnlyYear;
   const canManage = hasPermission(P.MANAGE_STRUCTURE) && !readOnlyYear;
@@ -175,9 +170,8 @@ export default function Programs() {
       setConfirm(null);
     } catch (error) {
       const parsed = parseApiError(error);
-      // A programme still holding levels, or a level still holding classes, is
-      // refused by a foreign key the server explains with a count. That needs
-      // its own modal, not a toast: the reader has to go and move those rows.
+      // Its own modal rather than a toast: the reader has to go and move
+      // those rows before this can succeed.
       if (parsed.code === "PROTECTED_REFERENCE") {
         setConfirm({
           kind: "blocked",

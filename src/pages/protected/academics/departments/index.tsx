@@ -68,10 +68,8 @@ export default function Departments() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
 
-  // The year travels with the branch, but only so the server can say whether
-  // each department was RUNNING that year. The list itself stays whole: a
-  // department is the school's filing, not the year's, and folding one away
-  // would make it unreachable on the year you want to start it in.
+  // The year travels only so the counts can be that year's. The list itself
+  // stays whole: a department is the school's filing, not the year's.
   const { data, isLoading, isError, refetch } = useGetDepartmentsQuery({
     ...lens,
     search,
@@ -94,9 +92,7 @@ export default function Departments() {
     setEditing(null);
     setDrawerOpen(true);
   };
-  // Every department, in one list, whether or not the year being read has
-  // anything under it. A department outlives the years it ran in, and its
-  // counts already say which of the two this is.
+  // One list, running or not: the counts already say which.
   const renderList = (rows: Department[]) =>
     view === "cards" ? (
       <div className="grid items-start gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -207,9 +203,8 @@ export default function Departments() {
       setConfirm(null);
     } catch (error) {
       const parsed = parseApiError(error);
-      // A department with programmes mapped to it cannot be deleted, and the
-      // server says which and how many. That is a different modal, not a toast:
-      // the reader has to go and move those programmes.
+      // Its own modal rather than a toast: the reader has to go and move
+      // those programmes before this can succeed.
       if (parsed.code === "PROTECTED_REFERENCE" && confirm.kind === "delete") {
         setConfirm({ kind: "blocked", department: confirm.department, message: parsed.message });
         return;

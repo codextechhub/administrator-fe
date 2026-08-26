@@ -92,9 +92,8 @@ export function GenerateArmsDrawer({
     () =>
       new Set(
         classes
-          // Per level AND branch, because that is the constraint's own scope:
-          // "JSS1 A" may exist at both branches, and marking the second one
-          // "Already there" would refuse a class the school is entitled to.
+          // Per level AND branch, the constraint's own scope: "JSS1 A" may
+          // exist at both branches.
           .filter(
             (c) =>
               c.level === levelId &&

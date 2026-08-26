@@ -48,9 +48,8 @@ export function RollForwardDialog({
   const [source, setSource] = useState("");
   const [roll, { isLoading }] = useRollForwardSessionMutation();
 
-  // Every year the school has, not just the page the list screen is showing -
-  // the year worth copying from is usually the one that just ended, and a
-  // status filter upstream could have hidden it.
+  // Every year, not the list screen's page: the one worth copying from is
+  // usually the one that just ended, which a status filter could have hidden.
   const { data } = useGetSessionsQuery({ status: "all" }, { skip: !open });
 
   const options = useMemo(

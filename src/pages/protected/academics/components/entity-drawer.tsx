@@ -145,9 +145,8 @@ export function EntityDrawer({
   const [codeIsOurs, setCodeIsOurs] = useState(!initial.code);
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(null);
 
-  // Re-seed when the drawer is pointed at a different row. Adjusted during
-  // render rather than in an effect, so the form never paints the previous
-  // row's values for a frame - see the same note in session-drawer.
+  // Re-seed on a different row, during render rather than in an effect: an
+  // effect paints the previous row's values for a frame first.
   const openedFor = open ? JSON.stringify(initial) : "shut";
   const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
   const [initialExtra, setInitialExtra] = useState(() =>
@@ -172,10 +171,8 @@ export function EntityDrawer({
     setRefusal(null);
   };
 
-  // Two ways scope stops being a choice, and both end in a sentence rather
-  // than a control. The parent wins over the account: a level inside a
-  // branch-only programme belongs to THAT branch even for an admin tied to a
-  // different one - and the server would refuse the write either way.
+  // Two ways scope stops being a choice, both ending in a sentence rather
+  // than a control. The parent wins over the account.
   const tiedLock =
     isTied && tiedBranch !== "all"
       ? {
@@ -209,13 +206,8 @@ export function EntityDrawer({
   const branchMissing = multiBranch && draft.branch === -1;
 
   const valid = !!shownName.trim() && !nameEmpty && !branchMissing && extrasValid;
-  // The extras count as changes too, or picking a department on an otherwise
-  // untouched form would leave Save greyed out.
-  //
-  // Re-baselined every time the drawer is pointed somewhere new, below. Taken
-  // once at mount - as it was - the baseline belonged to whichever row was
-  // opened FIRST, so every drawer after that started dirty and offered Save on
-  // a form nobody had touched.
+  // Extras count as changes, or picking a department on an untouched form
+  // would leave Save greyed out. Re-baselined per row below, not at mount.
   const dirty =
     JSON.stringify({
       ...draft,
@@ -288,9 +280,7 @@ export function EntityDrawer({
               onChange={(e) => {
                 onNameEdited?.();
                 setEdited((t) => ({ ...t, name: true }));
-                // No code here: `shownCode` derives it from the name every
-                // render, so pushing one would be a second source for the
-                // same value.
+                // No code: `shownCode` derives it from the name each render.
                 patch({ name: e.target.value });
               }}
               // Only once they have actually typed something here. See `touched`.

@@ -90,9 +90,8 @@ export function ExportButton({
 
   if (tenantIsPending || !canExport) return null;
 
-  // The server's own sentences, joined. It wrote them for this reader, and only
-  // the module that owns the binding knows WHY a filter could not be carried -
-  // a second copy of that explanation here would drift from it.
+  // The server's own sentences: only the module owning the binding knows why
+  // a filter could not be carried, and a copy here would drift from it.
   const why = (pending?.unmapped ?? []).map((u) => u.reason).join(" ");
 
   return (

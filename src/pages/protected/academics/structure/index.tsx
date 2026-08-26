@@ -166,9 +166,8 @@ function SessionHero({
       ? `${session.next_term} is next`
       : "Session complete";
 
-  // A draft year has not started and an archived one has finished, so the
-  // green "Active" edge would be a lie on either. The hero states what the
-  // year IS, because the counts underneath are that year's.
+  // The green edge would be a lie on a draft or archived year, and the counts
+  // underneath are that year's.
   const live = session.status === "ACTIVE";
   const tone = live
     ? "border-green-01"

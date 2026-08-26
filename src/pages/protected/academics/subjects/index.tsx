@@ -95,9 +95,8 @@ export default function Subjects() {
   const programs = useMemo(() => programData?.data ?? [], [programData]);
   const departments = useMemo(() => deptData?.data ?? [], [deptData]);
 
-  // An archived year is a record, and the server refuses every write into
-  // one. Withdrawing the controls is the honest half of that: an Edit that
-  // answers 409 is worse than no Edit at all.
+  // The server refuses every write into an archived year, so an Edit here
+  // would only answer 409.
   const canEdit = hasPermission(P.MODIFY_SUBJECT) && !readOnlyYear;
   const canManage = hasPermission(P.MANAGE_SUBJECTS) && !readOnlyYear;
   const filtered = !!search || type !== "all";

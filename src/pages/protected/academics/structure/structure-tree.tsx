@@ -52,11 +52,8 @@ export function StructureTree() {
   // The root is open by default. Everything below starts closed, so the first
   // paint is the programme list rather than four hundred rows.
   const [open, setOpen] = useState<Record<string, boolean>>({ session: true });
-  // "Expand all" cannot be a snapshot of the open map: the classes and subjects
-  // it is meant to reveal have not been fetched at the moment it is pressed, so
-  // a map written then would stop at the levels and the reader would have to
-  // press it a second time for the rows that had just arrived. Holding it as a
-  // MODE instead means the deeper rows are already open when they land.
+  // A MODE, not a snapshot of the open map: the rows it reveals have not been
+  // fetched when it is pressed, so a map written then would stop at levels.
   const [expandAll, setExpandAll] = useState(false);
 
   const { data, isLoading, isFetching } = useGetStructureTreeQuery({
@@ -87,9 +84,8 @@ export function StructureTree() {
     return shown;
   }, [nodes, openMap]);
 
-  // "Expand all" until every expandable node is open, not until ONE is. The
-  // root starts open, so `some` would have labelled the button "Collapse all"
-  // on first paint - offering to undo a state the reader never chose.
+  // Every expandable node, not one: the root starts open, so `some` would
+  // read "Collapse all" on first paint.
   const expandable = useMemo(() => nodes.filter((n) => n.hasChildren), [nodes]);
   const allOpen =
     expandAll || (expandable.length > 0 && expandable.every((n) => openMap[n.id]));

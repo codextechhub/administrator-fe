@@ -94,12 +94,8 @@ describe("classCode", () => {
 });
 
 describe("the entity drawer's dirty baseline", () => {
-  // A regression test written as data, because the bug was in state timing:
-  // `initialExtra` was captured once at mount, so the baseline belonged to
-  // whichever row was opened FIRST. Every drawer after that started dirty and
-  // offered Save on a form nobody had touched. The rule this pins is that the
-  // baseline is whatever the extras held when the drawer was pointed at THIS
-  // row - so comparing them to a stale snapshot must read as changed.
+  // The baseline is what the extras held when the drawer was pointed at THIS
+  // row, so a stale snapshot must read as changed.
   const baselineFor = (extras: object) => JSON.stringify(extras);
 
   it("reads an untouched form as unchanged", () => {

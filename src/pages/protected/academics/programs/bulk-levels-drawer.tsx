@@ -58,9 +58,8 @@ export function BulkLevelsDrawer({
     const seen = new Set<string>();
     return names.map((name) => {
       const key = name.toLowerCase();
-      // A repeat WITHIN the box counts as a clash too. The server refuses the
-      // batch for it, and a preview that only checked the database would call
-      // the second "JSS1" new.
+      // A repeat within the box clashes too - the server refuses the batch
+      // for it, so a database-only preview would call the second one new.
       const clash = existing.has(key) || seen.has(key);
       seen.add(key);
       return { name, clash };
@@ -76,9 +75,8 @@ export function BulkLevelsDrawer({
       const result = await create({
         program: program.id,
         names: rows.map((r) => r.name),
-        // A level inherits its programme's branch. Sending the programme's own
-        // value rather than nothing keeps a branch-only programme from
-        // acquiring school-wide levels.
+        // The programme's own branch, so a branch-only programme cannot
+        // acquire school-wide levels.
         branch: program.branch ?? null,
       }).unwrap();
       toast.success(result.message);

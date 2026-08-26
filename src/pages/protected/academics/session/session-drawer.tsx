@@ -145,16 +145,9 @@ export function SessionDrawer({
   const [update, { isLoading: updating }] = useUpdateSessionMutation();
   const saving = creating || updating;
 
-  // Reset when the drawer is pointed at a different year - or at none. Without
-  // it, editing 2025/2026 and then creating a new year starts on 2025/2026's
-  // dates.
-  //
-  // Adjusted during render rather than in an effect, which is what React
-  // prescribes for "derive state from a prop change": an effect would paint the
-  // previous year's values for one frame and then blank them, and the reader
-  // would watch the form change under their hands.
-  // The structure is part of the key: it arrives a moment after the drawer can
-  // open, and a new year must re-seed onto the right rows when it does.
+  // Reset on a different year, during render rather than in an effect: an
+  // effect paints the previous year's dates for a frame first. The structure
+  // is part of the key because it arrives after the drawer can open.
   const openedFor = open
     ? session
       ? `s${session.id}`
@@ -182,9 +175,7 @@ export function SessionDrawer({
       terms: d.terms.map((t, i) => (i === index ? { ...t, ...next } : t)),
     }));
 
-  // A term outside its session's dates is the mistake this form exists to
-  // catch, and it is per-row: the message belongs under the row that is wrong,
-  // not in a summary at the bottom.
+  // Per-row, because the message belongs under the term that is wrong.
   const termErrors = draft.terms.map((t) => {
     if (!t.start_date || !t.end_date || !draft.start || !draft.end) return "";
     if (t.end_date < t.start_date) return `${t.name || "This term"} ends before it starts.`;
@@ -220,9 +211,8 @@ export function SessionDrawer({
       start_date: draft.start,
       end_date: draft.end,
       terms: draft.terms.map((t, i) => ({ ...t, order_index: i + 1 })),
-      // Omitting branches would leave the existing set alone on an edit, which
-      // is not what clearing the picker means. An empty list is the school-wide
-      // answer and is sent explicitly.
+      // Sent explicitly: omitting it would leave the existing set alone,
+      // which is not what clearing the picker means.
       branch_ids: draft.schoolWide ? [] : draft.branchIds,
     };
     try {

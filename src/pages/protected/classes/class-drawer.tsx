@@ -61,11 +61,8 @@ export function ClassDrawer({
 
   const composed = [levelName, arm.trim()].filter(Boolean).join(" ");
 
-  // NOT the composed name. The drawer re-seeds whenever `initial` changes, and
-  // a composed name changes on every level and arm keystroke - so putting it
-  // here wiped the description and the branch choice each time the arm was
-  // edited. The composed value reaches the drawer as `derivedName`, which is
-  // what it is for.
+  // NOT the composed name: the drawer re-seeds whenever `initial` changes,
+  // and a composed one changes on every keystroke. It goes as `derivedName`.
   const initial = editing
     ? {
         name: editing.name,
@@ -100,14 +97,11 @@ export function ClassDrawer({
       onSave={onSave}
       onNameEdited={() => setNameEdited(true)}
       derivedName={nameEdited ? undefined : composed}
-      // From the NAME, so a hand-typed one gets a code that matches what was
-      // written. See classCode for why the first-three-letters rule cannot
-      // serve a class.
+      // From the NAME, so a hand-typed one gets a matching code. See
+      // classCode for why first-three-letters cannot serve a class.
       deriveCode={(name) => classCode(name, arm)}
-      // ABOVE the name, because these two BUILD it: picking JSS1 names the
-      // class JSS1, adding arm A makes it JSS1 A, and the code follows from
-      // there. Asking for a name first is asking a question the next two fields
-      // immediately answer over.
+      // ABOVE the name, because these two build it: JSS1 plus arm A makes
+      // JSS1 A, and the code follows.
       leading={
         <div className="mb-5 grid gap-4 border-b border-border pb-5">
           <div>

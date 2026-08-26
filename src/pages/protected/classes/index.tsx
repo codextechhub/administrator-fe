@@ -69,11 +69,9 @@ export default function Classes() {
   const [status, setStatus] = useState<"true" | "false" | "all">("true");
   const [view, setView] = useState<"cards" | "table">("cards");
   const [page, setPage] = useState(1);
-  // A level id belongs to ONE year, so it cannot survive a year switch: JSS1
-  // in 2026/2027 is a different row from JSS1 in 2025/2026, and carrying the
-  // old id across leaves the dropdown showing a level this year does not have
-  // while the list filters by it and comes back empty. The page number goes
-  // with it - page 3 of last year is rarely page 3 of this one.
+  // A level id belongs to one year, so it cannot survive a year switch: the
+  // dropdown would name a level this year does not have and the list would
+  // filter by it. The page number goes with it.
   const [lastSession, setLastSession] = useState(lens.session);
   if (lens.session !== lastSession) {
     setLastSession(lens.session);
@@ -109,9 +107,8 @@ export default function Classes() {
     [programData],
   );
 
-  // An archived year is a record, and the server refuses every write into
-  // one. Withdrawing the controls is the honest half of that: an Edit that
-  // answers 409 is worse than no Edit at all.
+  // The server refuses every write into an archived year, so an Edit here
+  // would only answer 409.
   const canEdit = hasPermission(P.MODIFY_CLASS) && !readOnlyYear;
   const canManage = hasPermission(P.MANAGE_CLASSES) && !readOnlyYear;
   const filtered = !!search || status !== "true" || levelFilter !== "all";

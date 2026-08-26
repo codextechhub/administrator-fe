@@ -66,21 +66,16 @@ export function classCode(name: string, arm = ""): string {
   const armPart = arm.trim();
   if (!armPart) return clean(full).slice(0, 12);
 
-  // The name is composed as "<level> <arm>", so the level is what is left when
-  // the arm is taken off the end. A name that no longer ends with the arm has
-  // been typed over, and is used whole.
+  // The name is "<level> <arm>", so the level is what is left without the
+  // arm. One that no longer ends with the arm was typed over; use it whole.
   const base = full.toLowerCase().endsWith(armPart.toLowerCase())
     ? full.slice(0, full.length - armPart.length)
     : full;
   const cleanArm = clean(armPart);
   if (!clean(base)) return cleanArm.slice(0, 12);
 
-  // Both give way, in the order that keeps the code readable. The LEVEL is
-  // abbreviated only as far as ten characters, because it is what a person
-  // scans for; the ARM takes whatever is left, which is why "SSS2 Commercial"
-  // reads SSS2-COMMERC and not S-COMMERCIAL. Truncating the whole string
-  // instead produced "ALPHASTREAM-", with the one part that tells two classes
-  // apart falling off the end.
+  // The level keeps up to ten characters and the arm takes the rest, so
+  // "SSS2 Commercial" reads SSS2-COMMERC rather than S-COMMERCIAL.
   const cleanBase = clean(base).slice(0, 10);
   return `${cleanBase}-${cleanArm.slice(0, 12 - cleanBase.length - 1)}`;
 }

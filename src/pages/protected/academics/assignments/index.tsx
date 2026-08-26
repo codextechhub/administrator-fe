@@ -20,10 +20,8 @@ import { useAcademicsLens } from "@/hooks/use-academics-lens";
  * only one of them can be acted on.
  */
 export default function Assignments() {
-  // The lens, like every other academics screen. Without it this count came
-  // from whichever year the server picked, so the sentence "there are 8
-  // classes ready" could describe a different year from the one in the pill -
-  // and it read from a second cache entry, refetching the same overview.
+  // The lens, like every other academics screen: without it the count could
+  // describe a year other than the one in the pill.
   const { lens, sessionName } = useAcademicsLens();
   const { data } = useGetAcademicOverviewQuery(lens);
   const classes = data?.data.counts.classes ?? 0;

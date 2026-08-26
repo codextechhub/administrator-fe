@@ -54,8 +54,7 @@ function listParams(args: ListArgs = {}): Record<string, string | number> {
   return {
     ...branchParam(branch),
     // Beside the branch for the same reason: a lens applied per screen is a
-    // lens one screen forgets, and forgetting the year silently answers about
-    // whichever year the school happens to be running.
+    // lens one screen forgets.
     ...(session ? { session } : {}),
     ...(search?.trim() ? { search: search.trim() } : {}),
     // Omitted means active-only on the server, which is what every screen's
@@ -95,9 +94,8 @@ export const academicsApi = baseApi.injectEndpoints({
           params: {
             ...branchParam(branch),
             ...(session ? { session } : {}),
-            // The default stops at levels with counts. That depth cap is what
-            // makes this safe to serve unpaginated, so ask for full only when
-            // the reader has actually opened a level.
+            // The depth cap is what makes this safe to serve unpaginated, so
+            // ask for full only once a level has been opened.
             ...(full ? { depth: "full" } : {}),
           },
         };
@@ -175,10 +173,8 @@ export const academicsApi = baseApi.injectEndpoints({
         method: "POST",
         body: { from },
       }),
-      // Everything moves: levels, classes and subjects all arrive at once, so
-      // every list tag goes, not just the structure one. Classes and Subjects
-      // carry tags of their own - leaving them out left the screen that
-      // launched the copy still showing its empty state after it succeeded.
+      // Everything arrives at once, and Classes and Subjects carry tags of
+      // their own - leaving them out left the copying screen showing empty.
       invalidatesTags: [
         "Sessions", "AcademicOverview", "AcademicStructure", "Classes", "Subjects",
       ],
@@ -268,9 +264,8 @@ export const academicsApi = baseApi.injectEndpoints({
       invalidatesTags: ["AcademicStructure", "AcademicOverview"],
     }),
 
-    // Levels are created UNDER a programme, so the parent is in the path
-    // rather than the body: the server reads the programme's own branch from
-    // it and refuses a level wider than its parent.
+    // The parent is in the path, not the body: the server reads its branch
+    // from there and refuses a level wider than it.
     createLevel: builder.mutation<
       Envelope<Level>,
       { program: number } & EntityWrite
@@ -355,10 +350,8 @@ export const academicsApi = baseApi.injectEndpoints({
       invalidatesTags: ["Classes", "AcademicStructure", "AcademicOverview"],
     }),
 
-    // Archive and restore rather than delete: there IS no delete route, and its
-    // absence is a promise another module depends on - M11's enrolment points
-    // at SchoolClass with on_delete=PROTECT, which is only safe because no
-    // route can reach that refusal.
+    // Archive and restore: there is no delete route, and its absence is a
+    // promise M11's PROTECTed enrolment depends on.
     archiveClass: builder.mutation<Envelope<SchoolClass>, number>({
       query: (id) => ({
         url: `/academics/classes/${id}/archive/`,

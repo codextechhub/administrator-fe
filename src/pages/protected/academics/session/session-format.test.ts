@@ -51,9 +51,8 @@ describe("scopeOf", () => {
   });
 
   it("says the whole school when the field was dropped", () => {
-    // A single-branch school gets no scope_label at all - the serializer strips
-    // every branch-shaped field. Absent must read as "everywhere", never as
-    // "no branches set", which is a different and false statement.
+    // A single-branch school gets no scope_label at all, and absent must read
+    // as "everywhere" rather than as "no branches set".
     expect(scopeOf(session())).toBe("The whole school");
   });
 });
