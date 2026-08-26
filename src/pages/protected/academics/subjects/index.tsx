@@ -46,7 +46,6 @@ import type {
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "../components/export-button";
-import { EmptyYear } from "@/pages/protected/academics/components/empty-year";
 import { blankDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 import { OfferedAt } from "./offered-at";
@@ -62,7 +61,8 @@ import { OfferedAt } from "./offered-at";
  * tap rather than six.
  */
 export default function Subjects() {
-  const { lens, branch, multiBranch, readOnlyYear } = useAcademicsLens();
+  const { lens, branch, multiBranch, readOnlyYear, sessionName } =
+    useAcademicsLens();
   const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState("");
@@ -202,8 +202,6 @@ export default function Subjects() {
             search,
             is_core: type,
             branch: branch === "all" ? undefined : branch,
-            // The rows belong to one year, so the file has to as well.
-            session: lens.session,
           }}
         />
 
@@ -221,17 +219,24 @@ export default function Subjects() {
           ))}
         </div>
       ) : !subjects.length ? (
-        <EmptyYear
+        <OutlinedNotice
           icon={BookOpen}
-          thing="subjects"
-          body="Subjects are what the school teaches, and each one names the levels it is taught at. Add the first."
-          filtered={filtered}
-          filteredBody="Try a different search, or change the type filter."
-          onClearFilters={() => {
-            setSearch("");
-            setType("all");
-            setPage(1);
-          }}
+          title={filtered ? "No subjects match that" : "No subjects yet"}
+          body={
+            filtered
+              ? "Try a different search, or change the type filter."
+              : "Subjects are what the school teaches, and each one names the levels it is taught at. Add the first."
+          }
+          actionLabel={filtered ? "Clear filters" : undefined}
+          onAction={
+            filtered
+              ? () => {
+                  setSearch("");
+                  setType("all");
+                  setPage(1);
+                }
+              : undefined
+          }
         />
       ) : view === "cards" ? (
         <div className="grid items-start gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -239,6 +244,7 @@ export default function Subjects() {
             <SubjectCard
               key={subject.id}
               subject={subject}
+              sessionName={sessionName}
               multiBranch={multiBranch}
               canEdit={canEdit}
               canManage={canManage}
@@ -323,7 +329,8 @@ export default function Subjects() {
         }}
         copy={{
           title: editing ? `Edit ${editing.name}` : "Add subject",
-          subtitle: "Subjects are taught at one or more levels.",
+          subtitle:
+            "A subject stays on file year to year. Where it is taught is what changes.",
           nameLabel: "Subject name",
           namePlaceholder: "e.g. Mathematics",
           codePlaceholder: "e.g. MTH",
@@ -429,6 +436,7 @@ function archiveBody(subject: Subject | null) {
 
 function SubjectCard({
   subject,
+  sessionName,
   multiBranch,
   canEdit,
   canManage,
@@ -436,6 +444,7 @@ function SubjectCard({
   onDelete,
 }: {
   subject: Subject;
+  sessionName: string | null;
   multiBranch: boolean;
   canEdit: boolean;
   canManage: boolean;
@@ -519,10 +528,14 @@ function SubjectCard({
 
       <hr className="my-3 border-white-02" />
 
+      {/* The one part of a subject that belongs to a year: a subject is on
+          file whatever the pill says, and where it is taught changes. */}
       <div>
-        <p className="text-xs text-gray-05">Offered at</p>
+        <p className="text-xs text-gray-05">
+          Offered at{sessionName ? ` in ${sessionName}` : ""}
+        </p>
         <p className="mt-0.5 truncate text-sm font-medium text-black-01">
-          {subject.offered_label}
+          {subject.level_count > 0 ? subject.offered_label : "Not taught"}
         </p>
         <p className="mt-0.5 text-xs text-gray-05">
           {subject.level_count === 1
