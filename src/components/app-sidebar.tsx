@@ -18,6 +18,7 @@ import { routesPath } from "@/routes/routesPath";
 import { useLocation } from "react-router";
 import {
   BookOpen,
+  CalendarClock,
   CalendarRange,
   DollarSign,
   ListChecks,
@@ -251,16 +252,97 @@ export function AppSidebar({
           .map((sub) => ({ title: sub.title, url: sub.url, isActive: sub.isActive })),
       },
       {
-        // Its own module now, not a child of academics management. Its screens
-        // are unchanged pending their own design pass.
-        title: "Academic Calendar",
-        url: routesPath.PROTECTED.ACADEMIC_CALENDAR.INDEX,
+        // Its own module now, not a child of academics management. The design
+        // splits it into two siblings - what a school DATES, and what runs
+        // inside those dates - and they are gated on different backend keys, so
+        // a reader may hold one and not the other.
+        //
+        // Timetables joins this list as its screens land, following the same
+        // rule the group above records: a nav item that 404s is a door drawn on
+        // a wall.
+        title: "Calendar",
+        url: "#",
         icon: CalendarRange,
         isActive: location.startsWith(
           routesPath.PROTECTED.ACADEMIC_CALENDAR.INDEX,
         ),
-        childActive: false,
+        childActive: location.startsWith(
+          routesPath.PROTECTED.ACADEMIC_CALENDAR.INDEX,
+        ),
         permission: P.BROWSE_CALENDAR,
+        items: [
+          {
+            title: "Overview",
+            url: routesPath.PROTECTED.ACADEMIC_CALENDAR.INDEX,
+            // Exact match: both children below start with this path, so
+            // `startsWith` would light Overview on all three.
+            isActive:
+              location === routesPath.PROTECTED.ACADEMIC_CALENDAR.INDEX,
+          },
+          {
+            title: "Events",
+            url: routesPath.PROTECTED.ACADEMIC_CALENDAR.EVENTS,
+            isActive: location.startsWith(
+              routesPath.PROTECTED.ACADEMIC_CALENDAR.EVENTS,
+            ),
+          },
+          {
+            title: "Term view",
+            url: routesPath.PROTECTED.ACADEMIC_CALENDAR.TERM_VIEW,
+            isActive: location.startsWith(
+              routesPath.PROTECTED.ACADEMIC_CALENDAR.TERM_VIEW,
+            ),
+          },
+        ],
+      },
+      {
+        // The calendar's sibling, and gated on its own key: a reader may hold
+        // `academics.calendar.view` and not `academics.timetable.view`, in
+        // which case this group is ABSENT rather than greyed out.
+        //
+        // Class timetables, Teacher timetables and Exam scheduling join this
+        // list in the phases that build them.
+        title: "Timetables",
+        url: "#",
+        icon: CalendarClock,
+        isActive: location.startsWith("/timetables"),
+        childActive: location.startsWith("/timetables"),
+        permission: P.BROWSE_TIMETABLES,
+        items: [
+          {
+            title: "Rooms",
+            url: routesPath.PROTECTED.TIMETABLES.ROOMS,
+            isActive: location.startsWith(routesPath.PROTECTED.TIMETABLES.ROOMS),
+          },
+          {
+            title: "Bell schedule",
+            url: routesPath.PROTECTED.TIMETABLES.BELL_SCHEDULE,
+            isActive: location.startsWith(
+              routesPath.PROTECTED.TIMETABLES.BELL_SCHEDULE,
+            ),
+          },
+          {
+            title: "Class timetables",
+            url: routesPath.PROTECTED.TIMETABLES.CLASSES,
+            isActive: location.startsWith(
+              routesPath.PROTECTED.TIMETABLES.CLASSES,
+            ),
+          },
+          {
+            title: "Teacher timetables",
+            url: routesPath.PROTECTED.TIMETABLES.TEACHERS,
+            isActive: location.startsWith(
+              routesPath.PROTECTED.TIMETABLES.TEACHERS,
+            ),
+          },
+          {
+            title: "Exam scheduling",
+            url: routesPath.PROTECTED.TIMETABLES.EXAMS,
+            isActive: location.startsWith(
+              routesPath.PROTECTED.TIMETABLES.EXAMS,
+            ),
+          },
+        ],
       },
     ],
     finance: [

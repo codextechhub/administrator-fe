@@ -61,11 +61,31 @@ export const routesPath = {
     },
     // The academic calendar is its OWN module now, not a child of academic
     // management. Spelled correctly here; the old /academic/calender paths
-    // redirect. Its screens are unchanged pending their own design pass.
+    // redirect.
+    //
+    // The design splits what used to be one item into two sibling modules, and
+    // the split is not cosmetic: the calendar is what a school DATES, and the
+    // timetables are what runs inside those dates. They are gated on different
+    // backend keys (`academics.calendar.*` and `academics.timetable.*`), so a
+    // teacher who may read the holiday list may hold neither, either, or both.
+    //
+    // `INDEX` is the hub, which covers both modules - its own "Go to" list
+    // names all seven screens - and lives here because that is where the design
+    // puts it.
     ACADEMIC_CALENDAR: {
       INDEX: "/academic-calendar",
-      DETAILS: "/academic-calendar/:id",
-      DETAILS_ID: (id: string | number) => `/academic-calendar/${id}`,
+      EVENTS: "/academic-calendar/events",
+      TERM_VIEW: "/academic-calendar/term-view",
+    },
+    // The timetable half. A separate prefix rather than more children of
+    // /academic-calendar, because a school reaching Rooms is not reaching the
+    // calendar and should not have to hold a calendar key to get there.
+    TIMETABLES: {
+      ROOMS: "/timetables/rooms",
+      BELL_SCHEDULE: "/timetables/bell-schedule",
+      CLASSES: "/timetables/classes",
+      TEACHERS: "/timetables/teachers",
+      EXAMS: "/timetables/exams",
     },
     FEES: { INDEX: "/school-fees" },
     SETTINGS: { INDEX: "/settings" },

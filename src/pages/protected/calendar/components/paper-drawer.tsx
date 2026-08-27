@@ -1,0 +1,381 @@
+import { useState } from "react";
+import { Loader2, Trash2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { SearchSelect } from "@/components/custom/search-select";
+import { Field } from "@/pages/protected/academics/components/entity-drawer";
+import { cn } from "@/lib/utils";
+import { parseApiError } from "@/utils/api-error";
+import type {
+  ExamSlotWrite,
+  Room,
+  Sitting,
+  TeacherRow,
+} from "@/redux/services/calendar/calendar-types";
+import type { PaperValues } from "./paper-values";
+import type {
+  SchoolClass,
+  Subject,
+} from "@/redux/services/academics/academics-types";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// One paper: which class sits which subject, when, where, supervised by whom.
+//
+// **The refusal and the warnings are the opposite way round from the class
+// timetable, and a school meets both in one afternoon.** On a lesson grid a
+// double-booked teacher WARNS and the write succeeds. Here:
+//
+//   * A class sitting two papers in one sitting is REFUSED. It is physically
+//     impossible and no school ever means it.
+//   * A room used twice, and an invigilator in two rooms, both WARN. Two
+//     classes really do sit in the Main Hall together, and one person really
+//     does float between adjacent rooms - and nothing records how many
+//     candidates a paper has or how many rooms one person can supervise, so
+//     refusing either would be refusing on a guess.
+//
+// The form says which is which rather than letting a school discover it by
+// being stopped once and not the other time.
+//
+// **Times are optional and stay that way.** A school that publishes exact times
+// has them; one that publishes only morning and afternoon does not, and is not
+// made to invent them.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SITTINGS: { value: Sitting; label: string }[] = [
+  { value: "MORNING", label: "Morning" },
+  { value: "AFTERNOON", label: "Afternoon" },
+];
+
+export function PaperDrawer({
+  open,
+  initial,
+  editing,
+  periodName,
+  periodRange,
+  minDate,
+  maxDate,
+  classes,
+  subjects,
+  rooms,
+  teachers,
+  saving,
+  removing,
+  onClose,
+  onSave,
+  onRemove,
+}: {
+  open: boolean;
+  initial: PaperValues;
+  editing: boolean;
+  periodName: string;
+  periodRange: string;
+  minDate: string;
+  maxDate: string;
+  classes: SchoolClass[];
+  subjects: Subject[];
+  rooms: Room[];
+  teachers: TeacherRow[];
+  saving: boolean;
+  removing: boolean;
+  onClose: () => void;
+  onSave: (values: ExamSlotWrite) => Promise<unknown>;
+  onRemove: () => Promise<void>;
+}) {
+  const [values, setValues] = useState<PaperValues>(initial);
+  const [touched, setTouched] = useState(false);
+  const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(
+    null,
+  );
+
+  const openedFor = open ? JSON.stringify(initial) : "shut";
+  const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
+  if (openedFor !== lastOpenedFor) {
+    setLastOpenedFor(openedFor);
+    if (open) {
+      setValues(initial);
+      setTouched(false);
+      setRefusal(null);
+    }
+  }
+
+  const patch = (next: Partial<PaperValues>) => {
+    setValues((v) => ({ ...v, ...next }));
+    setRefusal(null);
+  };
+
+  const outsidePeriod =
+    !!values.exam_date &&
+    (values.exam_date < minDate || values.exam_date > maxDate);
+  const timesBackwards =
+    !!values.start_time && !!values.end_time && values.end_time <= values.start_time;
+
+  const valid =
+    !!values.school_class &&
+    !!values.subject &&
+    !!values.exam_date &&
+    !outsidePeriod &&
+    !timesBackwards;
+
+  const save = async () => {
+    setTouched(true);
+    if (!valid) return;
+    try {
+      await onSave({
+        school_class: values.school_class!,
+        subject: values.subject!,
+        exam_date: values.exam_date,
+        sitting: values.sitting,
+        // Empty means "no answer", and must not become "00:00".
+        start_time: values.start_time || null,
+        end_time: values.end_time || null,
+        room: values.room,
+        invigilator: values.invigilator,
+      });
+      onClose();
+    } catch (error) {
+      const parsed = parseApiError(error);
+      // CLASS_ALREADY_SITTING names the class and the paper it collided with,
+      // and carries `detail.field`, so it lands under the class picker rather
+      // than in a toast the reader is not looking at.
+      const field =
+        parsed.code === "EXAM_OUTSIDE_EXAM_PERIOD"
+          ? "exam_date"
+          : String(parsed.detail.field ?? "");
+      setRefusal({
+        field,
+        message: parsed.message || "That paper could not be saved.",
+      });
+    }
+  };
+
+  const remove = async () => {
+    try {
+      await onRemove();
+      onClose();
+    } catch (error) {
+      setRefusal({
+        field: "",
+        message:
+          parseApiError(error).message || "That paper could not be removed.",
+      });
+    }
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 bg-white p-0 sm:max-w-lg"
+      >
+        <SheetHeader className="border-b border-border px-5 pb-4 pt-5 pr-12 text-left">
+          <SheetTitle className="truncate font-mont text-base">
+            {editing ? "Edit paper" : "Add paper"}
+          </SheetTitle>
+          <SheetDescription className="text-[13px] text-gray-01 text-pretty">
+            {periodName} · {periodRange}
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+          <Field
+            label="Class *"
+            error={
+              touched && !values.school_class
+                ? "Pick a class."
+                : refusal?.field === "school_class"
+                  ? refusal.message
+                  : ""
+            }
+          >
+            <SearchSelect
+              aria-label="Class"
+              placeholder="Search classes"
+              value={values.school_class ? String(values.school_class) : ""}
+              onChange={(e) =>
+                patch({
+                  school_class: e.target.value ? Number(e.target.value) : null,
+                })
+              }
+              options={classes.map((c) => ({
+                value: String(c.id),
+                label: c.name,
+              }))}
+            />
+          </Field>
+
+          <div className="mt-4">
+            <Field
+              label="Subject *"
+              error={touched && !values.subject ? "Pick a subject." : ""}
+            >
+              <SearchSelect
+                aria-label="Subject"
+                placeholder="Search subjects"
+                value={values.subject ? String(values.subject) : ""}
+                onChange={(e) =>
+                  patch({
+                    subject: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                options={subjects.map((s) => ({
+                  value: String(s.id),
+                  label: s.name,
+                }))}
+              />
+            </Field>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Field label="Date *">
+              <Input
+                type="date"
+                value={values.exam_date}
+                min={minDate}
+                max={maxDate}
+                onChange={(e) => patch({ exam_date: e.target.value })}
+                aria-invalid={outsidePeriod || undefined}
+              />
+            </Field>
+            <Field label="Sitting *">
+              <div className="flex flex-wrap gap-1.5">
+                {SITTINGS.map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => patch({ sitting: s.value })}
+                    aria-pressed={values.sitting === s.value}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-xs",
+                      values.sitting === s.value
+                        ? "border-primary bg-pry-01 font-medium text-primary"
+                        : "border-white-02 bg-white text-gray-06 hover:bg-gray-04",
+                    )}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          </div>
+          {(outsidePeriod || refusal?.field === "exam_date") && (
+            <p className="mt-1.5 text-xs text-error-text text-pretty">
+              {outsidePeriod
+                ? `This date is outside ${periodName} (${periodRange}).`
+                : refusal?.message}
+            </p>
+          )}
+
+          <div className="mt-4">
+            <Field label="Room">
+              <SearchSelect
+                aria-label="Room"
+                placeholder="Search rooms"
+                value={values.room ? String(values.room) : ""}
+                onChange={(e) =>
+                  patch({ room: e.target.value ? Number(e.target.value) : null })
+                }
+                options={rooms.map((r) => ({
+                  value: String(r.id),
+                  label: r.branch_name ? `${r.name} · ${r.branch_name}` : r.name,
+                }))}
+              />
+            </Field>
+          </div>
+
+          <div className="mt-4">
+            <Field label="Invigilator">
+              <SearchSelect
+                aria-label="Invigilator"
+                placeholder="Search teachers"
+                value={values.invigilator ? String(values.invigilator) : ""}
+                onChange={(e) =>
+                  patch({
+                    invigilator: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                options={teachers.map((t) => ({
+                  value: String(t.id),
+                  label: t.name,
+                }))}
+              />
+            </Field>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Field label="Start time">
+              <Input
+                type="time"
+                value={values.start_time}
+                onChange={(e) => patch({ start_time: e.target.value })}
+              />
+            </Field>
+            <Field label="End time">
+              <Input
+                type="time"
+                value={values.end_time}
+                onChange={(e) => patch({ end_time: e.target.value })}
+                aria-invalid={timesBackwards || undefined}
+              />
+            </Field>
+          </div>
+          <p className="mt-1 text-xs text-gray-05 text-pretty">
+            {timesBackwards
+              ? "The end time must be after the start time."
+              : "Optional. A school that publishes only morning and afternoon can leave these empty."}
+          </p>
+
+          {/* The split, stated. A school meets both halves of it in one
+              afternoon, and being stopped once but not the other time is how
+              somebody concludes the rules are arbitrary. */}
+          <div className="mt-5 rounded-lg border border-white-02 bg-white-05 px-3 py-2.5">
+            <p className="text-xs text-gray-06 text-pretty">
+              A room used twice, or one invigilator in two rooms, will save with
+              a warning: two classes really can sit in one hall, and one person
+              really does float between rooms. A class sitting two papers at
+              once will be refused, because that one is impossible.
+            </p>
+          </div>
+
+          {refusal && !refusal.field && (
+            <p className="mt-4 text-xs text-error-text text-pretty">
+              {refusal.message}
+            </p>
+          )}
+        </div>
+
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
+          {editing && (
+            <Button
+              variant="ghost"
+              className="mr-auto text-error-text"
+              onClick={remove}
+              disabled={removing || saving}
+            >
+              {removing ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              Remove paper
+            </Button>
+          )}
+          <Button variant="ghost" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={save} disabled={!valid || saving}>
+            {saving && <Loader2 className="size-4 animate-spin" />}
+            {editing ? "Save changes" : "Add paper"}
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}

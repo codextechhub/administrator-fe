@@ -16,13 +16,22 @@ const Departments = lazy(() => import("@/pages/protected/academics/departments")
 const Programs = lazy(() => import("@/pages/protected/academics/programs"));
 const Subjects = lazy(() => import("@/pages/protected/academics/subjects"));
 const Assignments = lazy(() => import("@/pages/protected/academics/assignments"));
-const AcademicCalendar = lazy(() => import("@/pages/protected/academics/calender"));
-const CalendarDetails = lazy(
-  () => import("@/pages/protected/academics/calender/calender-details"),
+const CalendarOverview = lazy(() => import("@/pages/protected/calendar/overview"));
+const CalendarEvents = lazy(() => import("@/pages/protected/calendar/events"));
+const TermView = lazy(() => import("@/pages/protected/calendar/term-view"));
+const Rooms = lazy(() => import("@/pages/protected/calendar/rooms"));
+const BellSchedule = lazy(() => import("@/pages/protected/calendar/bell-schedule"));
+const ClassTimetables = lazy(
+  () => import("@/pages/protected/calendar/class-timetables"),
 );
+const TeacherTimetables = lazy(
+  () => import("@/pages/protected/calendar/teacher-timetables"),
+);
+const ExamScheduling = lazy(() => import("@/pages/protected/calendar/exams"));
 
 const S = routesPath.PROTECTED.ACADEMIC_STRUCTURE;
 const C = routesPath.PROTECTED.ACADEMIC_CALENDAR;
+const T = routesPath.PROTECTED.TIMETABLES;
 
 /** Old paths that now point somewhere else. See the note beside the list. */
 export function redirects(pairs: [from: string, to: string][]): RouteObject[] {
@@ -99,18 +108,88 @@ export const academicRoutes = [
     } satisfies DashboardHandle,
   },
 
-  // The academic calendar is its own module now, not a child of academics
-  // management. Its screens are unchanged pending their own design pass, so no
-  // lens: nothing on them reads one yet.
+  // The calendar half. `lens: true` on all three: every row in this module
+  // belongs to one branch scope and one school year, and the overview's counts
+  // are the year's - a hub with no session pill is a hub reporting a year the
+  // reader did not choose.
   {
     path: C.INDEX,
-    Component: AcademicCalendar,
-    handle: { title: "Academic Calendar" } satisfies DashboardHandle,
+    Component: CalendarOverview,
+    handle: {
+      title: "Calendar Overview",
+      lens: true,
+      pendingSurface: true,
+    } satisfies DashboardHandle,
   },
   {
-    path: C.DETAILS,
-    Component: CalendarDetails,
-    handle: { title: "Academic Calendar", hasBack: true } satisfies DashboardHandle,
+    path: C.EVENTS,
+    Component: CalendarEvents,
+    handle: {
+      title: "Calendar & Events",
+      lens: true,
+      pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+  {
+    path: C.TERM_VIEW,
+    Component: TermView,
+    handle: {
+      title: "Term Calendar View",
+      lens: true,
+      pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+
+  // The timetable half. Same two lenses: a room belongs to a branch, and a
+  // bell schedule belongs to a year - a screen showing last year's periods
+  // under this year's heading is the mistake the session pill exists to stop.
+  {
+    path: T.ROOMS,
+    Component: Rooms,
+    handle: {
+      title: "Rooms",
+      lens: true,
+      pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+  {
+    path: T.BELL_SCHEDULE,
+    Component: BellSchedule,
+    handle: {
+      title: "Bell Schedule",
+      lens: true,
+      pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+
+  {
+    path: T.CLASSES,
+    Component: ClassTimetables,
+    handle: {
+      title: "Class Timetables",
+      lens: true,
+      pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+
+  {
+    path: T.TEACHERS,
+    Component: TeacherTimetables,
+    handle: {
+      title: "Teacher Timetables",
+      lens: true,
+      pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+
+  {
+    path: T.EXAMS,
+    Component: ExamScheduling,
+    handle: {
+      title: "Exam Scheduling",
+      lens: true,
+      pendingSurface: true,
+    } satisfies DashboardHandle,
   },
 
   // The module moved. Anything bookmarked at the old paths lands where the

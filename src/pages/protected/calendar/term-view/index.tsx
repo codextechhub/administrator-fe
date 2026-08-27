@@ -1,0 +1,403 @@
+import { useState } from "react";
+import { CalendarRange, ChevronLeft, ChevronRight } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Panel } from "@/components/custom/surface";
+import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
+import { cn, getVariantColor } from "@/lib/utils";
+import {
+  useGetCalendarEventsQuery,
+  useGetCalendarYearQuery,
+} from "@/redux/services/calendar/calendar-api";
+import type { CalendarEvent } from "@/redux/services/calendar/calendar-types";
+import { EventDetail } from "../components/event-drawer";
+import { eventVariant } from "../components/event-kind";
+import {
+  daysBetween,
+  formatRange,
+  localDate,
+  monthLabel,
+  parts,
+  toIso,
+} from "../components/dates";
+
+/**
+ * The same events as the list, read as a shape instead of as rows.
+ *
+ * Two views of one year, and each answers a question the other cannot. The
+ * timeline answers "where are we in the year" - three terms, their gaps, and
+ * today's mark. The month grid answers "what does November look like", which is
+ * the question somebody asks before booking anything.
+ *
+ * **The month is fetched, not filtered.** The grid asks the server for the
+ * window it is drawing (`from`/`to`), rather than pulling every event of the
+ * year and slicing locally. A school with two hundred dated entries would
+ * otherwise pay for all of them to draw thirty days, and the paginated list
+ * would silently be missing the ones on page two.
+ *
+ * **Every date here is a plain calendar date.** See `../components/dates`: a
+ * one-day holiday parsed as an instant lands on the wrong day for every reader
+ * west of Greenwich.
+ */
+export default function TermView() {
+  const { lens, multiBranch } = useAcademicsLens();
+
+  const { data: yearData, isLoading, isError, refetch } =
+    useGetCalendarYearQuery({ session: lens.session });
+  const year = yearData?.data ?? {};
+  const terms = year.terms ?? [];
+  const session = year.session;
+  const today = year.on ?? "";
+
+  // Which month the grid is showing. Starts on the month `today` falls in, so
+  // the screen opens on the month the reader is living in rather than on the
+  // first month of the year.
+  const [cursor, setCursor] = useState<{ y: number; m: number } | null>(null);
+  const [viewing, setViewing] = useState<CalendarEvent | null>(null);
+
+  const anchor = today || session?.start_date || "";
+  const [ay, am] = anchor ? parts(anchor) : [0, 0];
+  const view = cursor ?? (anchor ? { y: ay, m: am } : null);
+
+  // The window the grid draws: the whole month, plus the days of the
+  // neighbouring months that share its first and last weeks. Six Date
+  // constructions, so it is computed rather than memoised - a memo keyed on an
+  // object rebuilt every render costs more than the sum it is caching.
+  const window = view ? monthWindow(view.y, view.m) : null;
+
+  const { data: eventData, isFetching } = useGetCalendarEventsQuery(
+    window
+      ? { ...lens, from: window.from, to: window.to }
+      : // Nothing to draw yet: the year has not arrived, so there is no month.
+        // `skip` would need a second hook shape; an impossible window is the
+        // cheaper way to say "not yet" and it is never rendered.
+        { ...lens, from: "9999-12-31", to: "9999-12-31" },
+  );
+  const events = eventData?.data ?? [];
+
+  if (isError) {
+    return (
+      <main className="px-5 pt-3 pb-8">
+        <OutlinedNotice
+          icon={CalendarRange}
+          title="We could not load your calendar"
+          body="Something went wrong on our side. Try again in a moment."
+          actionLabel="Try again"
+          onAction={() => refetch()}
+        />
+      </main>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+        <Skeleton className="h-32 w-full rounded-md" />
+        <Skeleton className="h-[26rem] w-full rounded-md" />
+      </main>
+    );
+  }
+
+  if (!session || !view || !window) {
+    return (
+      <main className="px-5 pt-3 pb-8">
+        <OutlinedNotice
+          icon={CalendarRange}
+          title="No school year yet"
+          body="The timeline draws a school year and the grid draws its months, so both wait on one being started."
+        />
+      </main>
+    );
+  }
+
+  const move = (by: number) => {
+    const next = new Date(view.y, view.m - 1 + by, 1);
+    setCursor({ y: next.getFullYear(), m: next.getMonth() + 1 });
+  };
+
+  return (
+    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+      {/* ── The year as one bar ──────────────────────────────────────────── */}
+      <Panel className="p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-mont text-[15px] font-semibold text-black-01">
+            {session.name}
+          </h2>
+          <p className="text-[13px] text-gray-05">
+            {formatRange(session.start_date, session.end_date)}
+          </p>
+        </div>
+        <Timeline
+          start={session.start_date}
+          end={session.end_date}
+          today={today}
+          terms={terms}
+        />
+      </Panel>
+
+      {/* ── One month at a time ──────────────────────────────────────────── */}
+      <Panel className="p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="font-mont text-[15px] font-semibold text-black-01">
+            {monthLabel(view.y, view.m)}
+          </h3>
+          <div className="inline-flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => move(-1)}
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCursor({ y: ay, m: am })}
+            >
+              Today
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => move(1)}
+              aria-label="Next month"
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* A whole month, at every width.
+            
+            The grid was given a fixed 38rem and left to scroll sideways inside
+            its box. That kept the PAGE from overflowing, which is the rule, but
+            it left a phone showing Sunday to Wednesday - a month calendar you
+            have to drag to read is not one you can browse, and browsing is what
+            a phone is for here.
+            
+            So below `sm` all seven columns fit and the cells carry a dot per
+            event instead of its name: a 50px column cannot hold "Inter-house
+            Sports" at any font size worth reading, and a dot the right colour
+            answers "is anything on that day" - which is the question the month
+            view is being asked. The name is one tap away. */}
+        <div className="mt-4 -mx-1 overflow-x-auto px-1">
+          <div className="min-w-0 sm:min-w-[38rem]">
+            <div className="grid grid-cols-7 gap-1.5">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                <p
+                  key={d}
+                  className="pb-1 text-center text-[11px] font-medium uppercase tracking-wide text-gray-05"
+                >
+                  {d}
+                </p>
+              ))}
+              {Array.from({ length: window.cells }).map((_, i) => {
+                const cell = new Date(localDate(window.from));
+                cell.setDate(cell.getDate() + i);
+                const iso = toIso(cell);
+                const inMonth = cell.getMonth() + 1 === view.m;
+                const onDay = events.filter(
+                  (e) => e.start_date <= iso && e.end_date >= iso,
+                );
+                const closed = onDay.some((e) => e.closes_school);
+                return (
+                  <div
+                    key={iso}
+                    className={cn(
+                      "min-h-14 rounded-lg border p-1 sm:min-h-20 sm:p-1.5",
+                      inMonth ? "border-white-02" : "border-transparent",
+                      !inMonth && "opacity-40",
+                      closed && inMonth && "bg-white-05",
+                      iso === today && "border-primary",
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span
+                        className={cn(
+                          "text-xs",
+                          iso === today
+                            ? "font-semibold text-primary"
+                            : "text-gray-06",
+                        )}
+                      >
+                        {cell.getDate()}
+                      </span>
+                      {/* The word only where it fits. At phone width there is
+                          no room for it beside the date, and it spilled over
+                          the next day's cell; the primary border and the bold
+                          number already mark today without it. */}
+                      {iso === today && (
+                        <span className="hidden text-[9px] font-semibold uppercase tracking-wide text-primary sm:inline">
+                          Today
+                        </span>
+                      )}
+                      {closed && iso !== today && (
+                        <span className="hidden text-[9px] uppercase tracking-wide text-gray-05 sm:inline">
+                          Closed
+                        </span>
+                      )}
+                    </div>
+                    {/* Named chips where there is room for a name. */}
+                    <div className="mt-1 hidden gap-1 sm:grid">
+                      {onDay.slice(0, 2).map((event) => (
+                        <button
+                          key={event.id}
+                          type="button"
+                          onClick={() => setViewing(event)}
+                          className="min-w-0 text-left"
+                        >
+                          <Badge
+                            variant={eventVariant(event.event_type)}
+                            className="w-full justify-start rounded py-0 text-[10px]"
+                          >
+                            <span className="truncate">{event.name}</span>
+                          </Badge>
+                        </button>
+                      ))}
+                      {onDay.length > 2 && (
+                        <span className="pl-0.5 text-[10px] text-gray-05">
+                          +{onDay.length - 2} more
+                        </span>
+                      )}
+                    </div>
+
+                    {/* And a dot each where there is not. The button is padded
+                        to a tappable size around a 6px dot - the dot is the
+                        mark, the button is the target. */}
+                    <div className="mt-0.5 flex flex-wrap items-center sm:hidden">
+                      {onDay.slice(0, 4).map((event) => (
+                        <button
+                          key={event.id}
+                          type="button"
+                          onClick={() => setViewing(event)}
+                          aria-label={`${event.name}, ${event.type_label}`}
+                          title={event.name}
+                          className="grid size-5 place-content-center"
+                        >
+                          <span
+                            className="block size-1.5 rounded-full"
+                            style={{
+                              background: getVariantColor(
+                                eventVariant(event.event_type),
+                              ),
+                            }}
+                          />
+                        </button>
+                      ))}
+                      {onDay.length > 4 && (
+                        <span className="text-[9px] text-gray-05">
+                          +{onDay.length - 4}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {isFetching && (
+          <p className="mt-3 text-xs text-gray-05">Loading this month…</p>
+        )}
+      </Panel>
+
+      <EventDetail
+        event={viewing}
+        open={!!viewing}
+        multiBranch={multiBranch}
+        onClose={() => setViewing(null)}
+      />
+    </main>
+  );
+}
+
+/** The seven-column window a month is drawn in, as ISO dates. */
+function monthWindow(y: number, m: number) {
+  const first = new Date(y, m - 1, 1);
+  const last = new Date(y, m, 0);
+  const lead = first.getDay();
+  const from = new Date(y, m - 1, 1 - lead);
+  const cells = Math.ceil((lead + last.getDate()) / 7) * 7;
+  const to = new Date(from);
+  to.setDate(from.getDate() + cells - 1);
+  return { from: toIso(from), to: toIso(to), cells };
+}
+
+/**
+ * The year as one bar, with each term a block on it.
+ *
+ * The GAPS are the point. A school looking at this is looking for the shape of
+ * its year, and the two-week hole between First and Second Term is as much a
+ * part of that shape as the terms are - so terms are positioned by date rather
+ * than laid out end to end in equal thirds.
+ */
+function Timeline({
+  start,
+  end,
+  today,
+  terms,
+}: {
+  start: string;
+  end: string;
+  today: string;
+  terms: { id: number; name: string; start_date: string; end_date: string; state: string }[];
+}) {
+  const span = Math.max(1, daysBetween(start, end));
+  const at = (iso: string) =>
+    Math.min(100, Math.max(0, (daysBetween(start, iso) / span) * 100));
+
+  // Only when today actually falls inside the year. A school reading last
+  // year's calendar in March would otherwise get a marker pinned to one end,
+  // which reads as "we are at the start of this year" and is false.
+  const showToday = !!today && today >= start && today <= end;
+
+  return (
+    <div className="mt-4">
+      <div className="relative h-9 w-full rounded-lg bg-white-05">
+        {terms.map((term) => {
+          const left = at(term.start_date);
+          const width = Math.max(2, at(term.end_date) - left);
+          return (
+            <div
+              key={term.id}
+              title={`${term.name}: ${formatRange(term.start_date, term.end_date)}`}
+              style={{ left: `${left}%`, width: `${width}%` }}
+              className={cn(
+                "absolute top-1 flex h-7 items-center justify-center overflow-hidden rounded-md px-1",
+                term.state === "ongoing"
+                  ? "bg-primary text-white"
+                  : term.state === "completed"
+                    ? "bg-white-02 text-gray-06"
+                    : "border border-white-02 bg-white text-gray-06",
+              )}
+            >
+              <span className="truncate text-[11px] font-medium">
+                {term.name}
+              </span>
+            </div>
+          );
+        })}
+        {showToday && (
+          <div
+            style={{ left: `${at(today)}%` }}
+            className="absolute -top-1 h-11 w-0.5 -translate-x-1/2 rounded bg-error-text"
+            aria-label="Today"
+            title={`Today, ${formatRange(today, today)}`}
+          />
+        )}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-05">
+        {terms.map((term) => (
+          <span key={term.id}>
+            {term.name}: {formatRange(term.start_date, term.end_date)}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
