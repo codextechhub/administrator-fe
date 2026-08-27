@@ -384,7 +384,18 @@ export const baseApi = createApi({
     "Teachers",
     "Administrators",
     "Sessions",
+    // The calendar events themselves. The hub's counts, its next-up list and
+    // its alerts are a separate tag because almost every write in the module
+    // moves them: a lesson, a room and an event all change what the hub says.
     "Calendar",
+    "CalendarOverview",
+    "Rooms",
+    "Periods",
+    // The class picker, the grid and the publish state are one tag: they are
+    // one screen, and every write to a slot changes all three.
+    "ClassTimetables",
+    "TeacherTimetables",
+    "Exams",
     "Classes",
     // Departments, programmes and levels are one tag: they are one screen group
     // to a school, and adding a level changes a programme's row, so splitting

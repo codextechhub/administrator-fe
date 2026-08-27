@@ -29,6 +29,43 @@ describe("Academic Structure permission registry", () => {
     expect(resolvePermissionKey(P.MANAGE_CLASSES)).toBe("academics.classes.manage");
   });
 
+  it("resolves the timetable keys rooms, bells, grids and exams gate on", () => {
+    // These five were seeded and granted by the backend long before school-fe
+    // had heard of them, which is the same failure the structure keys had: a
+    // school admin holding every key would have seen no Timetables at all,
+    // because usePermissions returns false for a code it cannot resolve.
+    expect(resolvePermissionKey(P.BROWSE_TIMETABLES)).toBe("academics.timetable.view");
+    expect(resolvePermissionKey(P.CREATE_TIMETABLE_ENTRY)).toBe(
+      "academics.timetable.create",
+    );
+    expect(resolvePermissionKey(P.MODIFY_TIMETABLE_ENTRY)).toBe(
+      "academics.timetable.update",
+    );
+    expect(resolvePermissionKey(P.MANAGE_TIMETABLES)).toBe("academics.timetable.manage");
+    expect(resolvePermissionKey(P.PUBLISH_TIMETABLE)).toBe("academics.timetable.publish");
+  });
+
+  it("keeps the calendar and the timetable on their own resources", () => {
+    // The backend seeds them apart and says why: adding a public holiday and
+    // rebuilding the school's timetable are not one act. Collapsing them here
+    // would hand calendar.manage to anyone who may edit a lesson.
+    expect(resolvePermissionKey(P.MANAGE_CALENDAR)).not.toBe(
+      resolvePermissionKey(P.MANAGE_TIMETABLES),
+    );
+    expect(resolvePermissionKey(P.BROWSE_CALENDAR)).not.toBe(
+      resolvePermissionKey(P.BROWSE_TIMETABLES),
+    );
+  });
+
+  it("keeps publish off the manage key", () => {
+    // A branch admin publishes a timetable and does not delete one. The backend
+    // seeds publish to school_admin AND branch_admin, manage to school_admin
+    // only, so one key doing both jobs would quietly promote every branch admin.
+    expect(resolvePermissionKey(P.PUBLISH_TIMETABLE)).not.toBe(
+      resolvePermissionKey(P.MANAGE_TIMETABLES),
+    );
+  });
+
   it("keeps structure and subject on their own resources", () => {
     // A single "academics.structure.*" doing duty for subjects too would hand a
     // branch admin subject-delete along with department-delete. The backend

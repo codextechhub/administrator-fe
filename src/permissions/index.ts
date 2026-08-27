@@ -15,6 +15,7 @@
 //   AA = action         01=view   02=create  03=update  04=delete
 //                       05=approve 08=manage  09=suspend  10=reactivate
 //                       11=assign  12=start   13=end   14=run   15=execute
+//                       16=publish
 //                       39=view_sensitive
 //
 // ── Adding a permission ───────────────────────────────────────────────────────
@@ -189,6 +190,23 @@ const REGISTRY: Record<string, string> = {
   "300503": "academics.subject.update",
   "300508": "academics.subject.manage",
 
+  // ── academics / timetable  (MM=30, RR=06) ──────────────────────────────────
+  // Rooms, the bell schedule, class timetables and exam scheduling: one
+  // resource, because the backend seeds one. NOT four more uses of the calendar
+  // keys - adding a public holiday and rebuilding the school's entire timetable
+  // are not one act, and merging them would hand `academics.calendar.manage` to
+  // anyone who may edit a lesson.
+  //
+  // `.manage` is the DELETE verb here as everywhere else, and it is also what
+  // "Clear this class's timetable" demands. `.publish` is its own action rather
+  // than part of `.manage`: a branch admin publishes a timetable and does not
+  // delete one, so the two cannot share a key.
+  "300601": "academics.timetable.view",
+  "300602": "academics.timetable.create",
+  "300603": "academics.timetable.update",
+  "300608": "academics.timetable.manage",
+  "300616": "academics.timetable.publish",
+
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -302,6 +320,13 @@ export const P = {
   CREATE_SUBJECT:          "300502",  // add a subject
   MODIFY_SUBJECT:          "300503",  // edit a subject, incl. the levels it is offered at
   MANAGE_SUBJECTS:         "300508",  // delete a subject
+
+  // ── Rooms, Bell Schedule, Timetables and Exams ─────────────────────────────
+  BROWSE_TIMETABLES:       "300601",  // view rooms, bells, class/teacher grids, exams
+  CREATE_TIMETABLE_ENTRY:  "300602",  // add a room, a period, a lesson or an exam paper
+  MODIFY_TIMETABLE_ENTRY:  "300603",  // edit one, and duplicate a class's week into another
+  MANAGE_TIMETABLES:       "300608",  // delete a room/period/paper, and clear a whole grid
+  PUBLISH_TIMETABLE:       "300616",  // publish a class timetable or an exam timetable
 
   // ── Export Centre ──────────────────────────────────────────────────────────
   // No school role holds these yet - see the registry note.
