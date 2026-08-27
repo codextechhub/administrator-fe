@@ -82,12 +82,19 @@ export interface Level extends Scoped {
   is_active: boolean;
   program: number;
   program_name: string;
-  /**
-   * Null means the level is terminal OR that promotion has not been wired.
-   * The API cannot tell those apart, so no screen may read null as "terminal".
-   */
   next_level: number | null;
   next_level_name: string | null;
+  /** Pupils leave the school after this level. */
+  is_terminal: boolean;
+  /**
+   * The three promotion states as one word, computed by the server.
+   *
+   * "unset" is the one that matters: a level with no target is either the end
+   * of the school or a level nobody has wired, and reading the second as the
+   * first is what graduates a year group by accident. Read this rather than
+   * combining next_level and is_terminal here.
+   */
+  promotion: "promotes" | "terminal" | "unset";
   class_count: number;
   /**
    * Subjects offered at this level.
@@ -269,7 +276,18 @@ export interface SubjectWrite extends EntityWrite {
 export interface ClassWrite extends EntityWrite {
   level?: number;
   arm?: string;
+  /** Null is no limit, not a limit nobody has reached. M11 reads it that way. */
   capacity?: number | null;
+}
+
+export interface LevelWrite extends EntityWrite {
+  /**
+   * Send one or the other, never both: a level that promotes into JSS2 and
+   * also ends the school is two answers to one question, and the server
+   * refuses the pair.
+   */
+  next_level?: number | null;
+  is_terminal?: boolean;
 }
 
 /**
@@ -279,7 +297,10 @@ export interface ClassWrite extends EntityWrite {
  * that do not apply to it, so one body type keeps the drawer generic and stops
  * each screen widening it again.
  */
-export type AnyEntityWrite = EntityWrite & Partial<ClassWrite> & Partial<SubjectWrite>;
+export type AnyEntityWrite = EntityWrite &
+  Partial<ClassWrite> &
+  Partial<SubjectWrite> &
+  Partial<LevelWrite>;
 
 export interface SubjectListArgs extends ListArgs {
   is_core?: "true" | "false";

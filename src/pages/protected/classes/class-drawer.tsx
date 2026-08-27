@@ -41,6 +41,9 @@ export function ClassDrawer({
 }) {
   const [level, setLevel] = useState<number | null>(editing?.level ?? null);
   const [arm, setArm] = useState(editing?.arm ?? "");
+  const [capacity, setCapacity] = useState(
+    editing?.capacity != null ? String(editing.capacity) : "",
+  );
   const [nameEdited, setNameEdited] = useState(!!editing);
 
   const key = open ? String(editing?.id ?? "new") : "shut";
@@ -50,9 +53,17 @@ export function ClassDrawer({
     if (open) {
       setLevel(editing?.level ?? levels[0]?.id ?? null);
       setArm(editing?.arm ?? "");
+      setCapacity(editing?.capacity != null ? String(editing.capacity) : "");
       setNameEdited(!!editing);
     }
   }
+
+  // Blank is a real answer meaning no limit, so it is sent as null rather than
+  // omitted - otherwise clearing a capacity would leave the old one in place.
+  const capacityValue = capacity.trim() === "" ? null : Number(capacity);
+  const capacityIsSane =
+    capacityValue === null
+    || (Number.isInteger(capacityValue) && capacityValue > 0);
 
   const levelName = useMemo(
     () => levels.find((l) => l.id === level)?.name ?? "",
@@ -83,8 +94,12 @@ export function ClassDrawer({
       editing={!!editing}
       saving={saving}
       initial={initial}
-      extraBody={{ level: level ?? undefined, arm: arm.trim() }}
-      extrasValid={!noLevels && level != null}
+      extraBody={{
+        level: level ?? undefined,
+        arm: arm.trim(),
+        capacity: capacityValue,
+      }}
+      extrasValid={!noLevels && level != null && capacityIsSane}
       copy={{
         title: editing ? `Edit ${editing.name}` : "Add class",
         subtitle: "Pick a level and an arm, and the name is built for you.",
@@ -143,6 +158,35 @@ export function ClassDrawer({
             <p className="mt-1 text-xs text-gray-05">
               Leave blank if this level has only one class. Names like Science or
               Commercial work too.
+            </p>
+          </div>
+
+          {/* Asked rather than assumed. Nothing in this module enforces it -
+              M11 checks it when it places a pupil - so a class created without
+              one is a class with no limit, and the room built for thirty takes
+              forty-two. Optional, because a school may genuinely not cap a
+              class; what it must not be is a question nobody was asked. */}
+          <div>
+            <label
+              htmlFor="class-capacity"
+              className="mb-1.5 block text-[13px] font-medium text-gray-06"
+            >
+              Capacity
+            </label>
+            <Input
+              id="class-capacity"
+              type="number"
+              min={1}
+              inputMode="numeric"
+              value={capacity}
+              onChange={(e) => setCapacity(e.target.value)}
+              placeholder="e.g. 30"
+              aria-invalid={!capacityIsSane}
+            />
+            <p className="mt-1 text-xs text-gray-05">
+              {capacityIsSane
+                ? "How many pupils this class takes. Leave blank for no limit."
+                : "Give a whole number above zero, or leave it blank for no limit."}
             </p>
           </div>
         </div>

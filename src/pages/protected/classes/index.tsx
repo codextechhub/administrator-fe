@@ -285,6 +285,7 @@ export default function Classes() {
             "Level",
             "Arm",
             ...(multiBranch ? ["Scope"] : []),
+            "Capacity",
             "Subjects",
             "Status",
           ]}
@@ -295,6 +296,9 @@ export default function Classes() {
             Level: c.level_name,
             Arm: c.arm || "-",
             ...(multiBranch ? { Scope: c.scope_label ?? "School-wide" } : {}),
+            // Spelled out rather than left blank: no limit is a state the
+            // school chose, and an empty cell reads as missing data.
+            Capacity: c.capacity != null ? String(c.capacity) : "No limit",
             Subjects: String(c.subject_count),
             Status: c.is_active ? "Active" : "Archived",
           }))}

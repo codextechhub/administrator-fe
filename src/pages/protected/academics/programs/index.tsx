@@ -49,6 +49,12 @@ import { BulkLevelsDrawer } from "./bulk-levels-drawer";
 import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "../components/export-button";
 import { EmptyYear } from "@/pages/protected/academics/components/empty-year";
+import {
+  PromotionPicker,
+  type Promotion,
+  promotionBody,
+  promotionOf,
+} from "./promotion-picker";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 
@@ -81,6 +87,10 @@ export default function Programs() {
   const [levelDrawer, setLevelDrawer] = useState<
     { program: Program; level: Level | null } | null
   >(null);
+  // Lifted out of the drawer, so where a level promotes to travels in the same
+  // save as its name. See PromotionPicker for why "not set" is an option
+  // rather than an absence.
+  const [promotion, setPromotion] = useState<Promotion>({ kind: "unset" });
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
   // Without this an archived programme is unreachable, and archive becomes a
   // delete with extra steps.
@@ -137,9 +147,9 @@ export default function Programs() {
         kind: program.is_active ? ("archiveProgram" as const) : ("restoreProgram" as const),
         program,
       }),
-    onAddLevel: () => setLevelDrawer({ program, level: null }),
+    onAddLevel: () => openLevelDrawer(program, null),
     onBulkLevels: () => setBulkFor(program),
-    onEditLevel: (level: Level) => setLevelDrawer({ program, level }),
+    onEditLevel: (level: Level) => openLevelDrawer(program, level),
     onArchiveLevel: (level: Level) =>
       setConfirm({
         kind: level.is_active ? ("archiveLevel" as const) : ("restoreLevel" as const),
@@ -175,6 +185,11 @@ export default function Programs() {
       ? await updateLevel({ id: level.id, ...body }).unwrap()
       : await createLevel({ program: program.id, ...body }).unwrap();
     toast.success(result.message);
+  };
+
+  const openLevelDrawer = (program: Program, level: Level | null) => {
+    setPromotion(promotionOf(level));
+    setLevelDrawer({ program, level });
   };
 
   const runConfirm = async () => {
@@ -414,9 +429,22 @@ export default function Programs() {
           codePlaceholder: "e.g. JSS1",
           scopeHint: "A level usually belongs wherever its programme does.",
         }}
+        // Through extraBody rather than merged in saveLevel: the drawer greys
+        // Save until something changes, and a promotion it never sees is a
+        // change it cannot count.
+        extraBody={promotionBody(promotion)}
         onClose={() => setLevelDrawer(null)}
         onSave={saveLevel}
-      />
+      >
+        {() => (
+          <PromotionPicker
+            value={promotion}
+            onChange={setPromotion}
+            siblings={levelDrawer?.program.levels ?? []}
+            editingId={levelDrawer?.level?.id}
+          />
+        )}
+      </EntityDrawer>
 
       <BulkLevelsDrawer
         open={bulkFor !== null}
@@ -577,6 +605,7 @@ function ProgramRow({
   onArchiveLevel: (level: Level) => void;
 }) {
   const levels = program.levels ?? [];
+  const unwired = levels.filter((l) => l.promotion === "unset").length;
   return (
     <Panel as="section" className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 px-4 py-3">
@@ -601,6 +630,17 @@ function ProgramRow({
             {levels.length === 1 ? "1 level" : `${levels.length} levels`} ·{" "}
             {program.department_name ?? "No department"}
           </p>
+          {/* Said here because nowhere else would say it. An unwired level
+              looks exactly like a level that ends the school, so a promotion
+              run graduates it silently - and the only moment anybody would
+              notice is the moment it is too late. */}
+          {unwired > 0 && (
+            <p className="mt-1 truncate text-xs text-yellow-01-text">
+              {unwired === 1
+                ? "1 level has no promotion set"
+                : `${unwired} levels have no promotion set`}
+            </p>
+          )}
         </div>
 
         {multiBranch && (
@@ -690,6 +730,18 @@ function ProgramRow({
                       : level.class_count === 1
                         ? "1 class"
                         : `${level.class_count} classes`}
+                    {" · "}
+                    <span
+                      className={cn(
+                        level.promotion === "unset" && "text-yellow-01-text",
+                      )}
+                    >
+                      {level.promotion === "promotes"
+                        ? `Promotes to ${level.next_level_name}`
+                        : level.promotion === "terminal"
+                          ? "Pupils leave here"
+                          : "No promotion set"}
+                    </span>
                   </p>
                 </div>
 
