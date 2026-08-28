@@ -7,6 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ROOM_KINDS } from "../components/room-kind";
 import { BLANK_ROOM_FACETS, type RoomFacets } from "./room-facets";
 
 // Type and status, in a panel, with the chosen ones coming back out as chips.
@@ -16,14 +17,11 @@ import { BLANK_ROOM_FACETS, type RoomFacets } from "./room-facets";
 // module, and a second branch control on this one page would be two answers to
 // one question - and the one nobody would think to clear.
 
+// "All types" plus the shared list. A native <option> cannot carry an icon, so
+// this is the one place the type stays words-only.
 const ROOM_TYPE_OPTIONS: { value: RoomFacets["type"]; label: string }[] = [
   { value: "all", label: "All types" },
-  { value: "CLASSROOM", label: "Classroom" },
-  { value: "LABORATORY", label: "Laboratory" },
-  { value: "HALL", label: "Hall" },
-  { value: "LIBRARY", label: "Library" },
-  { value: "SPORTS", label: "Sports" },
-  { value: "OTHER", label: "Other" },
+  ...ROOM_KINDS.map((k) => ({ value: k.value as RoomFacets["type"], label: k.label })),
 ];
 
 export function RoomFilters({

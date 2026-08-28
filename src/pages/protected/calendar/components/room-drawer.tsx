@@ -15,7 +15,8 @@ import { Field } from "@/pages/protected/academics/components/entity-drawer";
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import { useBranchLens } from "@/hooks/use-branch-lens";
-import type { RoomType, RoomWrite } from "@/redux/services/calendar/calendar-types";
+import type { RoomWrite } from "@/redux/services/calendar/calendar-types";
+import { ROOM_KINDS } from "./room-kind";
 import type { RoomDraft } from "./room-draft";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,15 +38,6 @@ import type { RoomDraft } from "./room-draft";
 // An inactive room stops being offered when anyone picks a room, and everything
 // already scheduled in it stays exactly where it is.
 // ─────────────────────────────────────────────────────────────────────────────
-
-const ROOM_TYPES: { value: RoomType; label: string }[] = [
-  { value: "CLASSROOM", label: "Classroom" },
-  { value: "LABORATORY", label: "Laboratory" },
-  { value: "HALL", label: "Hall" },
-  { value: "LIBRARY", label: "Library" },
-  { value: "SPORTS", label: "Sports" },
-  { value: "OTHER", label: "Other" },
-];
 
 export function RoomDrawer({
   open,
@@ -198,8 +190,11 @@ export function RoomDrawer({
           <div className="mt-4">
             <Field label="Type *">
               <div className="flex flex-wrap gap-1.5">
-                {ROOM_TYPES.map((kind) => {
+                {ROOM_KINDS.map((kind) => {
                   const on = draft.room_type === kind.value;
+                  // Icon AND label here, deliberately. This is where somebody
+                  // learns which mark means what; the card can be terse
+                  // afterwards because this was not.
                   return (
                     <button
                       key={kind.value}
@@ -207,12 +202,13 @@ export function RoomDrawer({
                       onClick={() => patch({ room_type: kind.value })}
                       aria-pressed={on}
                       className={cn(
-                        "rounded-full border px-3 py-1.5 text-xs",
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs",
                         on
                           ? "border-primary bg-pry-01 font-medium text-primary"
                           : "border-white-02 bg-white text-gray-06 hover:bg-gray-04",
                       )}
                     >
+                      <kind.icon className="size-3.5" />
                       {kind.label}
                     </button>
                   );

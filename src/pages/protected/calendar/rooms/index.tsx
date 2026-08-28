@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { createElement, useMemo, useState } from "react";
 import {
   DoorOpen,
   LayoutGrid,
@@ -39,6 +39,7 @@ import {
 import type { Room, RoomWrite } from "@/redux/services/calendar/calendar-types";
 import { RoomDrawer } from "../components/room-drawer";
 import { blankRoom, roomDraftFrom } from "../components/room-draft";
+import { roomIcon } from "../components/room-kind";
 import { RoomFilters } from "./room-filters";
 import { BLANK_ROOM_FACETS, type RoomFacets } from "./room-facets";
 
@@ -254,7 +255,7 @@ export default function Rooms() {
           tableBodyList={rooms.map((room) => ({
             Room: room.name,
             Code: room.code || "-",
-            Type: room.type_label,
+            Type: <RoomTypeCell room={room} />,
             ...(multiBranch ? { Branch: room.branch_name ?? "-" } : {}),
             // Never "0": an unset capacity is no answer, and a zero would read
             // as a room that seats nobody.
@@ -349,15 +350,32 @@ function RoomCard({
       onOpen={onEdit}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="truncate font-mont text-[15px] font-medium text-black-01">
-            {room.name}
-          </h3>
-          {multiBranch && room.branch_name && (
+        <div className="flex min-w-0 items-start gap-2.5">
+          {/* The type, as a mark rather than a word. Titled and labelled,
+              because a flask only reads as "laboratory" once you know the
+              scheme - and the person meeting this card for the first time
+              does not. */}
+          <span
+            className="mt-0.5 grid size-8 shrink-0 place-content-center rounded-lg bg-pry-01 text-primary"
+            title={room.type_label}
+            aria-label={room.type_label}
+            role="img"
+          >
+            {/* createElement rather than a capitalised local: assigning a
+                looked-up component to `const Icon` reads to the linter as
+                declaring one during render, which resets state. */}
+            {createElement(roomIcon(room.room_type), { className: "size-4" })}
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate font-mont text-[15px] font-medium text-black-01">
+              {room.name}
+            </h3>
             <p className="mt-0.5 truncate text-xs text-gray-05">
-              {room.branch_name}
+              {[multiBranch ? room.branch_name : null, room.code]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
-          )}
+          </div>
         </div>
         <Badge
           variant={room.is_active ? "active" : "inactive"}
@@ -367,17 +385,15 @@ function RoomCard({
         </Badge>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-05">
-        {room.code && <span>{room.code}</span>}
-        <span>{room.type_label}</span>
-        {room.capacity != null && <span>Seats {room.capacity}</span>}
-      </div>
-
-      {/* The server's own sentence: "3 lessons · 1 exam paper", or "Nothing
-          scheduled here yet". The delete refusal is worded from the same
-          counts, so the card and the refusal cannot disagree. */}
-      <p className="mt-2 text-[13px] text-gray-06 text-pretty">
-        {room.usage.label}
+      {/* Capacity stays, because it is the fact somebody comparing two rooms
+          actually needs, and it joins the usage rather than sitting on a line
+          of its own. The usage half is the server's own sentence - "3 lessons ·
+          1 exam paper", or "Nothing scheduled here yet" - and the delete
+          refusal is worded from the same counts, so the two cannot disagree. */}
+      <p className="mt-3 text-[13px] text-gray-06 text-pretty">
+        {[room.capacity != null ? `Seats ${room.capacity}` : null, room.usage.label]
+          .filter(Boolean)
+          .join(" · ")}
       </p>
 
       {/* CardActions carries no layout of its own - it only stops a press
@@ -432,6 +448,18 @@ function Card({
     <ClickableCard label={label} onOpen={onOpen} className="p-4">
       {children}
     </ClickableCard>
+  );
+}
+
+/** The same mark as the card, next to the words rather than instead of them. */
+function RoomTypeCell({ room }: { room: Room }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {createElement(roomIcon(room.room_type), {
+        className: "size-3.5 shrink-0 text-gray-05",
+      })}
+      {room.type_label}
+    </span>
   );
 }
 
