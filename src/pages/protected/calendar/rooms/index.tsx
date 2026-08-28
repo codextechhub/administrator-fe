@@ -380,15 +380,19 @@ function RoomCard({
         {room.usage.label}
       </p>
 
+      {/* CardActions carries no layout of its own - it only stops a press
+          reaching the card behind it - so the row has to bring its own. Without
+          this the three buttons sat flush against the usage line and against
+          each other, reading as one run-on control. */}
       {(canEdit || canDelete) && (
-        <CardActions>
+        <CardActions className="mt-3.5 flex flex-wrap items-center gap-2 border-t border-white-02 pt-3">
           {canEdit && (
-            <Button variant="outline" size="sm" onClick={onEdit}>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={onEdit}>
               <Pencil className="size-3.5" /> Edit
             </Button>
           )}
           {canEdit && (
-            <Button variant="outline" size="sm" onClick={onToggle}>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={onToggle}>
               <Power className="size-3.5" />
               {room.is_active ? "Deactivate" : "Activate"}
             </Button>
@@ -397,7 +401,7 @@ function RoomCard({
             <Button
               variant="ghost"
               size="sm"
-              className="text-error-text"
+              className="ml-auto gap-1.5 text-error-text hover:text-error-text"
               onClick={onDelete}
             >
               <Trash2 className="size-3.5" /> Delete
