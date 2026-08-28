@@ -33,6 +33,7 @@ import { formatRange } from "../components/dates";
 import { RowActions } from "../components/row-actions";
 import { audienceLine } from "../components/audience";
 import { warnAboutClashes } from "../components/clash-toast";
+import { eventDeleteBody } from "../components/event-delete";
 import { blankEvent, draftFrom } from "../components/event-draft";
 import { EventDetail, EventDrawer } from "../components/event-drawer";
 import { EventFilters } from "./event-filters";
@@ -333,7 +334,7 @@ export default function CalendarEvents() {
         loading={removing}
         canCancel
         title={`Remove ${confirm?.name}?`}
-        description={deleteBody(confirm)}
+        description={eventDeleteBody(confirm)}
         onConfirmText="Remove"
         containerClass="min-h-[320px] lg:w-[420px]"
         srcClass="size-25"
@@ -368,21 +369,3 @@ function ScopeWithAudience({ event }: { event: CalendarEvent }) {
 }
 
 
-/**
- * What removing an event does, said plainly.
- *
- * An exam period is the one that is not just a date: an exam timetable hangs
- * off it, and the server PROTECTs the event while papers reference it. Saying
- * so before the press is better than a refusal after it.
- */
-function deleteBody(event: CalendarEvent | null): string {
-  if (!event) return "";
-  const when = formatRange(event.start_date, event.end_date);
-  if (event.event_type === "EXAM_PERIOD") {
-    return `${event.name} runs ${when}, and an exam timetable can hang off it. If papers are already scheduled inside it, this will be refused and nothing will change.`;
-  }
-  if (event.closes_school) {
-    return `${event.name} runs ${when} and currently marks those days non-teaching. Removing it puts them back into the teaching-day count.`;
-  }
-  return `${event.name} runs ${when}. It comes off the calendar for everyone.`;
-}

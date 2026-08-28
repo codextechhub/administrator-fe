@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Panel } from "@/components/custom/surface";
+import PromptModal from "@/components/modal/prompt-modal";
 import {
   Tooltip,
   TooltipContent,
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/tooltip";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
+import { parseApiError } from "@/utils/api-error";
 import { cn, getVariantColor } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -19,6 +21,7 @@ import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
   useCreateCalendarEventMutation,
+  useDeleteCalendarEventMutation,
   useGetCalendarEventsQuery,
   useGetCalendarYearQuery,
   useUpdateCalendarEventMutation,
@@ -33,6 +36,7 @@ import type {
 } from "@/redux/services/calendar/calendar-types";
 import { warnAboutClashes } from "../components/clash-toast";
 import { DayEventsDialog } from "../components/day-events-dialog";
+import { eventDeleteBody } from "../components/event-delete";
 import { EventDetail, EventDrawer } from "../components/event-drawer";
 import { blankEvent, draftFrom } from "../components/event-draft";
 import { eventVariant } from "../components/event-kind";
@@ -87,13 +91,17 @@ export default function TermView() {
   const [dayOpen, setDayOpen] = useState<string | null>(null);
   // The event being edited, opened from its own detail panel.
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
+  // The event the X was pressed on, waiting on the confirm.
+  const [confirm, setConfirm] = useState<CalendarEvent | null>(null);
 
   const { data: programData } = useGetProgramsQuery(lens);
   const { data: classData } = useGetClassesQuery(lens);
   const [create, { isLoading: creating }] = useCreateCalendarEventMutation();
   const [update, { isLoading: updating }] = useUpdateCalendarEventMutation();
+  const [remove, { isLoading: removing }] = useDeleteCalendarEventMutation();
   const canCreate = hasPermission(P.CREATE_CALENDAR_EVENT) && !readOnlyYear;
   const canEdit = hasPermission(P.MODIFY_CALENDAR_EVENT) && !readOnlyYear;
+  const canDelete = hasPermission(P.MANAGE_CALENDAR) && !readOnlyYear;
 
   /**
    * Pressing a day.
@@ -424,11 +432,47 @@ export default function TermView() {
         canCreate={canCreate}
         onClose={() => setDayOpen(null)}
         onPick={openEvent}
+        onDelete={
+          canDelete
+            ? (event) => {
+                // The day box closes behind the confirm: two stacked dialogs
+                // asking different questions is one too many.
+                setDayOpen(null);
+                setConfirm(event);
+              }
+            : undefined
+        }
         onAdd={() => {
           const day = dayOpen;
           setDayOpen(null);
           setAddingOn(day);
         }}
+      />
+
+      <PromptModal
+        isOpen={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={async () => {
+          if (!confirm) return;
+          try {
+            const result = await remove(confirm.id).unwrap();
+            toast.success(result.message || `${confirm.name} removed.`);
+          } catch (error) {
+            toast.error(
+              parseApiError(error).message ||
+                "That event could not be removed.",
+            );
+          }
+          setConfirm(null);
+        }}
+        loading={removing}
+        canCancel
+        title={`Remove ${confirm?.name}?`}
+        description={eventDeleteBody(confirm)}
+        onConfirmText="Remove"
+        containerClass="min-h-[320px] lg:w-[420px]"
+        srcClass="size-25"
+        src="/image/caution.png"
       />
 
       <EventDetail

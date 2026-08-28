@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ export function DayEventsDialog({
   open,
   multiBranch,
   canCreate,
+  onDelete,
   onClose,
   onPick,
   onAdd,
@@ -44,6 +45,8 @@ export function DayEventsDialog({
   open: boolean;
   multiBranch: boolean;
   canCreate: boolean;
+  /** Omitted for a reader who may not delete, which removes the control. */
+  onDelete?: (event: CalendarEvent) => void;
   onClose: () => void;
   onPick: (event: CalendarEvent) => void;
   onAdd: () => void;
@@ -65,11 +68,18 @@ export function DayEventsDialog({
           {events.map((event) => {
             const who = audienceLine(event.audience);
             return (
-              <li key={event.id}>
+              // `group` so the row's own hover reveals the X, and
+              // `focus-within` so a keyboard reaches it too - a control that
+              // exists only under a pointer does not exist for everybody.
+              <li key={event.id} className="group relative">
                 <button
                   type="button"
                   onClick={() => onPick(event)}
-                  className="w-full rounded-lg border border-white-02 px-3 py-2.5 text-left transition-colors hover:border-primary/60 hover:bg-pry-01/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className={cn(
+                    "w-full rounded-lg border border-white-02 px-3 py-2.5 text-left transition-colors hover:border-primary/60 hover:bg-pry-01/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    // Room for the X, so a long name never runs under it.
+                    onDelete && "pr-11",
+                  )}
                 >
                   <span className="flex flex-wrap items-center gap-2">
                     <Badge
@@ -96,6 +106,22 @@ export function DayEventsDialog({
                     {who && <span>{who}</span>}
                   </span>
                 </button>
+                {onDelete && (
+                  // A sibling of the row rather than a child of it: a button
+                  // inside a button is invalid, and the press has to be the
+                  // X's alone or removing an event would also open it.
+                  <button
+                    type="button"
+                    aria-label={`Delete ${event.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(event);
+                    }}
+                    className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-content-center rounded-full text-gray-05 opacity-0 transition-opacity hover:bg-error-text/10 hover:text-error-text focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error-text group-hover:opacity-100 group-focus-within:opacity-100"
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
               </li>
             );
           })}
