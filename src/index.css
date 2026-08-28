@@ -310,3 +310,99 @@
     padding-block: 10px;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Printing one document out of an application.
+
+   A timetable is the most widely read thing a school produces, and most of the
+   ways it travels are paper: the staffroom noticeboard, the folder a head of
+   department carries, the copy a parent is handed at the gate. So a screen that
+   can only be read on screen is a screen that has not finished the job.
+
+   `visibility` rather than `display`, deliberately. Hiding the chrome with
+   `display: none` collapses the layout the print area is positioned inside, and
+   a grid that has lost its container prints as a column of cells. Making
+   everything invisible and the print area visible again leaves the geometry
+   alone, which is why this old trick is still the reliable one.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  /* The chrome is REMOVED rather than made invisible.
+
+     Hiding it with `visibility` alone leaves it occupying its space, so the
+     document printed beside a 256px sidebar - indented on every page and
+     clipped on the right. These four are the whole of the app frame, and with
+     them gone the print area is simply the first thing on the page. */
+  [data-slot="sidebar"],
+  [data-slot="sidebar-wrapper"] > [data-slot="sidebar"],
+  header,
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Everything else is hidden but keeps its box, so the print area's own
+     layout - a table inside a panel inside a grid - is not rebuilt from
+     scratch on paper. */
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  /* An instruction inside the printed region: "Add" in an empty cell tells a
+     reader with a mouse what to do and tells paper nothing. Needs `important`
+     because the rule above turns everything in the area back on, and a
+     Tailwind `print:` utility sits in a layer this plain rule outranks. */
+  .print-blank {
+    visibility: hidden !important;
+  }
+
+  .print-area {
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  /* A grid that scrolls on screen has no scrollbar on paper; it has a second
+     page. Let it size to its content rather than clipping at the viewport. */
+  .print-area .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  .print-area table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed;
+  }
+
+  /* An Action column is not part of the document. Marked explicitly rather
+     than taken by position: the class grid is also a table inside a print
+     area, and its last column is Friday. */
+  .print-drop-last th:last-child,
+  .print-drop-last td:last-child {
+    display: none;
+  }
+
+  /* Backgrounds are dropped by default in most browsers, which would take the
+     clash tint and the non-teaching rows with them. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    margin: 12mm;
+    size: landscape;
+  }
+}

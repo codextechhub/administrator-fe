@@ -6,6 +6,7 @@ import {
   Copy,
   Eraser,
   GraduationCap,
+  Printer,
   Send,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -44,6 +45,7 @@ import {
   type LessonValues,
 } from "../components/lesson-drawer";
 import { DuplicateDrawer } from "../components/duplicate-drawer";
+import { ExportButton } from "@/pages/protected/academics/components/export-button";
 import { ClassPicker } from "./class-picker";
 
 /**
@@ -232,10 +234,29 @@ export default function ClassTimetables() {
 
   return (
     <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
+      <div className="print-hide flex flex-wrap items-center justify-between gap-2.5">
         <ClassPicker classes={classes} current={current} onPick={setClassId} />
 
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            className="text-sm"
+            onClick={() => window.print()}
+          >
+            <Printer className="size-4" /> Print
+          </Button>
+          {/* Beside Print rather than instead of it, and absent until a school
+              is granted the export keys - which no school role holds today. A
+              CSV of forty rows is not what goes on a noticeboard, but it is
+              what somebody wants when they are moving the week into a
+              spreadsheet, so both are offered where both are possible. */}
+          <ExportButton
+            screen="calendar.timetable"
+            params={{
+              school_class: current ?? undefined,
+              branch: currentRow?.branch ?? undefined,
+            }}
+          />
           {canEdit && (
             <Button
               variant="outline"
@@ -273,8 +294,20 @@ export default function ClassTimetables() {
       {gridLoading || !grid ? (
         <Skeleton className="h-[28rem] w-full rounded-md" />
       ) : (
-        <Panel className="p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <Panel className="print-area p-5">
+          {/* The document's own heading: on paper there is no session pill and
+              no page title to say which class or which year this is. */}
+          <div className="print-only mb-4">
+            <h1 className="font-mont text-lg font-semibold text-black-01">
+              {grid.school_class.name} - weekly timetable
+            </h1>
+            <p className="text-sm text-gray-06">
+              {grid.session.name} · {grid.status_label} ·{" "}
+              {grid.filled} of {grid.lesson_periods} teaching periods filled
+            </p>
+          </div>
+
+          <div className="print-hide flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <h2 className="font-mont text-[15px] font-semibold text-black-01">
                 {grid.school_class.name}
@@ -294,8 +327,22 @@ export default function ClassTimetables() {
             </Badge>
           </div>
 
+          {/* A printed copy carries the fact that the week is unresolved, but
+              not the list: a noticeboard cannot act on "Mrs Eze is
+              double-booked", and a reader who can is looking at the screen. */}
           {warnings.length > 0 && (
-            <div className="mt-4 rounded-lg border border-error-text/30 bg-error-text/5 px-3 py-2.5">
+            // States the clashes and nothing about publication: a grid can be
+            // published and then acquire one when another class books the same
+            // teacher, so "has not been published" would be false exactly when
+            // it matters most.
+            <p className="print-only mb-3 text-sm text-error-text">
+              {warnings.length} unresolved clash
+              {warnings.length === 1 ? "" : "es"} in this week.
+            </p>
+          )}
+
+          {warnings.length > 0 && (
+            <div className="print-hide mt-4 rounded-lg border border-error-text/30 bg-error-text/5 px-3 py-2.5">
               <p className="flex items-center gap-1.5 text-[13px] font-medium text-error-text">
                 <AlertTriangle className="size-3.5 shrink-0" />
                 {warnings.length} clash
@@ -318,7 +365,7 @@ export default function ClassTimetables() {
           )}
 
           {grid.filled === 0 && (
-            <p className="mt-4 rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-[13px] text-gray-06 text-pretty">
+            <p className="print-hide mt-4 rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-[13px] text-gray-06 text-pretty">
               Nothing scheduled yet. Click any empty cell to add a lesson, or
               copy another class's week across with Duplicate from.
             </p>
@@ -335,7 +382,7 @@ export default function ClassTimetables() {
           </div>
 
           {published && (
-            <p className="mt-3 text-xs text-gray-05 text-pretty">
+            <p className="print-hide mt-3 text-xs text-gray-05 text-pretty">
               Published{" "}
               {grid.published_at
                 ? new Date(grid.published_at).toLocaleDateString()
@@ -347,7 +394,7 @@ export default function ClassTimetables() {
         </Panel>
       )}
 
-      <p className="text-xs text-gray-05">
+      <p className="print-hide text-xs text-gray-05">
         Teacher weeks are derived from these grids.{" "}
         <Link
           to={routesPath.PROTECTED.TIMETABLES.TEACHERS}

@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CalendarPlus, ClipboardList, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarPlus,
+  ClipboardList,
+  Pencil,
+  Plus,
+  Printer,
+  Send,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +47,7 @@ import {
   paperValuesFrom,
   type PaperValues,
 } from "../components/paper-values";
+import { ExportButton } from "@/pages/protected/academics/components/export-button";
 import { RowActions } from "../components/row-actions";
 import { RowPicker } from "../components/row-picker";
 
@@ -170,7 +180,7 @@ export default function ExamScheduling() {
 
   return (
     <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
+      <div className="print-hide flex flex-wrap items-center justify-between gap-2.5">
         {/* Only where there is a choice to make. A school running mocks in
             November and end-of-term exams in December has two, and the design
             offered no way to reach the second - see ruling C. */}
@@ -203,6 +213,17 @@ export default function ExamScheduling() {
         )}
 
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            className="text-sm"
+            onClick={() => window.print()}
+          >
+            <Printer className="size-4" /> Print
+          </Button>
+          <ExportButton
+            screen="calendar.exam_papers"
+            params={{ branch: lens.branch === "all" ? undefined : lens.branch }}
+          />
           <PermissionGate
             permission={P.CREATE_TIMETABLE_ENTRY}
             disabled={readOnlyYear}
@@ -234,8 +255,21 @@ export default function ExamScheduling() {
         </div>
       </div>
 
-      <Panel className="p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <Panel className="print-area p-5">
+        {/* On paper there is no header and no picker to say which exam period
+            these papers belong to. */}
+        <div className="print-only mb-4">
+          <h1 className="font-mont text-lg font-semibold text-black-01">
+            {exam.name}
+          </h1>
+          <p className="text-sm text-gray-06">
+            {range} · {exam.paper_count} paper
+            {exam.paper_count === 1 ? "" : "s"}
+            {published ? " · Published" : " · Draft"}
+          </p>
+        </div>
+
+        <div className="print-hide flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             {exams.length > 1 && (
               <p className="text-[13px] text-gray-05">
@@ -255,7 +289,14 @@ export default function ExamScheduling() {
         </div>
 
         {exam.warnings.length > 0 && (
-          <div className="mt-4 rounded-lg border border-error-text/30 bg-error-text/5 px-3 py-2.5">
+          <p className="print-only mb-3 text-sm text-error-text">
+            {exam.warnings.length} unresolved clash
+            {exam.warnings.length === 1 ? "" : "es"} in this schedule.
+          </p>
+        )}
+
+        {exam.warnings.length > 0 && (
+          <div className="print-hide mt-4 rounded-lg border border-error-text/30 bg-error-text/5 px-3 py-2.5">
             <p className="flex items-center gap-1.5 text-[13px] font-medium text-error-text">
               <AlertTriangle className="size-3.5 shrink-0" />
               {exam.warnings.length} clash
@@ -279,7 +320,7 @@ export default function ExamScheduling() {
         )}
 
         {published && (
-          <p className="mt-4 rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-[13px] text-gray-06 text-pretty">
+          <p className="print-hide mt-4 rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-[13px] text-gray-06 text-pretty">
             This schedule has been published, so it can no longer be changed.
           </p>
         )}
@@ -296,6 +337,7 @@ export default function ExamScheduling() {
               }
             />
           ) : (
+            <div className="print-drop-last">
             <CustomTable
               tableHeaderList={[
                 "Date",
@@ -354,6 +396,7 @@ export default function ExamScheduling() {
               }}
               emptyText="No papers"
             />
+            </div>
           )}
         </div>
       </Panel>

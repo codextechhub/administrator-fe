@@ -157,7 +157,11 @@ function Cell({
   const slot = cell.slot;
   if (!slot) {
     const body = (
-      <span className="text-[11px] text-gray-05/70">{emptyLabel}</span>
+      // "Add" is an instruction, not content: on paper there is nothing to
+      // press, and a grid of the word repeated forty times reads as data.
+      <span className="print-blank text-[11px] text-gray-05/70">
+        {emptyLabel}
+      </span>
     );
     return onClick ? (
       <button

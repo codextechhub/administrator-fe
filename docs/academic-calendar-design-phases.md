@@ -834,10 +834,48 @@ never affected: the extra query is RBAC's, not this module's. `_BudgetMixin`
 now says so in its docstring, so the next person to see one of these fail by a
 small amount reads the captured queries before changing a number.
 
-### Phase 6 - Export
+### Phase 6 - Export - **done**
 
 The print view for the class grid and the exam table, plus the gated Export
 Centre buttons beside them.
+
+**What shipped.** A Print button on both screens calling `window.print()`, and
+the existing gated `ExportButton` next to it - `calendar.timetable` on the class
+grid (params `school_class`, `branch`) and `calendar.exam_papers` on the exam
+table (param `branch`). Both screen bindings were already registered in
+`export_datasets.py`, so a school granted the export keys sees the second button
+appear without a code change, which is what ruling A asked for.
+
+**One print block, in `src/index.css`, not per-screen print utilities.** The
+rule is `body * { visibility: hidden }` then `.print-area, .print-area *
+{ visibility: visible }`: it prints one region and everything the region
+contains, without every screen having to name what to suppress. Around that:
+`.print-hide` for chrome inside the region (toolbars, the on-screen header, the
+clash panel, the publication note), `.print-only` for a document heading that
+exists only on paper, `.print-drop-last` to remove a table's Action column, and
+`.print-blank` for an empty cell's "Add".
+
+**Four things the first PDF got wrong, and why each one mattered:**
+
+1. *Invisible is not absent.* The sidebar and toolbar were `visibility: hidden`,
+   so they still occupied their boxes: the timetable printed shifted right and
+   down, with Friday off the edge of the sheet. Chrome is now `display: none`.
+2. *"Add" printed in every empty cell.* A `print:invisible` Tailwind utility
+   lost to `.print-area *`, because Tailwind v4 utilities sit in a layer that
+   plain stylesheet rules outrank. The class carries `!important` and says so.
+3. *The header printed twice*, once from the screen and once from the print-only
+   document heading.
+4. *The print line said the grid "has not been published"* beside a Published
+   badge. It now states the clash count alone. A published grid can acquire a
+   clash later, so the old sentence was false exactly when somebody was printing
+   to find out what was wrong.
+
+**Verified** by driving both screens logged in and rendering real PDFs through
+Chrome's own print pipeline, not by reading the CSS. That pipeline has one trap
+worth recording: `page.pdf()` uses print media *unless* `emulateMedia` has been
+set, and a leftover `{media: "screen"}` from an earlier step silently produced an
+exam PDF containing the whole application chrome - a harness fault that reads
+exactly like the app ignoring the print rules.
 
 ### Phase B1 - The calendar import dataset (backend, parallel track)
 
