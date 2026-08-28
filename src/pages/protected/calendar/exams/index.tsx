@@ -4,12 +4,6 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
@@ -44,6 +38,7 @@ import {
   paperValuesFrom,
   type PaperValues,
 } from "../components/paper-values";
+import { RowActions } from "../components/row-actions";
 import { RowPicker } from "../components/row-picker";
 
 /**
@@ -320,26 +315,35 @@ export default function ExamScheduling() {
                 Room: slot.room_name ?? "-",
                 Invigilator: slot.invigilator?.name ?? "-",
                 Action: (
-                  <RowMenu
-                    canEdit={canEdit && !published}
-                    canDelete={canDelete && !published}
-                    onEdit={() =>
-                      setPaper({ values: paperValuesFrom(slot), slot })
-                    }
-                    onDelete={async () => {
-                      try {
-                        const result = await remove({
-                          examId: exam.id,
-                          id: slot.id,
-                        }).unwrap();
-                        toast.success(result.message || "Paper removed.");
-                      } catch (error) {
-                        toast.error(
-                          parseApiError(error).message ||
-                            "That paper could not be removed.",
-                        );
-                      }
-                    }}
+                  <RowActions
+                    label={`Actions for ${slot.class_name} ${slot.subject_name}`}
+                    actions={[
+                      canEdit && !published && {
+                        label: "Edit",
+                        icon: Pencil,
+                        onSelect: () =>
+                          setPaper({ values: paperValuesFrom(slot), slot }),
+                      },
+                      canDelete && !published && {
+                        label: "Remove paper",
+                        icon: Trash2,
+                        destructive: true,
+                        onSelect: async () => {
+                          try {
+                            const result = await remove({
+                              examId: exam.id,
+                              id: slot.id,
+                            }).unwrap();
+                            toast.success(result.message || "Paper removed.");
+                          } catch (error) {
+                            toast.error(
+                              parseApiError(error).message ||
+                                "That paper could not be removed.",
+                            );
+                          }
+                        },
+                      },
+                    ]}
                   />
                 ),
               }))}
@@ -376,43 +380,3 @@ export default function ExamScheduling() {
   );
 }
 
-function RowMenu({
-  canEdit,
-  canDelete,
-  onEdit,
-  onDelete,
-}: {
-  canEdit: boolean;
-  canDelete: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  if (!canEdit && !canDelete) return null;
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-gray-05"
-          aria-label="Paper actions"
-          onClick={(e) => e.stopPropagation()}
-        >
-          &#8942;
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-        {canEdit && (
-          <DropdownMenuItem onSelect={onEdit}>
-            <Pencil className="size-4" /> Edit
-          </DropdownMenuItem>
-        )}
-        {canDelete && (
-          <DropdownMenuItem onSelect={onDelete} variant="destructive">
-            <Trash2 className="size-4" /> Remove paper
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}

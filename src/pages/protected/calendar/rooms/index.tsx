@@ -13,12 +13,6 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
@@ -39,6 +33,7 @@ import {
 import type { Room, RoomWrite } from "@/redux/services/calendar/calendar-types";
 import { RoomDrawer } from "../components/room-drawer";
 import { blankRoom, roomDraftFrom } from "../components/room-draft";
+import { RowActions } from "../components/row-actions";
 import { roomIcon } from "../components/room-kind";
 import { RoomFilters } from "./room-filters";
 import { BLANK_ROOM_FACETS, type RoomFacets } from "./room-facets";
@@ -269,13 +264,28 @@ export default function Rooms() {
               </Badge>
             ),
             Action: (
-              <RowMenu
-                room={room}
-                canEdit={canEdit}
-                canDelete={canDelete}
-                onEdit={() => open(room)}
-                onToggle={() => toggleActive(room)}
-                onDelete={() => setConfirm(room)}
+              <RowActions
+                label={`Actions for ${room.name}`}
+                actions={[
+                  canEdit && {
+                    label: "Edit",
+                    icon: Pencil,
+                    onSelect: () => open(room),
+                  },
+                  // The label is the row's, not the column's - which is why
+                  // CustomTable's own static menu cannot express it.
+                  canEdit && {
+                    label: room.is_active ? "Deactivate" : "Activate",
+                    icon: Power,
+                    onSelect: () => toggleActive(room),
+                  },
+                  canDelete && {
+                    label: "Delete",
+                    icon: Trash2,
+                    destructive: true,
+                    onSelect: () => setConfirm(room),
+                  },
+                ]}
               />
             ),
           }))}
@@ -463,56 +473,6 @@ function RoomTypeCell({ room }: { room: Room }) {
   );
 }
 
-function RowMenu({
-  room,
-  canEdit,
-  canDelete,
-  onEdit,
-  onToggle,
-  onDelete,
-}: {
-  room: Room;
-  canEdit: boolean;
-  canDelete: boolean;
-  onEdit: () => void;
-  onToggle: () => void;
-  onDelete: () => void;
-}) {
-  if (!canEdit && !canDelete) return null;
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-gray-05"
-          aria-label={`${room.name} actions`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          &#8942;
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-        {canEdit && (
-          <DropdownMenuItem onSelect={onEdit}>
-            <Pencil className="size-4" /> Edit
-          </DropdownMenuItem>
-        )}
-        {canEdit && (
-          <DropdownMenuItem onSelect={onToggle}>
-            <Power className="size-4" />
-            {room.is_active ? "Deactivate" : "Activate"}
-          </DropdownMenuItem>
-        )}
-        {canDelete && (
-          <DropdownMenuItem onSelect={onDelete} variant="destructive">
-            <Trash2 className="size-4" /> Delete
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 /**
  * What deleting a room does, and when it will not happen.

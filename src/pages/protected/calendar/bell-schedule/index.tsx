@@ -4,12 +4,6 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
@@ -32,6 +26,7 @@ import type {
   Period,
   PeriodWrite,
 } from "@/redux/services/calendar/calendar-types";
+import { RowActions } from "../components/row-actions";
 import { PeriodDrawer } from "../components/period-drawer";
 import { blankPeriod, periodDraftFrom } from "../components/period-draft";
 
@@ -304,12 +299,21 @@ export default function BellSchedule() {
                   }
                 : {}),
               Action: (
-                <RowMenu
-                  period={period}
-                  canEdit={canEdit}
-                  canDelete={canDelete}
-                  onEdit={() => open(period)}
-                  onDelete={() => setConfirm(period)}
+                <RowActions
+                  label={`Actions for ${period.label}`}
+                  actions={[
+                    canEdit && {
+                      label: "Edit",
+                      icon: Pencil,
+                      onSelect: () => open(period),
+                    },
+                    canDelete && {
+                      label: "Delete",
+                      icon: Trash2,
+                      destructive: true,
+                      onSelect: () => setConfirm(period),
+                    },
+                  ]}
                 />
               ),
             }))}
@@ -363,48 +367,6 @@ function summary(periods: Period[]): string {
   return `${periods.length} period${periods.length === 1 ? "" : "s"}, ${lessons} of them teaching · ${first} to ${last}`;
 }
 
-function RowMenu({
-  period,
-  canEdit,
-  canDelete,
-  onEdit,
-  onDelete,
-}: {
-  period: Period;
-  canEdit: boolean;
-  canDelete: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  if (!canEdit && !canDelete) return null;
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-gray-05"
-          aria-label={`${period.label} actions`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          &#8942;
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-        {canEdit && (
-          <DropdownMenuItem onSelect={onEdit}>
-            <Pencil className="size-4" /> Edit
-          </DropdownMenuItem>
-        )}
-        {canDelete && (
-          <DropdownMenuItem onSelect={onDelete} variant="destructive">
-            <Trash2 className="size-4" /> Delete
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 /**
  * What removing a period does.

@@ -4,12 +4,6 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
@@ -36,6 +30,7 @@ import type {
 } from "@/redux/services/calendar/calendar-types";
 import { eventVariant } from "../components/event-kind";
 import { formatRange } from "../components/dates";
+import { RowActions } from "../components/row-actions";
 import { audienceLine } from "../components/audience";
 import { blankEvent, draftFrom } from "../components/event-draft";
 import { EventDetail, EventDrawer } from "../components/event-drawer";
@@ -265,12 +260,22 @@ export default function CalendarEvents() {
                 }
               : {}),
             Action: (
-              <RowMenu
-                canEdit={canEdit}
-                canDelete={canDelete}
-                onView={() => setViewing(event)}
-                onEdit={() => openForm(event)}
-                onDelete={() => setConfirm(event)}
+              <RowActions
+                label={`Actions for ${event.name}`}
+                actions={[
+                  { label: "View details", icon: Eye, onSelect: () => setViewing(event) },
+                  canEdit && {
+                    label: "Edit",
+                    icon: Pencil,
+                    onSelect: () => openForm(event),
+                  },
+                  canDelete && {
+                    label: "Delete",
+                    icon: Trash2,
+                    destructive: true,
+                    onSelect: () => setConfirm(event),
+                  },
+                ]}
               />
             ),
           }))}
@@ -354,50 +359,6 @@ function ScopeWithAudience({ event }: { event: CalendarEvent }) {
   );
 }
 
-function RowMenu({
-  canEdit,
-  canDelete,
-  onView,
-  onEdit,
-  onDelete,
-}: {
-  canEdit: boolean;
-  canDelete: boolean;
-  onView: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-gray-05"
-          aria-label="Event actions"
-          onClick={(e) => e.stopPropagation()}
-        >
-          &#8942;
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuItem onSelect={onView}>
-          <Eye className="size-4" /> View details
-        </DropdownMenuItem>
-        {canEdit && (
-          <DropdownMenuItem onSelect={onEdit}>
-            <Pencil className="size-4" /> Edit
-          </DropdownMenuItem>
-        )}
-        {canDelete && (
-          <DropdownMenuItem onSelect={onDelete} variant="destructive">
-            <Trash2 className="size-4" /> Delete
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 /**
  * What removing an event does, said plainly.
