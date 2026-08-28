@@ -1,5 +1,6 @@
 "use client";
 
+import { createContext, useContext, useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import {
   Collapsible,
@@ -28,6 +29,43 @@ import {
 import { cn } from "@/lib/utils";
 import { Link } from "react-router";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// One expandable nav group open at a time.
+//
+// Each Collapsible used to hold its own `defaultOpen`, so nothing coordinated
+// them: opening Timetables and then Academic Structure left both expanded, and
+// a sidebar with three groups open is one where the item you want is below the
+// fold. There is no upper bound - every group could be open at once.
+//
+// The state is shared ACROSS groups rather than within one, because the rule is
+// about the sidebar and not about a heading: Academics and Finance are rendered
+// by two different NavMain calls, and "one at a time" that let one of each be
+// open would be the same bug with a smaller number.
+//
+// Falls back to per-item state when no provider is present, so NavMain still
+// works anywhere it is dropped in.
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface NavAccordion {
+  openKey: string | null;
+  setOpenKey: (key: string | null) => void;
+}
+
+const NavAccordionContext = createContext<NavAccordion | null>(null);
+
+export function NavAccordionProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  return (
+    <NavAccordionContext.Provider value={{ openKey, setOpenKey }}>
+      {children}
+    </NavAccordionContext.Provider>
+  );
+}
+
 export function NavMain({
   items,
   groupTitle,
@@ -48,6 +86,18 @@ export function NavMain({
 }) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const accordion = useContext(NavAccordionContext);
+
+  // The group holding the current route opens itself, and keeps doing so as the
+  // route moves - navigating from Rooms to Events has to close Timetables and
+  // open Calendar, or the sidebar stops describing where you are.
+  const routeGroup = items.find((item) => item.childActive)?.title ?? null;
+  useEffect(() => {
+    if (routeGroup) accordion?.setOpenKey(routeGroup);
+    // Only when the route's group changes. Including the setter would reset the
+    // reader's own choice on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeGroup]);
 
   return (
     <SidebarGroup className="py-0">
@@ -126,7 +176,16 @@ export function NavMain({
             <Collapsible
               key={idx}
               asChild
-              defaultOpen={item.childActive}
+              // Controlled where a provider is present, uncontrolled where it
+              // is not - `open` and `defaultOpen` are mutually exclusive, so
+              // each branch passes exactly one.
+              {...(accordion
+                ? {
+                    open: accordion.openKey === item.title,
+                    onOpenChange: (next: boolean) =>
+                      accordion.setOpenKey(next ? item.title : null),
+                  }
+                : { defaultOpen: item.childActive })}
               className="group/collapsible"
             >
               <SidebarMenuItem>

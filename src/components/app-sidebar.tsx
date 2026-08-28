@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { HomeIcon, TeamMgtIcon } from "@/assets/navbar-svg";
-import { NavMain } from "./nav-main";
+import { NavAccordionProvider, NavMain } from "./nav-main";
 import { routesPath } from "@/routes/routesPath";
 import { useLocation } from "react-router";
 import {
@@ -409,7 +409,10 @@ export function AppSidebar({
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
+        {/* One expandable group open at a time, across every group rather than
+            within each - see nav-main. */}
         <SidebarContent className="bg-white pt-3">
+          <NavAccordionProvider>
           {onboarding ? (
             <>
               {onboardingNav.length > 0 && (
@@ -432,6 +435,7 @@ export function AppSidebar({
               )}
             </>
           )}
+          </NavAccordionProvider>
         </SidebarContent>
 
         {/* The branch and session lenses, pinned under the nav so they stay put
