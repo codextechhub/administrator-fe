@@ -8,15 +8,29 @@ import { Panel } from "@/components/custom/surface";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { cn, getVariantColor } from "@/lib/utils";
+import { toast } from "sonner";
+
+import { P } from "@/permissions";
+import { usePermissions } from "@/hooks/use-permissions";
 import {
+  useCreateCalendarEventMutation,
   useGetCalendarEventsQuery,
   useGetCalendarYearQuery,
 } from "@/redux/services/calendar/calendar-api";
-import type { CalendarEvent } from "@/redux/services/calendar/calendar-types";
-import { EventDetail } from "../components/event-drawer";
+import {
+  useGetClassesQuery,
+  useGetProgramsQuery,
+} from "@/redux/services/academics/academics-api";
+import type {
+  CalendarEvent,
+  CalendarEventWrite,
+} from "@/redux/services/calendar/calendar-types";
+import { EventDetail, EventDrawer } from "../components/event-drawer";
+import { blankEvent } from "../components/event-draft";
 import { eventVariant } from "../components/event-kind";
 import {
   daysBetween,
+  formatDate,
   formatRange,
   localDate,
   monthLabel,
@@ -43,7 +57,8 @@ import {
  * west of Greenwich.
  */
 export default function TermView() {
-  const { lens, multiBranch } = useAcademicsLens();
+  const { lens, branch, multiBranch, readOnlyYear } = useAcademicsLens();
+  const { hasPermission } = usePermissions();
 
   const { data: yearData, isLoading, isError, refetch } =
     useGetCalendarYearQuery({ session: lens.session });
@@ -57,6 +72,13 @@ export default function TermView() {
   // first month of the year.
   const [cursor, setCursor] = useState<{ y: number; m: number } | null>(null);
   const [viewing, setViewing] = useState<CalendarEvent | null>(null);
+  // The day a reader pressed, waiting to become an event.
+  const [addingOn, setAddingOn] = useState<string | null>(null);
+
+  const { data: programData } = useGetProgramsQuery(lens);
+  const { data: classData } = useGetClassesQuery(lens);
+  const [create, { isLoading: creating }] = useCreateCalendarEventMutation();
+  const canCreate = hasPermission(P.CREATE_CALENDAR_EVENT) && !readOnlyYear;
 
   const anchor = today || session?.start_date || "";
   const [ay, am] = anchor ? parts(anchor) : [0, 0];
@@ -207,12 +229,33 @@ export default function TermView() {
                 return (
                   <div
                     key={iso}
+                    // Pressing the day adds an event on it. The events inside
+                    // stop their own presses, so opening one never also opens
+                    // the form for the day underneath it.
+                    role={canCreate && inMonth ? "button" : undefined}
+                    tabIndex={canCreate && inMonth ? 0 : undefined}
+                    aria-label={
+                      canCreate && inMonth ? `Add an event on ${formatDate(iso)}` : undefined
+                    }
+                    onClick={
+                      canCreate && inMonth ? () => setAddingOn(iso) : undefined
+                    }
+                    onKeyDown={(e) => {
+                      if (!canCreate || !inMonth) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setAddingOn(iso);
+                      }
+                    }}
                     className={cn(
                       "min-h-14 rounded-lg border p-1 sm:min-h-20 sm:p-1.5",
                       inMonth ? "border-white-02" : "border-transparent",
                       !inMonth && "opacity-40",
                       closed && inMonth && "bg-white-05",
                       iso === today && "border-primary",
+                      canCreate &&
+                        inMonth &&
+                        "cursor-pointer hover:border-primary/60 hover:bg-pry-01/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     )}
                   >
                     <div className="flex items-center justify-between gap-1">
@@ -247,7 +290,10 @@ export default function TermView() {
                         <button
                           key={event.id}
                           type="button"
-                          onClick={() => setViewing(event)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setViewing(event);
+                          }}
                           className="min-w-0 text-left"
                         >
                           <Badge
@@ -273,7 +319,10 @@ export default function TermView() {
                         <button
                           key={event.id}
                           type="button"
-                          onClick={() => setViewing(event)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setViewing(event);
+                          }}
                           aria-label={`${event.name}, ${event.type_label}`}
                           title={event.name}
                           className="grid size-5 place-content-center"
@@ -305,6 +354,27 @@ export default function TermView() {
           <p className="mt-3 text-xs text-gray-05">Loading this month…</p>
         )}
       </Panel>
+
+      {/* Pre-dated to the day that was pressed, so the one thing the reader
+          already told us is not asked again. */}
+      <EventDrawer
+        open={!!addingOn}
+        editing={false}
+        saving={creating}
+        initial={{
+          ...blankEvent(branch === "all" ? null : branch),
+          start_date: addingOn ?? "",
+          end_date: addingOn ?? "",
+        }}
+        programs={programData?.data ?? []}
+        classes={classData?.data ?? []}
+        onClose={() => setAddingOn(null)}
+        onSave={async (body: CalendarEventWrite) => {
+          const result = await create(body).unwrap();
+          toast.success(result.message);
+          for (const w of result.data?.warnings ?? []) toast.warning(w.detail);
+        }}
+      />
 
       <EventDetail
         event={viewing}
@@ -356,9 +426,37 @@ function Timeline({
   // which reads as "we are at the start of this year" and is false.
   const showToday = !!today && today >= start && today <= end;
 
+  // The spans between one term ending and the next beginning. Derived rather
+  // than stored: a gap is the absence of a term, so it has no row of its own
+  // and cannot go stale.
+  const byDate = [...terms].sort((a, b) =>
+    a.start_date < b.start_date ? -1 : 1,
+  );
+  const breaks = byDate
+    .slice(0, -1)
+    .map((term, i) => ({ from: term.end_date, to: byDate[i + 1].start_date }))
+    .filter((gap) => gap.to > gap.from);
+
   return (
     <div className="mt-4">
       <div className="relative h-9 w-full rounded-lg bg-white-05">
+        {/* The holidays between terms, drawn rather than left blank.
+        
+            The terms are positioned by date, so the gaps between them are real
+            and worth keeping - the fortnight at Christmas is part of the shape
+            of a year. But an empty gap made the bar read as three separate
+            things, and the today marker crossing one looked like it had come
+            off its track. Filling them keeps the bar continuous to the eye
+            while still saying, in a different weight, that this is not term
+            time. */}
+        {breaks.map((gap) => (
+          <div
+            key={gap.from}
+            title={`Between terms: ${formatRange(gap.from, gap.to)}`}
+            style={{ left: `${at(gap.from)}%`, width: `${Math.max(0.5, at(gap.to) - at(gap.from))}%` }}
+            className="absolute top-1 h-7 border-y border-dashed border-white-02 bg-white/70"
+          />
+        ))}
         {terms.map((term) => {
           const left = at(term.start_date);
           const width = Math.max(2, at(term.end_date) - left);
