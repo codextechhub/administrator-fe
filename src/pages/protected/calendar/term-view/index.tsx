@@ -5,6 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Panel } from "@/components/custom/surface";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { cn, getVariantColor } from "@/lib/utils";
@@ -26,6 +31,8 @@ import type {
   CalendarEvent,
   CalendarEventWrite,
 } from "@/redux/services/calendar/calendar-types";
+import { warnAboutClashes } from "../components/clash-toast";
+import { DayEventsDialog } from "../components/day-events-dialog";
 import { EventDetail, EventDrawer } from "../components/event-drawer";
 import { blankEvent, draftFrom } from "../components/event-draft";
 import { eventVariant } from "../components/event-kind";
@@ -75,6 +82,9 @@ export default function TermView() {
   const [viewing, setViewing] = useState<CalendarEvent | null>(null);
   // The day a reader pressed, waiting to become an event.
   const [addingOn, setAddingOn] = useState<string | null>(null);
+  // The day whose entries are listed in the centre. Set only for a day that
+  // has some - an empty day goes straight to the form.
+  const [dayOpen, setDayOpen] = useState<string | null>(null);
   // The event being edited, opened from its own detail panel.
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
 
@@ -84,6 +94,25 @@ export default function TermView() {
   const [update, { isLoading: updating }] = useUpdateCalendarEventMutation();
   const canCreate = hasPermission(P.CREATE_CALENDAR_EVENT) && !readOnlyYear;
   const canEdit = hasPermission(P.MODIFY_CALENDAR_EVENT) && !readOnlyYear;
+
+  /**
+   * Pressing a day.
+   *
+   * An empty day means one thing, so it goes straight to the form. A day that
+   * already holds something means three - show me, fix that one, add another -
+   * so it opens the list, which offers all three instead of guessing.
+   */
+  const pressDay = (iso: string, onDay: CalendarEvent[]) => {
+    if (onDay.length) setDayOpen(iso);
+    else if (canCreate) setAddingOn(iso);
+  };
+
+  /** Opening an event: the form for a reader who may edit, the detail if not. */
+  const openEvent = (event: CalendarEvent) => {
+    setDayOpen(null);
+    if (canEdit) setEditing(event);
+    else setViewing(event);
+  };
 
   const anchor = today || session?.start_date || "";
   const [ay, am] = anchor ? parts(anchor) : [0, 0];
@@ -231,25 +260,31 @@ export default function TermView() {
                   (e) => e.start_date <= iso && e.end_date >= iso,
                 );
                 const closed = onDay.some((e) => e.closes_school);
+                // Pressable when there is something to show, or something the
+                // reader could add. A day with neither is inert rather than a
+                // control that opens nothing.
+                const pressable = inMonth && (onDay.length > 0 || canCreate);
                 return (
                   <div
                     key={iso}
                     // Pressing the day adds an event on it. The events inside
                     // stop their own presses, so opening one never also opens
                     // the form for the day underneath it.
-                    role={canCreate && inMonth ? "button" : undefined}
-                    tabIndex={canCreate && inMonth ? 0 : undefined}
+                    role={pressable ? "button" : undefined}
+                    tabIndex={pressable ? 0 : undefined}
                     aria-label={
-                      canCreate && inMonth ? `Add an event on ${formatDate(iso)}` : undefined
+                      pressable
+                        ? onDay.length
+                          ? `${onDay.length} on ${formatDate(iso)}`
+                          : `Add an event on ${formatDate(iso)}`
+                        : undefined
                     }
-                    onClick={
-                      canCreate && inMonth ? () => setAddingOn(iso) : undefined
-                    }
+                    onClick={pressable ? () => pressDay(iso, onDay) : undefined}
                     onKeyDown={(e) => {
-                      if (!canCreate || !inMonth) return;
+                      if (!pressable) return;
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        setAddingOn(iso);
+                        pressDay(iso, onDay);
                       }
                     }}
                     className={cn(
@@ -258,8 +293,7 @@ export default function TermView() {
                       !inMonth && "opacity-40",
                       closed && inMonth && "bg-white-05",
                       iso === today && "border-primary",
-                      canCreate &&
-                        inMonth &&
+                      pressable &&
                         "cursor-pointer hover:border-primary/60 hover:bg-pry-01/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     )}
                   >
@@ -292,14 +326,9 @@ export default function TermView() {
                     {/* Named chips where there is room for a name. */}
                     <div className="mt-1 hidden gap-1 sm:grid">
                       {onDay.slice(0, 2).map((event) => (
-                        <button
+                        <span
                           key={event.id}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setViewing(event);
-                          }}
-                          className="min-w-0 text-left"
+                          className="block min-w-0 text-left"
                         >
                           <Badge
                             variant={eventVariant(event.event_type)}
@@ -307,7 +336,7 @@ export default function TermView() {
                           >
                             <span className="truncate">{event.name}</span>
                           </Badge>
-                        </button>
+                        </span>
                       ))}
                       {onDay.length > 2 && (
                         <span className="pl-0.5 text-[10px] text-gray-05">
@@ -321,14 +350,8 @@ export default function TermView() {
                         mark, the button is the target. */}
                     <div className="mt-0.5 flex flex-wrap items-center sm:hidden">
                       {onDay.slice(0, 4).map((event) => (
-                        <button
+                        <span
                           key={event.id}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setViewing(event);
-                          }}
-                          aria-label={`${event.name}, ${event.type_label}`}
                           title={event.name}
                           className="grid size-5 place-content-center"
                         >
@@ -340,7 +363,7 @@ export default function TermView() {
                               ),
                             }}
                           />
-                        </button>
+                        </span>
                       ))}
                       {onDay.length > 4 && (
                         <span className="text-[9px] text-gray-05">
@@ -386,13 +409,28 @@ export default function TermView() {
             ? await update({ id: editing.id, ...body }).unwrap()
             : await create(body).unwrap();
           toast.success(result.message);
-          for (const w of result.data?.warnings ?? []) toast.warning(w.detail);
+          warnAboutClashes(result.data, canEdit ? setEditing : undefined);
         }}
       />
 
       {/* Opened by pressing an event on the grid. Its Edit hands the same
           event to the form, so a mistyped date is corrected where it was
           noticed rather than by going to find it on the Events screen. */}
+      <DayEventsDialog
+        date={dayOpen ?? ""}
+        events={dayOpen ? events.filter((e) => e.start_date <= dayOpen && e.end_date >= dayOpen) : []}
+        open={!!dayOpen}
+        multiBranch={multiBranch}
+        canCreate={canCreate}
+        onClose={() => setDayOpen(null)}
+        onPick={openEvent}
+        onAdd={() => {
+          const day = dayOpen;
+          setDayOpen(null);
+          setAddingOn(day);
+        }}
+      />
+
       <EventDetail
         event={viewing}
         open={!!viewing}
@@ -442,6 +480,10 @@ function Timeline({
   today: string;
   terms: { id: number; name: string; start_date: string; end_date: string; state: string }[];
 }) {
+  const span = Math.max(1, daysBetween(start, end));
+  const at = (iso: string) =>
+    Math.min(100, Math.max(0, (daysBetween(start, iso) / span) * 100));
+
   // Only when today actually falls inside the year. A school reading last
   // year's calendar in March would otherwise get a marker pinned to one end,
   // which reads as "we are at the start of this year" and is false.
@@ -449,58 +491,98 @@ function Timeline({
 
   const byDate = [...terms].sort((a, b) => (a.start_date < b.start_date ? -1 : 1));
 
+  // Days the year covers that no term does: the holidays between terms, plus
+  // any run-up before the first and tail after the last. Derived rather than
+  // stored - a gap is the absence of a term, so it has no row and cannot go
+  // stale - and worth drawing, because the fortnight at Christmas is part of
+  // the shape of a year and a bar that hid it would be lying about the shape.
+  const gaps: { from: string; to: string }[] = [];
+  if (byDate.length) {
+    if (byDate[0].start_date > start) {
+      gaps.push({ from: start, to: byDate[0].start_date });
+    }
+    byDate.slice(0, -1).forEach((term, i) => {
+      const next = byDate[i + 1];
+      if (next.start_date > term.end_date) {
+        gaps.push({ from: term.end_date, to: next.start_date });
+      }
+    });
+    const last = byDate[byDate.length - 1];
+    if (last.end_date < end) gaps.push({ from: last.end_date, to: end });
+  }
+
   return (
     <div className="mt-4">
-      {/* The terms sit against each other, separated by a hairline rather than
-          by the holidays between them.
-      
-          They were positioned by absolute date, which put a real gap wherever a
-          break fell - and three blocks with holes between them read as three
-          separate bars rather than one year. The blocks are still WEIGHTED by
-          length, so a long term is a long block and the shape of the year
-          survives; what goes is the empty space, which the caption underneath
-          reports anyway by naming each term's dates. */}
-      <div className="flex h-9 w-full items-stretch gap-1 overflow-hidden rounded-lg">
-        {byDate.map((term) => {
-          const days = Math.max(1, daysBetween(term.start_date, term.end_date));
-          // Today's position INSIDE this term, so the marker still lands on the
-          // right day rather than at the block's edge.
-          const holdsToday =
-            showToday && today >= term.start_date && today <= term.end_date;
-          const intoTerm = holdsToday
-            ? Math.min(
-                100,
-                Math.max(0, (daysBetween(term.start_date, today) / days) * 100),
-              )
-            : 0;
+      <div className="relative h-9 w-full rounded-lg bg-white-05">
+        {/* The uncovered days. Hoverable, because an unexplained hole in a
+            timeline reads as a rendering fault rather than as a fortnight off. */}
+        {gaps.map((gap) => {
+          const days = daysBetween(gap.from, gap.to);
           return (
-            <div
-              key={term.id}
-              title={`${term.name}: ${formatRange(term.start_date, term.end_date)}`}
-              style={{ flexGrow: days, flexBasis: 0 }}
-              className={cn(
-                "relative flex min-w-0 items-center justify-center overflow-hidden rounded-md px-1",
-                term.state === "ongoing"
-                  ? "bg-pry-01 text-primary"
-                  : term.state === "completed"
-                    ? "bg-white-02 text-gray-06"
-                    : "bg-white-05 text-gray-06",
-              )}
-            >
-              <span className="truncate text-[11px] font-medium">
-                {term.name}
-              </span>
-              {holdsToday && (
-                <span
-                  style={{ left: `${intoTerm}%` }}
-                  className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-error-text"
-                  aria-label="Today"
-                  title={`Today, ${formatDate(today)}`}
+            <Tooltip key={gap.from}>
+              <TooltipTrigger asChild>
+                <div
+                  style={{
+                    left: `${at(gap.from)}%`,
+                    width: `${Math.max(0.6, at(gap.to) - at(gap.from))}%`,
+                  }}
+                  className="absolute inset-y-0 cursor-help"
                 />
-              )}
-            </div>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="font-medium">Not in any term</p>
+                <p className="text-[11px] opacity-90">
+                  {formatRange(gap.from, gap.to)} · {days}{" "}
+                  {days === 1 ? "day" : "days"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           );
         })}
+
+        {byDate.map((term) => {
+          const left = at(term.start_date);
+          const width = Math.max(2, at(term.end_date) - left);
+          return (
+            <Tooltip key={term.id}>
+              <TooltipTrigger asChild>
+                <div
+                  style={{ left: `${left}%`, width: `${width}%` }}
+                  className={cn(
+                    "absolute top-1 flex h-7 items-center justify-center overflow-hidden rounded-md px-1",
+                    term.state === "ongoing"
+                      ? "bg-primary text-white"
+                      : term.state === "completed"
+                        ? "bg-white-02 text-gray-06"
+                        : "border border-white-02 bg-white text-gray-06",
+                  )}
+                >
+                  <span className="truncate text-[11px] font-medium">
+                    {term.name}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="font-medium">{term.name}</p>
+                <p className="text-[11px] opacity-90">
+                  {formatRange(term.start_date, term.end_date)}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+
+        {/* Drawn last and taller than the blocks, so it stays visible where it
+            crosses a gap - which was the complaint that made these disappear
+            in the first place. */}
+        {showToday && (
+          <div
+            style={{ left: `${at(today)}%` }}
+            className="pointer-events-none absolute -top-1 h-11 w-0.5 -translate-x-1/2 rounded bg-error-text"
+            aria-label="Today"
+            title={`Today, ${formatDate(today)}`}
+          />
+        )}
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-05">
         {byDate.map((term) => (

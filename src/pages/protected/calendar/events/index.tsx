@@ -32,6 +32,7 @@ import { eventVariant } from "../components/event-kind";
 import { formatRange } from "../components/dates";
 import { RowActions } from "../components/row-actions";
 import { audienceLine } from "../components/audience";
+import { warnAboutClashes } from "../components/clash-toast";
 import { blankEvent, draftFrom } from "../components/event-draft";
 import { EventDetail, EventDrawer } from "../components/event-drawer";
 import { EventFilters } from "./event-filters";
@@ -123,11 +124,18 @@ export default function CalendarEvents() {
       ? await update({ id: editing.id, ...body }).unwrap()
       : await create(body).unwrap();
     toast.success(result.message);
-    // The write succeeded AND has something to say. Each warning is a sentence
-    // the server wrote for this reader, so it is shown as it arrived.
-    for (const warning of result.data?.warnings ?? []) {
-      toast.warning(warning.detail);
-    }
+    // The write succeeded AND has something to say. Each warning is the
+    // server's own sentence, and it carries a way back to the event it is
+    // about, because "that was a mistake" is the commonest reply to one.
+    warnAboutClashes(
+      result.data,
+      canEdit
+        ? (row) => {
+            setEditing(row);
+            setFormOpen(true);
+          }
+        : undefined,
+    );
   };
 
   const runDelete = async () => {
