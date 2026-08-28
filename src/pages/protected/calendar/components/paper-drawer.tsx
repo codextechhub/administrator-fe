@@ -11,6 +11,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { SearchSelect } from "@/components/custom/search-select";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Field } from "@/pages/protected/academics/components/entity-drawer";
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
@@ -235,13 +236,17 @@ export function PaperDrawer({
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Field label="Date *">
-              <Input
-                type="date"
+              {/* Bounded by the exam period, so a date outside it cannot be
+                  picked at all. The server refuses one anyway; this makes the
+                  refusal unreachable rather than something to recover from. */}
+              <DatePickerInput
+                aria-label="Exam date"
                 value={values.exam_date}
                 min={minDate}
                 max={maxDate}
                 onChange={(e) => patch({ exam_date: e.target.value })}
                 aria-invalid={outsidePeriod || undefined}
+                className={cn(outsidePeriod && "border-error-01")}
               />
             </Field>
             <Field label="Sitting *">

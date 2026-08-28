@@ -13,6 +13,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { SearchSelect } from "@/components/custom/search-select";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Field } from "@/pages/protected/academics/components/entity-drawer";
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
@@ -262,8 +263,8 @@ export function EventDrawer({
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Field label="Start date *">
-              <Input
-                type="date"
+              <DatePickerInput
+                aria-label="Event start date"
                 value={draft.start_date}
                 onChange={(e) => {
                   const start = e.target.value;
@@ -280,15 +281,19 @@ export function EventDrawer({
                 }}
                 onBlur={() => setTouched((t) => ({ ...t, dates: true }))}
                 aria-invalid={startMissing || undefined}
+                className={cn(startMissing && "border-error-01")}
               />
             </Field>
             <Field label="End date *">
-              <Input
-                type="date"
+              <DatePickerInput
+                aria-label="Event end date"
                 value={draft.end_date}
+                // The calendar greys out anything before the start, so the
+                // backwards range is unreachable rather than merely refused.
                 min={draft.start_date || undefined}
                 onChange={(e) => patch({ end_date: e.target.value })}
                 aria-invalid={endsBeforeStart || undefined}
+                className={cn(endsBeforeStart && "border-error-01")}
               />
             </Field>
           </div>
