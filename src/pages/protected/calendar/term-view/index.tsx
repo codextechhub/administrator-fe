@@ -16,6 +16,7 @@ import {
   useCreateCalendarEventMutation,
   useGetCalendarEventsQuery,
   useGetCalendarYearQuery,
+  useUpdateCalendarEventMutation,
 } from "@/redux/services/calendar/calendar-api";
 import {
   useGetClassesQuery,
@@ -26,7 +27,7 @@ import type {
   CalendarEventWrite,
 } from "@/redux/services/calendar/calendar-types";
 import { EventDetail, EventDrawer } from "../components/event-drawer";
-import { blankEvent } from "../components/event-draft";
+import { blankEvent, draftFrom } from "../components/event-draft";
 import { eventVariant } from "../components/event-kind";
 import {
   daysBetween,
@@ -74,11 +75,15 @@ export default function TermView() {
   const [viewing, setViewing] = useState<CalendarEvent | null>(null);
   // The day a reader pressed, waiting to become an event.
   const [addingOn, setAddingOn] = useState<string | null>(null);
+  // The event being edited, opened from its own detail panel.
+  const [editing, setEditing] = useState<CalendarEvent | null>(null);
 
   const { data: programData } = useGetProgramsQuery(lens);
   const { data: classData } = useGetClassesQuery(lens);
   const [create, { isLoading: creating }] = useCreateCalendarEventMutation();
+  const [update, { isLoading: updating }] = useUpdateCalendarEventMutation();
   const canCreate = hasPermission(P.CREATE_CALENDAR_EVENT) && !readOnlyYear;
+  const canEdit = hasPermission(P.MODIFY_CALENDAR_EVENT) && !readOnlyYear;
 
   const anchor = today || session?.start_date || "";
   const [ay, am] = anchor ? parts(anchor) : [0, 0];
@@ -358,29 +363,49 @@ export default function TermView() {
       {/* Pre-dated to the day that was pressed, so the one thing the reader
           already told us is not asked again. */}
       <EventDrawer
-        open={!!addingOn}
-        editing={false}
-        saving={creating}
-        initial={{
-          ...blankEvent(branch === "all" ? null : branch),
-          start_date: addingOn ?? "",
-          end_date: addingOn ?? "",
-        }}
+        open={!!addingOn || !!editing}
+        editing={!!editing}
+        saving={creating || updating}
+        initial={
+          editing
+            ? draftFrom(editing)
+            : {
+                ...blankEvent(branch === "all" ? null : branch),
+                start_date: addingOn ?? "",
+                end_date: addingOn ?? "",
+              }
+        }
         programs={programData?.data ?? []}
         classes={classData?.data ?? []}
-        onClose={() => setAddingOn(null)}
+        onClose={() => {
+          setAddingOn(null);
+          setEditing(null);
+        }}
         onSave={async (body: CalendarEventWrite) => {
-          const result = await create(body).unwrap();
+          const result = editing
+            ? await update({ id: editing.id, ...body }).unwrap()
+            : await create(body).unwrap();
           toast.success(result.message);
           for (const w of result.data?.warnings ?? []) toast.warning(w.detail);
         }}
       />
 
+      {/* Opened by pressing an event on the grid. Its Edit hands the same
+          event to the form, so a mistyped date is corrected where it was
+          noticed rather than by going to find it on the Events screen. */}
       <EventDetail
         event={viewing}
         open={!!viewing}
         multiBranch={multiBranch}
         onClose={() => setViewing(null)}
+        onEdit={
+          canEdit
+            ? () => {
+                setEditing(viewing);
+                setViewing(null);
+              }
+            : undefined
+        }
       />
     </main>
   );
@@ -417,80 +442,68 @@ function Timeline({
   today: string;
   terms: { id: number; name: string; start_date: string; end_date: string; state: string }[];
 }) {
-  const span = Math.max(1, daysBetween(start, end));
-  const at = (iso: string) =>
-    Math.min(100, Math.max(0, (daysBetween(start, iso) / span) * 100));
-
   // Only when today actually falls inside the year. A school reading last
   // year's calendar in March would otherwise get a marker pinned to one end,
   // which reads as "we are at the start of this year" and is false.
   const showToday = !!today && today >= start && today <= end;
 
-  // The spans between one term ending and the next beginning. Derived rather
-  // than stored: a gap is the absence of a term, so it has no row of its own
-  // and cannot go stale.
-  const byDate = [...terms].sort((a, b) =>
-    a.start_date < b.start_date ? -1 : 1,
-  );
-  const breaks = byDate
-    .slice(0, -1)
-    .map((term, i) => ({ from: term.end_date, to: byDate[i + 1].start_date }))
-    .filter((gap) => gap.to > gap.from);
+  const byDate = [...terms].sort((a, b) => (a.start_date < b.start_date ? -1 : 1));
 
   return (
     <div className="mt-4">
-      <div className="relative h-9 w-full rounded-lg bg-white-05">
-        {/* The holidays between terms, drawn rather than left blank.
-        
-            The terms are positioned by date, so the gaps between them are real
-            and worth keeping - the fortnight at Christmas is part of the shape
-            of a year. But an empty gap made the bar read as three separate
-            things, and the today marker crossing one looked like it had come
-            off its track. Filling them keeps the bar continuous to the eye
-            while still saying, in a different weight, that this is not term
-            time. */}
-        {breaks.map((gap) => (
-          <div
-            key={gap.from}
-            title={`Between terms: ${formatRange(gap.from, gap.to)}`}
-            style={{ left: `${at(gap.from)}%`, width: `${Math.max(0.5, at(gap.to) - at(gap.from))}%` }}
-            className="absolute top-1 h-7 border-y border-dashed border-white-02 bg-white/70"
-          />
-        ))}
-        {terms.map((term) => {
-          const left = at(term.start_date);
-          const width = Math.max(2, at(term.end_date) - left);
+      {/* The terms sit against each other, separated by a hairline rather than
+          by the holidays between them.
+      
+          They were positioned by absolute date, which put a real gap wherever a
+          break fell - and three blocks with holes between them read as three
+          separate bars rather than one year. The blocks are still WEIGHTED by
+          length, so a long term is a long block and the shape of the year
+          survives; what goes is the empty space, which the caption underneath
+          reports anyway by naming each term's dates. */}
+      <div className="flex h-9 w-full items-stretch gap-1 overflow-hidden rounded-lg">
+        {byDate.map((term) => {
+          const days = Math.max(1, daysBetween(term.start_date, term.end_date));
+          // Today's position INSIDE this term, so the marker still lands on the
+          // right day rather than at the block's edge.
+          const holdsToday =
+            showToday && today >= term.start_date && today <= term.end_date;
+          const intoTerm = holdsToday
+            ? Math.min(
+                100,
+                Math.max(0, (daysBetween(term.start_date, today) / days) * 100),
+              )
+            : 0;
           return (
             <div
               key={term.id}
               title={`${term.name}: ${formatRange(term.start_date, term.end_date)}`}
-              style={{ left: `${left}%`, width: `${width}%` }}
+              style={{ flexGrow: days, flexBasis: 0 }}
               className={cn(
-                "absolute top-1 flex h-7 items-center justify-center overflow-hidden rounded-md px-1",
+                "relative flex min-w-0 items-center justify-center overflow-hidden rounded-md px-1",
                 term.state === "ongoing"
-                  ? "bg-primary text-white"
+                  ? "bg-pry-01 text-primary"
                   : term.state === "completed"
                     ? "bg-white-02 text-gray-06"
-                    : "border border-white-02 bg-white text-gray-06",
+                    : "bg-white-05 text-gray-06",
               )}
             >
               <span className="truncate text-[11px] font-medium">
                 {term.name}
               </span>
+              {holdsToday && (
+                <span
+                  style={{ left: `${intoTerm}%` }}
+                  className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-error-text"
+                  aria-label="Today"
+                  title={`Today, ${formatDate(today)}`}
+                />
+              )}
             </div>
           );
         })}
-        {showToday && (
-          <div
-            style={{ left: `${at(today)}%` }}
-            className="absolute -top-1 h-11 w-0.5 -translate-x-1/2 rounded bg-error-text"
-            aria-label="Today"
-            title={`Today, ${formatRange(today, today)}`}
-          />
-        )}
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-05">
-        {terms.map((term) => (
+        {byDate.map((term) => (
           <span key={term.id}>
             {term.name}: {formatRange(term.start_date, term.end_date)}
           </span>
