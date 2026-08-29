@@ -31,6 +31,7 @@ import { OutlinedNotice } from "./components/outlined-notice";
 import { ProgressRing } from "./components/progress-ring";
 import { TaskCard } from "./components/task-card";
 import { taskMeta } from "./task-catalog";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * The Onboarding Control Room - the home base for a school that is not live yet.
@@ -59,7 +60,7 @@ export default function OnboardingControlRoom() {
   // else is worth retrying.
   if (notProvisioned) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={SearchX}
           title="We could not find your onboarding checklist"
@@ -67,25 +68,25 @@ export default function OnboardingControlRoom() {
           actionLabel="Contact CodeX"
           onAction={() => requestSupportOpen()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   if (closedToYou) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={ShieldOff}
           title="You cannot open the onboarding checklist"
           body={`Your account does not carry access to this school's onboarding. Ask whoever set up your account, or reach CodeX at ${SUPPORT_MAIL}.`}
         />
-      </main>
+      </PageShell>
     );
   }
 
   if (unexpectedError || !state) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={CircleAlert}
           title="We could not load your checklist"
@@ -93,7 +94,7 @@ export default function OnboardingControlRoom() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
@@ -151,7 +152,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
   };
 
   return (
-    <main className="px-5 pt-3 pb-8 space-y-5">
+    <PageShell className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold font-mont text-black-01">
@@ -327,7 +328,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
           </section>
         </div>
       </div>
-    </main>
+    </PageShell>
   );
 }
 
@@ -489,7 +490,7 @@ function readinessDetail(
 /** Ghosts shaped like the summary and the checklist that are about to arrive. */
 function ControlRoomSkeleton() {
   return (
-    <main className="px-5 pt-3 pb-8 space-y-5" aria-busy>
+    <PageShell className="space-y-5" aria-busy>
       <span className="sr-only">Loading your onboarding checklist…</span>
       <Skeleton className="h-6 w-64" aria-hidden />
       <div className="bg-white rounded-md px-4 py-5 sm:px-6" aria-hidden>
@@ -513,6 +514,6 @@ function ControlRoomSkeleton() {
           <Skeleton className="h-28 w-full rounded-md" />
         </div>
       </div>
-    </main>
+    </PageShell>
   );
 }

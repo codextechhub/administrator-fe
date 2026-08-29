@@ -138,12 +138,18 @@ Horizontal page overflow is a bug, full stop.
 
 House conventions (proven app-wide in console-fe; apply them here):
 - The DashboardLayout children wrapper needs `grid grid-cols-1 min-w-0` so
-  nowrap tables can never stretch a page past the viewport. **Known gap:**
-  this repo's `dashboard-layout.tsx` does NOT have that wrapper yet - port it
-  from console-fe (`src/components/layout/dashboard-layout.tsx`) on the first
-  responsive pass, along with CustomTable's phone-card mode (rows render as
-  stacked label/value cards below `md`; dense tables opt out with
-  `mobile="scroll"`).
+  nowrap tables can never stretch a page past the viewport. **This is now in
+  place here** (`dashboard-layout.tsx`), along with CustomTable's phone-card
+  mode (rows render as stacked label/value cards below `md`; dense tables opt
+  out with `mobile="scroll"`). The note that said otherwise was stale and would
+  have sent somebody to port a wrapper that already exists.
+- **Every page's `<main>` is `PageShell`** (`src/components/layout/page-shell.tsx`),
+  never a hand-written class string. The wrapper above protects a BLOCK main; it
+  cannot protect a second grid declared inside it, and a grid without
+  `grid-cols-1` is sized to its min-content - so one nowrap table pushes the
+  whole page off the right of the screen. Two pages here had exactly that shape
+  before the shell landed. There is therefore no `grid` class to pass: there is
+  a `grid` prop, and it always emits `grid grid-cols-1 min-w-0` together.
 - Toolbars/action rows get `flex-wrap`; tab strips `max-w-full
   overflow-x-auto` with `whitespace-nowrap` buttons; form grids
   `grid-cols-1 sm:grid-cols-N`; count-KPI strips `grid-cols-2 … lg:grid-cols-4`

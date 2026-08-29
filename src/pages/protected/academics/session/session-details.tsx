@@ -13,6 +13,7 @@ import { Panel } from "@/components/custom/surface";
 import { SessionDrawer } from "./session-drawer";
 import { SessionStatusChip } from "./session-chips";
 import { scopeOf, TERM_LABEL, TERM_TONE, termState } from "./session-format";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * One school year, and the terms inside it.
@@ -43,20 +44,20 @@ export default function SessionDetails() {
 
   if (isLoading) {
     return (
-      <main className="grid grid-cols-1 gap-4 px-5 pt-3 pb-10">
+      <PageShell className="gap-4 pb-10" grid>
         <Skeleton className="h-16 w-full rounded-md" />
         <div className="grid gap-4 xl:grid-cols-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-28 w-full rounded-md" />
           ))}
         </div>
-      </main>
+      </PageShell>
     );
   }
 
   if (isError || !session) {
     return (
-      <main className="px-5 pt-3 pb-10">
+      <PageShell className="pb-10">
         <OutlinedNotice
           icon={CalendarRange}
           title="We could not load this session"
@@ -64,14 +65,14 @@ export default function SessionDetails() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   const archived = session.status === "ARCHIVED";
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start px-5 pt-3 pb-10">
+    <PageShell className="content-start pb-10" grid>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h4 className="min-w-0 truncate font-mont text-xl font-medium text-black-01">
           {session.name} Academic Session
@@ -177,6 +178,6 @@ export default function SessionDetails() {
         session={session}
         onClose={() => setEditing(false)}
       />
-    </main>
+    </PageShell>
   );
 }

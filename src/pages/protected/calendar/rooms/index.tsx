@@ -37,6 +37,7 @@ import { RowActions } from "../components/row-actions";
 import { roomIcon } from "../components/room-kind";
 import { RoomFilters } from "./room-filters";
 import { BLANK_ROOM_FACETS, type RoomFacets } from "./room-facets";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * The places lessons and examinations happen in.
@@ -139,7 +140,7 @@ export default function Rooms() {
 
   if (isError) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={DoorOpen}
           title="We could not load your rooms"
@@ -147,12 +148,12 @@ export default function Rooms() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       <div className="flex flex-wrap items-center gap-2.5">
         <div className="relative min-w-0 flex-1 basis-52">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
@@ -329,7 +330,7 @@ export default function Rooms() {
         srcClass="size-25"
         src="/image/caution.png"
       />
-    </main>
+    </PageShell>
   );
 }
 

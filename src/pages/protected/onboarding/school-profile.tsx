@@ -23,6 +23,7 @@ import { apiErrorMessage, parseApiError } from "@/utils/api-error";
 import { SUPPORT_MAIL } from "@/utils/static";
 import { LogoField } from "./components/logo-field";
 import { OutlinedNotice } from "./components/outlined-notice";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * The school's own profile - the "Complete your school profile" step.
@@ -45,17 +46,17 @@ export default function SchoolProfilePage() {
 
   if (isLoading) {
     return (
-      <main className="px-5 pt-3 pb-8 space-y-5" aria-busy>
+      <PageShell className="space-y-5" aria-busy>
         <span className="sr-only">Loading your school profile…</span>
         <Skeleton className="h-6 w-56" aria-hidden />
         <Skeleton className="h-96 w-full max-w-200 rounded-md" aria-hidden />
-      </main>
+      </PageShell>
     );
   }
 
   if (status === 403) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={ShieldOff}
           title="You cannot open your school's profile"
@@ -63,13 +64,13 @@ export default function SchoolProfilePage() {
           actionLabel="Back to control room"
           onAction={() => navigate(routesPath.PROTECTED.ONBOARDING.INDEX)}
         />
-      </main>
+      </PageShell>
     );
   }
 
   if (error || !profile) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={CircleAlert}
           title="We could not load your school profile"
@@ -77,7 +78,7 @@ export default function SchoolProfilePage() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
@@ -141,7 +142,7 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
   );
 
   return (
-    <main className="px-5 pt-3 pb-8 space-y-5">
+    <PageShell className="space-y-5">
       <div>
         <h2 className="text-lg font-semibold font-mont text-black-01">
           Your school profile
@@ -319,7 +320,7 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
             : "You can read your school's profile. Changing it is the school administrator's to do."}
         </p>
       </form>
-    </main>
+    </PageShell>
   );
 }
 

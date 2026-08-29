@@ -29,6 +29,7 @@ import type {
 import { RowActions } from "../components/row-actions";
 import { PeriodDrawer } from "../components/period-drawer";
 import { blankPeriod, periodDraftFrom } from "../components/period-draft";
+import { PageShell } from "@/components/layout/page-shell";
 
 const DAY_TABS: { value: DayOfWeek | "all"; label: string; short: string }[] = [
   { value: "all", label: "The whole schedule", short: "All" },
@@ -136,7 +137,7 @@ export default function BellSchedule() {
 
   if (isError) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={Bell}
           title="We could not load your bell schedule"
@@ -144,14 +145,14 @@ export default function BellSchedule() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   const empty = !isLoading && everyPeriod.length === 0;
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <p className="min-w-0 text-sm text-gray-06 text-pretty">
           The daily period structure every timetable grid is built on.
@@ -349,7 +350,7 @@ export default function BellSchedule() {
         srcClass="size-25"
         src="/image/caution.png"
       />
-    </main>
+    </PageShell>
   );
 }
 

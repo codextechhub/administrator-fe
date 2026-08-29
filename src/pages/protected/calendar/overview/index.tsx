@@ -27,6 +27,7 @@ import {
 } from "@/redux/services/calendar/calendar-api";
 import { eventVariant } from "../components/event-kind";
 import { formatRange, relativeDays } from "../components/dates";
+import { PageShell } from "@/components/layout/page-shell";
 
 const C = routesPath.PROTECTED.ACADEMIC_CALENDAR;
 const T = routesPath.PROTECTED.TIMETABLES;
@@ -65,7 +66,7 @@ export default function CalendarOverview() {
 
   if (isError) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={CalendarRange}
           title="We could not load your calendar"
@@ -73,13 +74,13 @@ export default function CalendarOverview() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   if (isLoading) {
     return (
-      <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+      <PageShell className="content-start gap-5" grid>
         <Skeleton className="h-40 w-full rounded-md" />
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -87,7 +88,7 @@ export default function CalendarOverview() {
           ))}
         </div>
         <Skeleton className="h-64 w-full rounded-md" />
-      </main>
+      </PageShell>
     );
   }
 
@@ -97,7 +98,7 @@ export default function CalendarOverview() {
   // points at the year, not at an Add event button that would refuse.
   if (!overview.session) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={CalendarRange}
           title="No school year yet"
@@ -107,7 +108,7 @@ export default function CalendarOverview() {
             navigate(routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS)
           }
         />
-      </main>
+      </PageShell>
     );
   }
 
@@ -121,7 +122,7 @@ export default function CalendarOverview() {
   const pct = total > 0 ? Math.round((taught / total) * 100) : 0;
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       {/* ── The year, and where inside it we are ─────────────────────────── */}
       <Panel className="p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -337,7 +338,7 @@ export default function CalendarOverview() {
           )}
         </Panel>
       </div>
-    </main>
+    </PageShell>
   );
 }
 

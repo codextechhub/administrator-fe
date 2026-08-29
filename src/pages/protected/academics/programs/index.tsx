@@ -57,6 +57,7 @@ import {
 } from "./promotion-picker";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * Programmes, and the levels inside them.
@@ -211,7 +212,7 @@ export default function Programs() {
 
   if (isError) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={ListTree}
           title="We could not load your programmes"
@@ -219,7 +220,7 @@ export default function Programs() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
@@ -227,7 +228,7 @@ export default function Programs() {
   const drawerKey = programDrawer === null ? "shut" : (editingProgram?.id ?? "new");
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       {/* Adjusted during render, not in an effect - the select must already
           hold the programme's department on the first paint. */}
       {(() => {
@@ -470,7 +471,7 @@ export default function Programs() {
             : undefined
         }
       />
-    </main>
+    </PageShell>
   );
 }
 

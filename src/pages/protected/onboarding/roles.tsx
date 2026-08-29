@@ -20,6 +20,7 @@ import { OutlinedNotice } from "./components/outlined-notice";
 import { InvitationsPanel } from "./components/invitations-panel";
 import { RoleDrawer } from "./components/role-drawer";
 import { useOnboardingState } from "./use-onboarding-state";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * "Confirm Default Roles & RBAC" - one screen, two tabs, opened from two cards.
@@ -157,7 +158,7 @@ export default function OnboardingRoles() {
   };
 
   return (
-    <main className="px-5 pt-3 pb-8 space-y-5">
+    <PageShell className="space-y-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0 max-w-[60ch]">
           <h2 className="text-lg font-semibold font-mont text-black-01">
@@ -280,6 +281,6 @@ export default function OnboardingRoles() {
         onClose={() => setDrawerOpen(false)}
       />
 
-    </main>
+    </PageShell>
   );
 }

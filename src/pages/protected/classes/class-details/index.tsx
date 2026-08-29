@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
+import { PageShell } from "@/components/layout/page-shell";
 
 export default function ClassDetails() {
   return (
-    <main className="px-4.5 py-6 space-y-5">
+    <PageShell className="px-4.5 py-6 space-y-5">
       <div className="flex items-center justify-between gap-4">
         <p className="text-black-01 text-lg font-medium truncate">
           JSS 2 - Caleb Primary - Magodo
@@ -30,6 +31,6 @@ export default function ClassDetails() {
           <p className="text-2xl font-semibold text-black-01 truncate">74%</p>
         </div>
       </div>
-    </main>
+    </PageShell>
   );
 }

@@ -2,6 +2,7 @@ import { GraduationCap, UsersRound } from "lucide-react";
 import { Panel } from "@/components/custom/surface";
 import { useGetAcademicOverviewQuery } from "@/redux/services/academics/academics-api";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * Class teachers, and who sits in each class.
@@ -47,7 +48,7 @@ export default function Assignments() {
   ];
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       <div>
         <h2 className="text-base font-medium text-black-01">Assignments</h2>
         <p className="mt-1 max-w-2xl text-sm text-gray-01 text-pretty">
@@ -90,6 +91,6 @@ export default function Assignments() {
         designed ahead of the data, so it stays empty until staff and students
         are real.
       </p>
-    </main>
+    </PageShell>
   );
 }

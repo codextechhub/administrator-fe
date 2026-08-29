@@ -47,6 +47,7 @@ import {
 import { DuplicateDrawer } from "../components/duplicate-drawer";
 import { ExportButton } from "@/pages/protected/academics/components/export-button";
 import { ClassPicker } from "./class-picker";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * A weekly grid per class. Click an empty cell to fill it.
@@ -188,16 +189,16 @@ export default function ClassTimetables() {
 
   if (listLoading) {
     return (
-      <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+      <PageShell className="content-start gap-5" grid>
         <Skeleton className="h-16 w-full rounded-md" />
         <Skeleton className="h-[28rem] w-full rounded-md" />
-      </main>
+      </PageShell>
     );
   }
 
   if (!classes.length) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={GraduationCap}
           title="No classes yet"
@@ -209,7 +210,7 @@ export default function ClassTimetables() {
             );
           }}
         />
-      </main>
+      </PageShell>
     );
   }
 
@@ -217,7 +218,7 @@ export default function ClassTimetables() {
   // school's periods; with none there are no rows to draw.
   if (grid && !grid.has_bell_schedule) {
     return (
-      <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+      <PageShell className="content-start gap-5" grid>
         <ClassPicker
           classes={classes}
           current={current}
@@ -232,12 +233,12 @@ export default function ClassTimetables() {
             window.location.assign(routesPath.PROTECTED.TIMETABLES.BELL_SCHEDULE);
           }}
         />
-      </main>
+      </PageShell>
     );
   }
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       <div className="print-hide flex flex-wrap items-center justify-between gap-2.5">
         <ClassPicker classes={classes} current={current} onPick={setClassId} />
 
@@ -470,6 +471,6 @@ export default function ClassTimetables() {
         srcClass="size-25"
         src="/image/caution.png"
       />
-    </main>
+    </PageShell>
   );
 }

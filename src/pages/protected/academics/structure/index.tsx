@@ -25,6 +25,7 @@ import type {
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { Panel } from "@/components/custom/surface";
 import { StructureTree } from "./structure-tree";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * Academic Structure - the overview.
@@ -46,7 +47,7 @@ export default function AcademicStructureOverview() {
 
   if (isLoading) {
     return (
-      <main className="grid grid-cols-1 content-start gap-6 px-5 pt-3 pb-8">
+      <PageShell className="content-start gap-6" grid>
         <Skeleton className="h-44 w-full rounded-md" />
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -54,13 +55,13 @@ export default function AcademicStructureOverview() {
           ))}
         </div>
         <Skeleton className="h-72 w-full rounded-md" />
-      </main>
+      </PageShell>
     );
   }
 
   if (isError || !overview) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={GraduationCap}
           title="We could not load your academic structure"
@@ -68,7 +69,7 @@ export default function AcademicStructureOverview() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
@@ -83,7 +84,7 @@ export default function AcademicStructureOverview() {
   const session = viewed ?? active;
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-6 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-6" grid>
       <SessionHero session={session} departments={counts.departments} />
 
       {/* Only reachable once a school has split its calendar by branch. There is
@@ -127,7 +128,7 @@ export default function AcademicStructureOverview() {
       ) : (
         <StructureTree />
       )}
-    </main>
+    </PageShell>
   );
 }
 

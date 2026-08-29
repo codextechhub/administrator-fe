@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import { Lock } from "lucide-react";
 import { routesPath } from "@/routes/routesPath";
 import { OutlinedNotice } from "./outlined-notice";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * What a school that has not gone live sees where a closed screen would be.
@@ -17,7 +18,7 @@ import { OutlinedNotice } from "./outlined-notice";
 export function NotLiveNotice() {
   const navigate = useNavigate();
   return (
-    <main className="px-5 pt-3 pb-8">
+    <PageShell>
       <OutlinedNotice
         icon={Lock}
         title="This part of XVS opens when your school goes live"
@@ -25,6 +26,6 @@ export function NotLiveNotice() {
         actionLabel="Back to control room"
         onAction={() => navigate(routesPath.PROTECTED.ONBOARDING.INDEX)}
       />
-    </main>
+    </PageShell>
   );
 }

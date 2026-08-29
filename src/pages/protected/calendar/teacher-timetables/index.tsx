@@ -15,6 +15,7 @@ import {
 import { TimetableGrid } from "../components/timetable-grid";
 import { warningsFromDays } from "../components/grid-shape";
 import { PersonPicker } from "./person-picker";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * One teacher's week, derived from the class grids.
@@ -66,10 +67,10 @@ export default function TeacherTimetables() {
 
   if (listLoading) {
     return (
-      <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+      <PageShell className="content-start gap-5" grid>
         <Skeleton className="h-16 w-full rounded-md" />
         <Skeleton className="h-[28rem] w-full rounded-md" />
-      </main>
+      </PageShell>
     );
   }
 
@@ -77,7 +78,7 @@ export default function TeacherTimetables() {
   // not been given the teacher role yet needs sending there, not to a grid.
   if (!teachers.length) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={Users}
           title="Nobody carries the teacher role yet"
@@ -87,12 +88,12 @@ export default function TeacherTimetables() {
             window.location.assign(routesPath.PROTECTED.TEACHERS.INDEX);
           }}
         />
-      </main>
+      </PageShell>
     );
   }
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <PersonPicker
           people={teachers}
@@ -208,7 +209,7 @@ export default function TeacherTimetables() {
           Edit a class timetable
         </Link>
       </p>
-    </main>
+    </PageShell>
   );
 }
 

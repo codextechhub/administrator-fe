@@ -50,6 +50,7 @@ import {
 import { ExportButton } from "@/pages/protected/academics/components/export-button";
 import { RowActions } from "../components/row-actions";
 import { RowPicker } from "../components/row-picker";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * Papers placed inside a dated exam period on the calendar.
@@ -141,7 +142,7 @@ export default function ExamScheduling() {
 
   if (isError) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={ClipboardList}
           title="We could not load your exam schedule"
@@ -149,16 +150,16 @@ export default function ExamScheduling() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   if (isLoading) {
     return (
-      <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+      <PageShell className="content-start gap-5" grid>
         <Skeleton className="h-24 w-full rounded-md" />
         <Skeleton className="h-80 w-full rounded-md" />
-      </main>
+      </PageShell>
     );
   }
 
@@ -166,7 +167,7 @@ export default function ExamScheduling() {
   // a schedule hangs off a dated exam period and the calendar holds none.
   if (!exams.length || !exam) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={CalendarPlus}
           title="No exam period yet"
@@ -176,14 +177,14 @@ export default function ExamScheduling() {
             window.location.assign(routesPath.PROTECTED.ACADEMIC_CALENDAR.EVENTS);
           }}
         />
-      </main>
+      </PageShell>
     );
   }
 
   const range = formatRange(exam.start_date, exam.end_date);
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       <div className="print-hide flex flex-wrap items-center justify-between gap-2.5">
         {/* Only where there is a choice to make. A school running mocks in
             November and end-of-term exams in December has two, and the design
@@ -423,7 +424,7 @@ export default function ExamScheduling() {
         onSave={savePaper}
         onRemove={removePaper}
       />
-    </main>
+    </PageShell>
   );
 }
 

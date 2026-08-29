@@ -50,6 +50,7 @@ import {
   ReadinessChip,
 } from "./components/onboarding-chips";
 import { OutlinedNotice } from "./components/outlined-notice";
+import { PageShell } from "@/components/layout/page-shell";
 
 /** Anchor for the request form, so the rejected card can point back at it. */
 const GO_LIVE_FORM_ID = "go-live-request-form";
@@ -91,18 +92,18 @@ export default function GoLivePage() {
 
   if (isLoading) {
     return (
-      <main className="px-5 pt-3 pb-8 space-y-5" aria-busy>
+      <PageShell className="space-y-5" aria-busy>
         <span className="sr-only">Loading your go-live status…</span>
         <Skeleton className="h-6 w-40" aria-hidden />
         <Skeleton className="h-52 w-full rounded-md" aria-hidden />
         <Skeleton className="h-64 w-full rounded-md" aria-hidden />
-      </main>
+      </PageShell>
     );
   }
 
   if (notProvisioned) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={SearchX}
           title="We could not find your onboarding checklist"
@@ -110,25 +111,25 @@ export default function GoLivePage() {
           actionLabel="Contact CodeX"
           onAction={() => requestSupportOpen()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   if (closedToYou) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={ShieldOff}
           title="You cannot open the go-live request"
           body={`Your account does not carry access to this school's go-live requests. Ask whoever set up your account, or reach CodeX at ${SUPPORT_MAIL}.`}
         />
-      </main>
+      </PageShell>
     );
   }
 
   if (unexpectedError || !state) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={CircleAlert}
           title="We could not load your go-live status"
@@ -136,7 +137,7 @@ export default function GoLivePage() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
@@ -171,7 +172,7 @@ function GoLive({ state }: { state: OnboardingState }) {
   }));
 
   return (
-    <main className="px-5 pt-3 pb-8 space-y-5">
+    <PageShell className="space-y-5">
       <div>
         <h2 className="text-lg font-semibold font-mont text-black-01">
           Going live
@@ -240,7 +241,7 @@ function GoLive({ state }: { state: OnboardingState }) {
         request={details}
         onClose={() => setDetails(null)}
       />
-    </main>
+    </PageShell>
   );
 }
 

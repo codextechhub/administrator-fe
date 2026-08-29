@@ -7,6 +7,7 @@ import { NotificationEventIcon } from "@/components/custom/notification-event-ic
 import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatRelativeDate } from "@/utils/relative-date";
+import { PageShell } from "@/components/layout/page-shell";
 import {
   useGetNotificationsQuery,
   useGetUnreadNotificationCountQuery,
@@ -79,7 +80,7 @@ export default function Notifications() {
   };
 
   return (
-    <main className="px-5 pt-3 pb-8 min-w-0 space-y-5 text-black-01">
+    <PageShell className="space-y-5 text-black-01">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold font-mont text-black-01">
@@ -253,6 +254,6 @@ export default function Notifications() {
           </div>
         )}
       </section>
-    </main>
+    </PageShell>
   );
 }

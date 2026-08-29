@@ -38,6 +38,7 @@ import { blankEvent, draftFrom } from "../components/event-draft";
 import { EventDetail, EventDrawer } from "../components/event-drawer";
 import { EventFilters } from "./event-filters";
 import { BLANK_FACETS, type EventFacets } from "./event-facets";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * Holidays, breaks, exam periods and school events, each dated inside a term.
@@ -154,7 +155,7 @@ export default function CalendarEvents() {
 
   if (isError) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={CalendarDays}
           title="We could not load your calendar"
@@ -162,12 +163,12 @@ export default function CalendarEvents() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       <div className="flex flex-wrap items-center gap-2.5">
         <div className="relative min-w-0 flex-1 basis-52">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
@@ -340,7 +341,7 @@ export default function CalendarEvents() {
         srcClass="size-25"
         src="/image/caution.png"
       />
-    </main>
+    </PageShell>
   );
 }
 

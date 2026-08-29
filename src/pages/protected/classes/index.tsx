@@ -44,6 +44,7 @@ import { ExportButton } from "@/pages/protected/academics/components/export-butt
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { ClassDrawer } from "./class-drawer";
 import { GenerateArmsDrawer } from "./generate-arms-drawer";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * The classes pupils sit in, with their arms.
@@ -136,7 +137,7 @@ export default function Classes() {
 
   if (isError) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={GraduationCap}
           title="We could not load your classes"
@@ -144,12 +145,12 @@ export default function Classes() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       <div className="flex flex-wrap items-center gap-2.5">
         <div className="relative min-w-0 flex-1 basis-52">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
@@ -383,7 +384,7 @@ export default function Classes() {
             : undefined
         }
       />
-    </main>
+    </PageShell>
   );
 }
 

@@ -9,6 +9,7 @@ import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import type { SchoolBranch } from "@/redux/services/branches/branches-types";
 import { BranchDrawer } from "./branch-drawer";
 import { locationOf, StatusChip } from "./branch-display";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * The branches this school runs.
@@ -33,19 +34,19 @@ export default function Branches() {
 
   if (isLoading) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, index) => (
             <Skeleton key={index} className="h-56 w-full rounded-md" />
           ))}
         </div>
-      </main>
+      </PageShell>
     );
   }
 
   if (isError) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={GraduationCap}
           title="We could not load your branches"
@@ -53,24 +54,24 @@ export default function Branches() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   if (!branches.length) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={GraduationCap}
           title="No branches yet"
           body="CodeX sets up your branches. Ask the team if one is missing."
         />
-      </main>
+      </PageShell>
     );
   }
 
   return (
-    <main className="px-5 pt-3 pb-8">
+    <PageShell>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {branches.map((branch) => (
           <BranchCard
@@ -85,7 +86,7 @@ export default function Branches() {
         code={openCode}
         onClose={() => setOpenCode(null)}
       />
-    </main>
+    </PageShell>
   );
 }
 

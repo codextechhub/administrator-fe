@@ -40,6 +40,7 @@ import { eventDeleteBody } from "../components/event-delete";
 import { EventDetail, EventDrawer } from "../components/event-drawer";
 import { blankEvent, draftFrom } from "../components/event-draft";
 import { eventVariant } from "../components/event-kind";
+import { PageShell } from "@/components/layout/page-shell";
 import {
   daysBetween,
   formatDate,
@@ -144,7 +145,7 @@ export default function TermView() {
 
   if (isError) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={CalendarRange}
           title="We could not load your calendar"
@@ -152,28 +153,28 @@ export default function TermView() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   if (isLoading) {
     return (
-      <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+      <PageShell className="content-start gap-5" grid>
         <Skeleton className="h-32 w-full rounded-md" />
         <Skeleton className="h-[26rem] w-full rounded-md" />
-      </main>
+      </PageShell>
     );
   }
 
   if (!session || !view || !window) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={CalendarRange}
           title="No school year yet"
           body="The timeline draws a school year and the grid draws its months, so both wait on one being started."
         />
-      </main>
+      </PageShell>
     );
   }
 
@@ -183,7 +184,7 @@ export default function TermView() {
   };
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       {/* ── The year as one bar ──────────────────────────────────────────── */}
       <Panel className="p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -489,7 +490,7 @@ export default function TermView() {
             : undefined
         }
       />
-    </main>
+    </PageShell>
   );
 }
 

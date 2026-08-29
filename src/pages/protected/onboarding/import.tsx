@@ -19,6 +19,7 @@ import {
 } from "@/redux/services/import-data/import-api";
 import { useTransitionOnboardingTaskMutation } from "@/redux/services/onboarding/onboarding-api";
 import type { ImportTemplateSummary } from "@/redux/services/import-data/import-types";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * "Upload Initial Datasets", drawn as the design draws it.
@@ -334,7 +335,7 @@ export default function OnboardingImport() {
   );
 
   return (
-    <main className="px-5 pt-3 pb-8 grid grid-cols-1 min-w-0 gap-5">
+    <PageShell className="gap-5" grid>
       <input
         ref={fileInput}
         type="file"
@@ -498,7 +499,7 @@ export default function OnboardingImport() {
         </p>
       </section>
 
-    </main>
+    </PageShell>
   );
 }
 

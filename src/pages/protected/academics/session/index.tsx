@@ -47,6 +47,7 @@ import { RollForwardDialog } from "./roll-forward-dialog";
 import { CardActions, ClickableCard } from "@/components/custom/surface";
 import { SessionStatusChip } from "./session-chips";
 import { scopeOf, statusOf, TERM_TONE, termState } from "./session-format";
+import { PageShell } from "@/components/layout/page-shell";
 
 /**
  * The school years this school has defined.
@@ -122,7 +123,7 @@ export default function AcademicSessions() {
 
   if (isError) {
     return (
-      <main className="px-5 pt-3 pb-8">
+      <PageShell>
         <OutlinedNotice
           icon={CalendarRange}
           title="We could not load your sessions"
@@ -130,12 +131,12 @@ export default function AcademicSessions() {
           actionLabel="Try again"
           onAction={() => refetch()}
         />
-      </main>
+      </PageShell>
     );
   }
 
   return (
-    <main className="grid min-w-0 grid-cols-1 content-start gap-5 px-5 pt-3 pb-8">
+    <PageShell className="content-start gap-5" grid>
       {/* flex-wrap, so the toolbar stacks on a phone instead of squeezing the
           search box to nothing. */}
       <div className="flex flex-wrap items-center gap-2.5">
@@ -325,7 +326,7 @@ export default function AcademicSessions() {
             : undefined
         }
       />
-    </main>
+    </PageShell>
   );
 }
 
