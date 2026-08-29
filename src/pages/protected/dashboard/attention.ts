@@ -32,11 +32,22 @@ export type AttentionTone = "blocking" | "warning" | "info";
 export interface AttentionItem {
   id: string;
   tone: AttentionTone;
+  /** A short label for the KIND of condition. Ours, because a heading is not
+   *  a finding: the server writes findings, and one of its sentences used as a
+   *  title would wrap to three lines in a card. */
+  title: string;
   /** Rendered as written. Never assembled from parts here. */
   detail: string;
+  /** The size of it, shown as the card's figure. Absent where there is no
+   *  count that means anything - a branch with no year is one branch, and "1"
+   *  next to it is furniture. */
+  stat?: number;
   /** Where to go and do something about it. */
   to: string;
   action: string;
+  /** True for the half a school has to fix; false for the half it should know
+   *  about. Drives the two groups the panel reads in. */
+  mine: boolean;
 }
 
 /**
@@ -65,13 +76,40 @@ const ALERT_TONE: Record<AlertCode, AttentionTone> = {
   EVENT_OUTSIDE_ANY_TERM: "info",
 };
 
-const ALERT_TARGET: Record<AlertCode, { to: string; action: string }> = {
-  SESSION_HAS_NO_TERMS: { to: R.ACADEMIC_STRUCTURE.SESSIONS, action: "Add terms" },
-  TERM_DATES_OVERLAP: { to: R.ACADEMIC_STRUCTURE.SESSIONS, action: "Fix the dates" },
-  TERM_OUTSIDE_SESSION: { to: R.ACADEMIC_STRUCTURE.SESSIONS, action: "Fix the dates" },
-  TIMETABLE_HAS_CLASHES: { to: R.TIMETABLES.CLASSES, action: "Open the grid" },
-  CLASS_HAS_NO_TIMETABLE: { to: R.TIMETABLES.CLASSES, action: "Build it" },
-  EVENT_OUTSIDE_ANY_TERM: { to: R.ACADEMIC_CALENDAR.EVENTS, action: "Review it" },
+const ALERT_TARGET: Record<
+  AlertCode,
+  { to: string; action: string; title: string }
+> = {
+  SESSION_HAS_NO_TERMS: {
+    to: R.ACADEMIC_STRUCTURE.SESSIONS,
+    action: "Add terms",
+    title: "The year has no terms",
+  },
+  TERM_DATES_OVERLAP: {
+    to: R.ACADEMIC_STRUCTURE.SESSIONS,
+    action: "Fix the dates",
+    title: "Terms overlap",
+  },
+  TERM_OUTSIDE_SESSION: {
+    to: R.ACADEMIC_STRUCTURE.SESSIONS,
+    action: "Fix the dates",
+    title: "A term falls outside the year",
+  },
+  TIMETABLE_HAS_CLASHES: {
+    to: R.TIMETABLES.CLASSES,
+    action: "Open the grid",
+    title: "Timetable clashes",
+  },
+  CLASS_HAS_NO_TIMETABLE: {
+    to: R.TIMETABLES.CLASSES,
+    action: "Build it",
+    title: "Classes with no timetable",
+  },
+  EVENT_OUTSIDE_ANY_TERM: {
+    to: R.ACADEMIC_CALENDAR.EVENTS,
+    action: "Review it",
+    title: "Dated outside every term",
+  },
 };
 
 export function buildAttention({
@@ -93,6 +131,9 @@ export function buildAttention({
     out.push({
       id: "go-live",
       tone: "blocking",
+      mine: true,
+      title: "Going live is blocked",
+      stat: blocking,
       detail:
         blocking === 1
           ? "One required setup step is still outstanding, so this school cannot go live yet."
@@ -110,6 +151,8 @@ export function buildAttention({
     out.push({
       id: `branch-${branch.id}`,
       tone: "blocking",
+      mine: true,
+      title: "A branch has no year",
       detail: `${branch.name} is not in any academic year, so nothing can be scheduled for it.`,
       to: R.ACADEMIC_STRUCTURE.SESSIONS,
       action: "Give it a year",
@@ -121,9 +164,18 @@ export function buildAttention({
   );
   for (const alert of sorted) {
     const target = ALERT_TARGET[alert.code];
+    const tone = ALERT_TONE[alert.code] ?? "info";
     out.push({
       id: `${alert.code}-${alert.ids.join("-") || "all"}`,
-      tone: ALERT_TONE[alert.code] ?? "info",
+      tone,
+      // Everything a school is told about is a school's to fix, except the
+      // things it may reasonably have meant - a December break dated between
+      // terms is the standing example. Those are for watching.
+      mine: tone !== "info",
+      title: target?.title ?? "Something needs a look",
+      // The rows the server named. It sends them so a screen can link to
+      // them; the count of them is also the honest size of the problem.
+      stat: alert.ids.length || undefined,
       detail: alert.detail,
       to: target?.to ?? R.ACADEMIC_CALENDAR.INDEX,
       action: target?.action ?? "Take a look",

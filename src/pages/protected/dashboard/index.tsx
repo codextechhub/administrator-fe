@@ -1,15 +1,12 @@
 import { Link } from "react-router";
 import {
-  AlertTriangle,
   ArrowUpRight,
   BookOpen,
   CalendarDays,
   CalendarRange,
   CheckCircle2,
-  ChevronRight,
   DoorOpen,
   GraduationCap,
-  Info,
   LayoutGrid,
   Layers,
   Users,
@@ -26,7 +23,8 @@ import { routesPath } from "@/routes/routesPath";
 import { useGetAcademicOverviewQuery } from "@/redux/services/academics/academics-api";
 import { useGetCalendarOverviewQuery } from "@/redux/services/calendar/calendar-api";
 import { useGetOnboardingStateQuery } from "@/redux/services/onboarding/onboarding-api";
-import { buildAttention, type AttentionTone } from "./attention";
+import { buildAttention } from "./attention";
+import { FocusPanel } from "./focus-panel";
 
 const R = routesPath.PROTECTED;
 
@@ -108,12 +106,6 @@ function Metric({
     </Link>
   );
 }
-
-const TONE_STYLES: Record<AttentionTone, { box: string; icon: typeof Info }> = {
-  blocking: { box: "border-error-text/30 bg-error-text/5", icon: AlertTriangle },
-  warning: { box: "border-yellow-01/40 bg-yellow-01/5", icon: AlertTriangle },
-  info: { box: "border-white-02 bg-white-05", icon: Info },
-};
 
 export default function Dashboard() {
   const user = useAppSelector(selectUser);
@@ -270,62 +262,24 @@ export default function Dashboard() {
         </p>
       </section>
 
-      {/* ── what needs doing ─────────────────────────────────────────────── */}
-      <section>
-        <h2 className="font-mont text-base font-semibold text-black-01">
-          Needs your attention
-        </h2>
-        {loading ? (
-          <div className="mt-3 grid gap-2">
-            <Shimmer className="h-14 rounded-xl" />
-            <Shimmer className="h-14 rounded-xl" />
-          </div>
-        ) : attention.length === 0 ? (
-          // Said plainly rather than left blank. An empty box is a box that
-          // failed to load; a sentence is an answer.
-          <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-white-02 bg-white px-4 py-3.5">
-            <CheckCircle2 className="size-4 shrink-0 text-success-text" />
-            <p className="text-[13px] text-gray-06 text-pretty">
-              Nothing is waiting on you. The year is set up, the terms line up
-              and every timetable that exists is free of clashes.
-            </p>
-          </div>
-        ) : (
-          <ul className="mt-3 grid gap-2">
-            {attention.map((item) => {
-              const tone = TONE_STYLES[item.tone];
-              const Icon = tone.icon;
-              return (
-                <li key={item.id}>
-                  <Link
-                    to={item.to}
-                    className={cn(
-                      "flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors hover:border-primary/40",
-                      tone.box,
-                    )}
-                  >
-                    <Icon
-                      className={cn(
-                        "size-4 shrink-0",
-                        item.tone === "blocking" && "text-error-text",
-                        item.tone === "warning" && "text-yellow-02",
-                        item.tone === "info" && "text-gray-05",
-                      )}
-                    />
-                    <p className="min-w-0 flex-1 text-[13px] text-gray-06 text-pretty">
-                      {item.detail}
-                    </p>
-                    <span className="hidden shrink-0 items-center gap-1 text-xs font-medium text-primary sm:flex">
-                      {item.action}
-                      <ChevronRight className="size-3.5" />
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+      {/* ── today's focus ───────────────────────────────────────────────── */}
+      {loading ? (
+        <Shimmer className="h-20 rounded-2xl" />
+      ) : attention.length === 0 ? (
+        // Said plainly rather than left blank. The console renders nothing at
+        // all on a clear day because its hero already says so; this hero
+        // reports the year rather than the workload, so the clear day has to be
+        // stated here or the screen simply loses a section.
+        <section className="flex items-center gap-2.5 rounded-2xl border border-white-02 bg-white px-4 py-3.5">
+          <CheckCircle2 className="size-4 shrink-0 text-success-text" />
+          <p className="text-[13px] text-gray-06 text-pretty">
+            Nothing is waiting on you. The year is set up, the terms line up and
+            every timetable that exists is free of clashes.
+          </p>
+        </section>
+      ) : (
+        <FocusPanel items={attention} />
+      )}
 
       {/* ── the term, and what is coming ─────────────────────────────────── */}
       {canSeeCalendar && (
