@@ -16,14 +16,28 @@
 // without a single character of text.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function HeroBuildings({ className }: { className?: string }) {
+/**
+ * `full` is the three buildings; `centre` is the main block alone.
+ *
+ * One drawing, two windows onto it. A phone has room for a mark and not for a
+ * campus - shrinking all three to fit turns the columns and the clock into
+ * grey mush - so the small screen gets the portico and the tower at a size
+ * where they are still legible as a building.
+ */
+export function HeroBuildings({
+  className,
+  crop = "full",
+}: {
+  className?: string;
+  crop?: "full" | "centre";
+}) {
   return (
     <svg
       // Cropped to the content, not to a round number: the flag sits at y=4 and
       // the ground at y=124, and a taller box left 26 units of nothing at the
       // bottom - which pushed the clock tower out of the top of the panel when
       // the drawing was scaled to fill it.
-      viewBox="0 0 340 130"
+      viewBox={crop === "centre" ? "94 0 116 130" : "0 0 340 130"}
       fill="none"
       // Decorative. The greeting beside it already says where the reader is,
       // and a screen reader describing masonry would be noise.

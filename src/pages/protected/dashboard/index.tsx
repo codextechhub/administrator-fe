@@ -275,8 +275,17 @@ export default function Dashboard() {
             greeting always wins the room it needs - on a phone the drawing is
             gone entirely rather than squeezed behind three lines of type. */}
         <HeroBuildings className="pointer-events-none absolute bottom-0 right-3 hidden h-[82%] max-w-[52%] text-white/[0.17] sm:block" />
+        {/* The main block alone below `sm`. Same drawing, narrower window on
+            it: all three buildings shrunk to a phone turn the columns and the
+            clock into grey mush. */}
+        <HeroBuildings
+          crop="centre"
+          className="pointer-events-none absolute bottom-0 right-2 h-[76%] text-white/[0.15] sm:hidden"
+        />
 
-        <div className="relative min-w-0 max-w-xl">
+        {/* Padded clear of the drawing on a phone, where the panel is barely
+            wider than the sentence under the greeting. */}
+        <div className="relative min-w-0 max-w-xl pr-14 sm:pr-0">
           <p className="flex items-center gap-1.5 text-[11px] font-medium text-white/60">
             <CalendarDays className="size-3.5" />
             {today}
