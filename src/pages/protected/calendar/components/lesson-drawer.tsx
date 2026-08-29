@@ -19,6 +19,8 @@ import type {
   TimetableSlot,
 } from "@/redux/services/calendar/calendar-types";
 import type { Subject } from "@/redux/services/academics/academics-types";
+import { problemsOf, useFormProblems } from "./form-problems";
+import { ProblemSummary } from "./problem-summary";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // One cell of one class's week.
@@ -88,8 +90,15 @@ export function LessonDrawer({
     teacher: null,
     room: null,
   });
-  const [touched, setTouched] = useState(false);
   const [refusal, setRefusal] = useState("");
+
+  // Subject is the only required one. A grid is legitimately built subjects
+  // first and people later, and the publish gate is what refuses an unstaffed
+  // week - not this form.
+  const problems = problemsOf(
+    !values.subject && { field: "subject", message: "Pick a subject." },
+  );
+  const { attempt, errorFor, showing, reset } = useFormProblems(problems);
 
   const openedFor = open && target ? `${target.dayOfWeek}:${target.period}:${target.slot?.id ?? "new"}` : "shut";
   const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
@@ -101,20 +110,15 @@ export function LessonDrawer({
         teacher: target.slot?.teacher?.id ?? null,
         room: target.slot?.room ?? null,
       });
-      setTouched(false);
       setRefusal("");
+      reset();
     }
   }
 
   const editing = !!target?.slot;
-  // Subject is the only required one. A grid is legitimately built subjects
-  // first and people later, and the publish gate is what refuses an unstaffed
-  // week - not this form.
-  const valid = !!values.subject;
 
   const save = async () => {
-    setTouched(true);
-    if (!valid) return;
+    if (!attempt()) return;
     try {
       await onSave(values);
       onClose();
@@ -154,7 +158,7 @@ export function LessonDrawer({
         <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
           <Field
             label="Subject *"
-            error={touched && !values.subject ? "Pick a subject." : ""}
+            error={errorFor("subject")}
           >
             <SearchSelect
               aria-label="Subject"
@@ -233,7 +237,9 @@ export function LessonDrawer({
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
+        <div className="shrink-0 border-t border-white-02 pt-4">
+          <ProblemSummary problems={showing} />
+          <div className="flex flex-wrap items-center justify-end gap-2 px-5 pb-4">
           {editing && (
             <Button
               variant="ghost"
@@ -252,10 +258,13 @@ export function LessonDrawer({
           <Button variant="ghost" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={save} disabled={!valid || saving}>
+          {/* Live even when the draft is incomplete: pressing it is how a
+              reader finds out what is missing. */}
+          <Button onClick={save} disabled={saving}>
             {saving && <Loader2 className="size-4 animate-spin" />}
             {editing ? "Save changes" : "Add lesson"}
           </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

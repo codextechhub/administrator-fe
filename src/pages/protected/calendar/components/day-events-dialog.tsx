@@ -53,7 +53,28 @@ export function DayEventsDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        // Radix focuses the first focusable child when a dialog opens, and in
+        // this one that is the first event's row. The row is a `group` whose
+        // `focus-within` reveals the delete X, so the top entry opened with its
+        // X already showing while every entry below it waited to be hovered.
+        //
+        // The X was doing what it was told. What was wrong is that
+        // `focus-within` cannot tell "the reader reached for this row" from
+        // "the browser put focus here because a dialog opened", so the answer
+        // is to stop the automatic focus landing on a row rather than to weaken
+        // the rule that reveals the control.
+        //
+        // Focus moves to the dialog itself instead of being left outside it: a
+        // dialog that opens without taking focus is one a screen reader never
+        // enters and Escape does not close. From here the first Tab reaches the
+        // first row, which is the point at which somebody HAS reached for it.
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          (event.currentTarget as HTMLElement | null)?.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="font-mont text-base">
             {formatDate(date)}

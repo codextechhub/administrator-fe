@@ -18,6 +18,8 @@ import { useBranchLens } from "@/hooks/use-branch-lens";
 import type { RoomWrite } from "@/redux/services/calendar/calendar-types";
 import { ROOM_KINDS } from "./room-kind";
 import type { RoomDraft } from "./room-draft";
+import { problemsOf, useFormProblems } from "./form-problems";
+import { ProblemSummary } from "./problem-summary";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Add or edit a room.
@@ -63,23 +65,9 @@ export function RoomDrawer({
   } = useBranchLens();
 
   const [draft, setDraft] = useState<RoomDraft>(initial);
-  const [touched, setTouched] = useState<{ name?: boolean }>({});
-  const [edited, setEdited] = useState<{ name?: boolean }>({});
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(
     null,
   );
-
-  const openedFor = open ? JSON.stringify(initial) : "shut";
-  const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
-  if (openedFor !== lastOpenedFor) {
-    setLastOpenedFor(openedFor);
-    if (open) {
-      setDraft(initial);
-      setTouched({});
-      setEdited({});
-      setRefusal(null);
-    }
-  }
 
   const patch = (next: Partial<RoomDraft>) => {
     setDraft((d) => ({ ...d, ...next }));
@@ -92,19 +80,41 @@ export function RoomDrawer({
       : null;
   const effectiveBranch = tiedLock ? tiedLock.id : draft.branch;
 
-  const nameEmpty = !!touched.name && !draft.name.trim();
-  // Never optional, unlike everywhere else in this module. A single-branch
-  // school never sees the control and the server fills in its only branch.
-  const branchMissing = multiBranch && !tiedLock && draft.branch === -1;
+  // A room's branch is never optional, unlike everywhere else in this module.
+  // A single-branch school never sees the control and the server fills in its
+  // only branch.
+  const problems = problemsOf(
+    !draft.name.trim() && {
+      field: "name",
+      message: "Give the room a name, for example Block A Room 1.",
+    },
+    multiBranch &&
+      !tiedLock &&
+      draft.branch === -1 && {
+        field: "branch",
+        message: "Say which branch this room is at.",
+      },
+  );
 
-  const valid = !!draft.name.trim() && !branchMissing;
+  const { register, leave, attempt, errorFor, invalid, showing, reset } =
+    useFormProblems(problems);
+
+  const openedFor = open ? JSON.stringify(initial) : "shut";
+  const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
+  if (openedFor !== lastOpenedFor) {
+    setLastOpenedFor(openedFor);
+    if (open) {
+      setDraft(initial);
+      reset();
+      setRefusal(null);
+    }
+  }
   const dirty =
     JSON.stringify({ ...draft, branch: effectiveBranch }) !==
     JSON.stringify({ ...initial, branch: tiedLock ? tiedLock.id : initial.branch });
 
   const save = async () => {
-    setTouched({ name: true });
-    if (!valid) return;
+    if (!attempt()) return;
     try {
       await onSave({
         name: draft.name.trim(),
@@ -149,23 +159,15 @@ export function RoomDrawer({
         <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
           <Field
             label="Room name *"
-            error={
-              nameEmpty
-                ? "A room name is required."
-                : refusal?.field === "name"
-                  ? refusal.message
-                  : ""
-            }
+            error={errorFor("name") || (refusal?.field === "name" ? refusal.message : "")}
           >
             <Input
+              ref={register("name")}
               value={draft.name}
-              onChange={(e) => {
-                setEdited((t) => ({ ...t, name: true }));
-                patch({ name: e.target.value });
-              }}
-              onBlur={() => edited.name && setTouched((t) => ({ ...t, name: true }))}
+              onChange={(e) => patch({ name: e.target.value })}
+              onBlur={leave("name")}
               placeholder="e.g. Block A Room 1"
-              aria-invalid={nameEmpty || refusal?.field === "name" || undefined}
+              aria-invalid={invalid("name") || (refusal?.field === "name" || undefined)}
             />
           </Field>
 
@@ -249,6 +251,11 @@ export function RoomDrawer({
                       label: b.name,
                     }))}
                   />
+                  {errorFor("branch") && (
+                    <p className="mt-1.5 text-xs text-error-text text-pretty">
+                      {errorFor("branch")}
+                    </p>
+                  )}
                   <p className="mt-2 text-xs text-gray-05 text-pretty">
                     A room is a physical place, so it belongs to one branch. The
                     same room name at another branch is fine.
@@ -298,14 +305,22 @@ export function RoomDrawer({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
-          <Button variant="ghost" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
-          <Button onClick={save} disabled={!valid || !dirty || saving}>
-            {saving && <Loader2 className="size-4 animate-spin" />}
-            {editing ? "Save changes" : "Add room"}
-          </Button>
+        <div className="shrink-0 border-t border-white-02 pt-4">
+          <ProblemSummary problems={showing} />
+          <div className="flex items-center justify-end gap-2 px-5 pb-4">
+            <Button variant="ghost" onClick={onClose} disabled={saving}>
+              Cancel
+            </Button>
+            {/* Live even when the draft is incomplete: pressing it is how a
+                reader finds out what is missing. `dirty` only greys SAVE
+                CHANGES, where nothing-to-save explains itself. On an add form
+                it would grey the button on a blank drawer, which is the same
+                dead control with the reason removed. */}
+            <Button onClick={save} disabled={(editing && !dirty) || saving}>
+              {saving && <Loader2 className="size-4 animate-spin" />}
+              {editing ? "Save changes" : "Add room"}
+            </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

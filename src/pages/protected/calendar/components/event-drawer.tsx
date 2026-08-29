@@ -30,6 +30,8 @@ import { EVENT_KINDS, eventVariant } from "./event-kind";
 import { formatRange } from "./dates";
 import { AudiencePicker } from "./audience-picker";
 import type { EventDraft } from "./event-draft";
+import { problemsOf, useFormProblems } from "./form-problems";
+import { ProblemSummary } from "./problem-summary";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The event drawer: read one, or write one.
@@ -96,23 +98,9 @@ export function EventDrawer({
   } = useBranchLens();
 
   const [draft, setDraft] = useState<EventDraft>(initial);
-  const [touched, setTouched] = useState<{ name?: boolean; dates?: boolean }>({});
-  const [edited, setEdited] = useState<{ name?: boolean }>({});
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(
     null,
   );
-
-  const openedFor = open ? JSON.stringify(initial) : "shut";
-  const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
-  if (openedFor !== lastOpenedFor) {
-    setLastOpenedFor(openedFor);
-    if (open) {
-      setDraft(initial);
-      setTouched({});
-      setEdited({});
-      setRefusal(null);
-    }
-  }
 
   const patch = (next: Partial<EventDraft>) => {
     setDraft((d) => ({ ...d, ...next }));
@@ -130,20 +118,49 @@ export function EventDrawer({
       : null;
   const effectiveBranch = tiedLock ? tiedLock.id : draft.branch;
 
-  const nameEmpty = !!touched.name && !draft.name.trim();
-  const startMissing = !!touched.dates && !draft.start_date;
   // The server refuses this too, with the same sentence. Caught here as well
   // so a reader who can see both boxes is told before they press Save.
   const endsBeforeStart =
     !!draft.start_date && !!draft.end_date && draft.end_date < draft.start_date;
-  const branchMissing = multiBranch && draft.branch === -1;
 
-  const valid =
-    !!draft.name.trim() &&
-    !!draft.start_date &&
-    !!draft.end_date &&
-    !endsBeforeStart &&
-    !branchMissing;
+  // In the reading order of the form: the first one is where the cursor goes.
+  const problems = problemsOf(
+    !draft.name.trim() && {
+      field: "name",
+      message: "Give the event a name, for example Mid-term break.",
+    },
+    !draft.start_date && {
+      field: "start_date",
+      message: "Pick a start date.",
+    },
+    !draft.end_date && {
+      field: "end_date",
+      message: "Pick an end date. For a one-day event it is the start date.",
+    },
+    endsBeforeStart && {
+      field: "end_date",
+      message: "The end date cannot fall before the start date.",
+    },
+    multiBranch &&
+      draft.branch === -1 && {
+        field: "branch",
+        message: "Say which branch this event belongs to.",
+      },
+  );
+
+  const { register, leave, attempt, errorFor, invalid, showing, reset } =
+    useFormProblems(problems);
+
+  const openedFor = open ? JSON.stringify(initial) : "shut";
+  const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
+  if (openedFor !== lastOpenedFor) {
+    setLastOpenedFor(openedFor);
+    if (open) {
+      setDraft(initial);
+      reset();
+      setRefusal(null);
+    }
+  }
 
   const dirty =
     JSON.stringify({ ...draft, branch: effectiveBranch }) !==
@@ -157,8 +174,7 @@ export function EventDrawer({
     });
 
   const save = async () => {
-    setTouched({ name: true, dates: true });
-    if (!valid) return;
+    if (!attempt()) return;
     try {
       await onSave({
         name: draft.name.trim(),
@@ -209,23 +225,15 @@ export function EventDrawer({
         <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
           <Field
             label="Event name *"
-            error={
-              nameEmpty
-                ? "An event name is required."
-                : refusal?.field === "name"
-                  ? refusal.message
-                  : ""
-            }
+            error={errorFor("name") || (refusal?.field === "name" ? refusal.message : "")}
           >
             <Input
+              ref={register("name")}
               value={draft.name}
-              onChange={(e) => {
-                setEdited((t) => ({ ...t, name: true }));
-                patch({ name: e.target.value });
-              }}
-              onBlur={() => edited.name && setTouched((t) => ({ ...t, name: true }))}
+              onChange={(e) => patch({ name: e.target.value })}
+              onBlur={leave("name")}
               placeholder="e.g. Mid-term break"
-              aria-invalid={nameEmpty || refusal?.field === "name" || undefined}
+              aria-invalid={invalid("name") || (refusal?.field === "name" || undefined)}
             />
           </Field>
 
@@ -262,7 +270,7 @@ export function EventDrawer({
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Field label="Start date *">
+            <Field label="Start date *" error={errorFor("start_date")}>
               <DatePickerInput
                 aria-label="Event start date"
                 value={draft.start_date}
@@ -279,12 +287,12 @@ export function EventDrawer({
                         : draft.end_date,
                   });
                 }}
-                onBlur={() => setTouched((t) => ({ ...t, dates: true }))}
-                aria-invalid={startMissing || undefined}
-                className={cn(startMissing && "border-error-01")}
+                onBlur={leave("start_date")}
+                aria-invalid={invalid("start_date")}
+                className={cn(errorFor("start_date") && "border-error-01")}
               />
             </Field>
-            <Field label="End date *">
+            <Field label="End date *" error={errorFor("end_date")}>
               <DatePickerInput
                 aria-label="Event end date"
                 value={draft.end_date}
@@ -292,18 +300,15 @@ export function EventDrawer({
                 // backwards range is unreachable rather than merely refused.
                 min={draft.start_date || undefined}
                 onChange={(e) => patch({ end_date: e.target.value })}
-                aria-invalid={endsBeforeStart || undefined}
-                className={cn(endsBeforeStart && "border-error-01")}
+                onBlur={leave("end_date")}
+                aria-invalid={invalid("end_date")}
+                className={cn(errorFor("end_date") && "border-error-01")}
               />
             </Field>
           </div>
-          {(startMissing || endsBeforeStart || refusal?.field === "dates") && (
+          {refusal?.field === "dates" && (
             <p className="mt-1.5 text-xs text-error-text text-pretty">
-              {endsBeforeStart
-                ? "The end date cannot fall before the start date."
-                : refusal?.field === "dates"
-                  ? refusal.message
-                  : "A start and end date are required."}
+              {refusal.message}
             </p>
           )}
 
@@ -408,14 +413,22 @@ export function EventDrawer({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
-          <Button variant="ghost" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
-          <Button onClick={save} disabled={!valid || !dirty || saving}>
-            {saving && <Loader2 className="size-4 animate-spin" />}
-            {editing ? "Save changes" : "Add event"}
-          </Button>
+        <div className="shrink-0 border-t border-white-02 pt-4">
+          <ProblemSummary problems={showing} />
+          <div className="flex items-center justify-end gap-2 px-5 pb-4">
+            <Button variant="ghost" onClick={onClose} disabled={saving}>
+              Cancel
+            </Button>
+            {/* Live even when the draft is incomplete: pressing it is how a
+                reader finds out what is missing. `dirty` only greys SAVE
+                CHANGES, where nothing-to-save explains itself. On an add form
+                it would grey the button on a blank drawer, which is the same
+                dead control with the reason removed. */}
+            <Button onClick={save} disabled={(editing && !dirty) || saving}>
+              {saving && <Loader2 className="size-4 animate-spin" />}
+              {editing ? "Save changes" : "Add event"}
+            </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

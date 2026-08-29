@@ -22,6 +22,8 @@ import type {
   TeacherRow,
 } from "@/redux/services/calendar/calendar-types";
 import type { PaperValues } from "./paper-values";
+import { problemsOf, useFormProblems } from "./form-problems";
+import { ProblemSummary } from "./problem-summary";
 import type {
   SchoolClass,
   Subject,
@@ -91,10 +93,31 @@ export function PaperDrawer({
   onRemove: () => Promise<void>;
 }) {
   const [values, setValues] = useState<PaperValues>(initial);
-  const [touched, setTouched] = useState(false);
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(
     null,
   );
+
+  const outsidePeriod =
+    !!values.exam_date &&
+    (values.exam_date < minDate || values.exam_date > maxDate);
+  const timesBackwards =
+    !!values.start_time && !!values.end_time && values.end_time <= values.start_time;
+
+  // In the reading order of the form: the first one is where the cursor goes.
+  const problems = problemsOf(
+    !values.school_class && { field: "school_class", message: "Pick a class." },
+    !values.subject && { field: "subject", message: "Pick a subject." },
+    !values.exam_date && { field: "exam_date", message: "Pick the date of the paper." },
+    outsidePeriod && {
+      field: "exam_date",
+      message: "The date must fall inside the exam period.",
+    },
+    timesBackwards && {
+      field: "end_time",
+      message: "The end time must be after the start time.",
+    },
+  );
+  const { attempt, errorFor, invalid, showing, reset } = useFormProblems(problems);
 
   const openedFor = open ? JSON.stringify(initial) : "shut";
   const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
@@ -102,8 +125,8 @@ export function PaperDrawer({
     setLastOpenedFor(openedFor);
     if (open) {
       setValues(initial);
-      setTouched(false);
       setRefusal(null);
+      reset();
     }
   }
 
@@ -112,22 +135,8 @@ export function PaperDrawer({
     setRefusal(null);
   };
 
-  const outsidePeriod =
-    !!values.exam_date &&
-    (values.exam_date < minDate || values.exam_date > maxDate);
-  const timesBackwards =
-    !!values.start_time && !!values.end_time && values.end_time <= values.start_time;
-
-  const valid =
-    !!values.school_class &&
-    !!values.subject &&
-    !!values.exam_date &&
-    !outsidePeriod &&
-    !timesBackwards;
-
   const save = async () => {
-    setTouched(true);
-    if (!valid) return;
+    if (!attempt()) return;
     try {
       await onSave({
         school_class: values.school_class!,
@@ -189,11 +198,8 @@ export function PaperDrawer({
           <Field
             label="Class *"
             error={
-              touched && !values.school_class
-                ? "Pick a class."
-                : refusal?.field === "school_class"
-                  ? refusal.message
-                  : ""
+              errorFor("school_class") ||
+              (refusal?.field === "school_class" ? refusal.message : "")
             }
           >
             <SearchSelect
@@ -215,7 +221,7 @@ export function PaperDrawer({
           <div className="mt-4">
             <Field
               label="Subject *"
-              error={touched && !values.subject ? "Pick a subject." : ""}
+              error={errorFor("subject")}
             >
               <SearchSelect
                 aria-label="Subject"
@@ -245,8 +251,8 @@ export function PaperDrawer({
                 min={minDate}
                 max={maxDate}
                 onChange={(e) => patch({ exam_date: e.target.value })}
-                aria-invalid={outsidePeriod || undefined}
-                className={cn(outsidePeriod && "border-error-01")}
+                aria-invalid={invalid("exam_date")}
+                className={cn(errorFor("exam_date") && "border-error-01")}
               />
             </Field>
             <Field label="Sitting *">
@@ -328,6 +334,7 @@ export function PaperDrawer({
                 value={values.end_time}
                 onChange={(e) => patch({ end_time: e.target.value })}
                 aria-invalid={timesBackwards || undefined}
+                
               />
             </Field>
           </div>
@@ -356,7 +363,9 @@ export function PaperDrawer({
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
+        <div className="shrink-0 border-t border-white-02 pt-4">
+          <ProblemSummary problems={showing} />
+          <div className="flex flex-wrap items-center justify-end gap-2 px-5 pb-4">
           {editing && (
             <Button
               variant="ghost"
@@ -375,10 +384,13 @@ export function PaperDrawer({
           <Button variant="ghost" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={save} disabled={!valid || saving}>
+          {/* Live even when the draft is incomplete: pressing it is how a
+              reader finds out what is missing. */}
+          <Button onClick={save} disabled={saving}>
             {saving && <Loader2 className="size-4 animate-spin" />}
             {editing ? "Save changes" : "Add paper"}
           </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

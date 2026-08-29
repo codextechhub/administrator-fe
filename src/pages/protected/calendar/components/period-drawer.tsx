@@ -21,6 +21,8 @@ import type {
   PeriodWrite,
 } from "@/redux/services/calendar/calendar-types";
 import type { PeriodDraft } from "./period-draft";
+import { problemsOf, useFormProblems } from "./form-problems";
+import { ProblemSummary } from "./problem-summary";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // One row of the school day.
@@ -85,23 +87,9 @@ export function PeriodDrawer({
   } = useBranchLens();
 
   const [draft, setDraft] = useState<PeriodDraft>(initial);
-  const [touched, setTouched] = useState<{ label?: boolean; times?: boolean }>({});
-  const [edited, setEdited] = useState<{ label?: boolean }>({});
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(
     null,
   );
-
-  const openedFor = open ? JSON.stringify(initial) : "shut";
-  const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
-  if (openedFor !== lastOpenedFor) {
-    setLastOpenedFor(openedFor);
-    if (open) {
-      setDraft(initial);
-      setTouched({});
-      setEdited({});
-      setRefusal(null);
-    }
-  }
 
   const patch = (next: Partial<PeriodDraft>) => {
     setDraft((d) => ({ ...d, ...next }));
@@ -114,19 +102,52 @@ export function PeriodDrawer({
       : null;
   const effectiveBranch = tiedLock ? tiedLock.id : draft.branch;
 
-  const labelEmpty = !!touched.label && !draft.label.trim();
   // The server refuses this too, with the same sentence. Caught here as well so
   // a reader looking at both boxes is told before they press Save.
   const endsBeforeStart =
     !!draft.start_time && !!draft.end_time && draft.end_time <= draft.start_time;
-  const branchMissing = multiBranch && draft.branch === -1;
 
-  const valid =
-    !!draft.label.trim() &&
-    !!draft.start_time &&
-    !!draft.end_time &&
-    !endsBeforeStart &&
-    !branchMissing;
+  // In the reading order of the form, because the first one is where the cursor
+  // goes. A time box says "hour and minutes" rather than "required": the state
+  // a school actually reaches is a half-typed time, where the box reads 08:30
+  // and the value is still empty.
+  const problems = problemsOf(
+    !draft.label.trim() && {
+      field: "label",
+      message: "Give the period a label, for example Period 1.",
+    },
+    !draft.start_time && {
+      field: "start_time",
+      message: "Set a start time. It needs an hour and minutes, like 08:00.",
+    },
+    !draft.end_time && {
+      field: "end_time",
+      message: "Set an end time. It needs an hour and minutes, like 08:45.",
+    },
+    endsBeforeStart && {
+      field: "end_time",
+      message: "The end time must be after the start time.",
+    },
+    multiBranch &&
+      draft.branch === -1 && {
+        field: "branch",
+        message: "Say which branch this period is for.",
+      },
+  );
+
+  const { register, leave, attempt, errorFor, invalid, showing, reset } =
+    useFormProblems(problems);
+
+  const openedFor = open ? JSON.stringify(initial) : "shut";
+  const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
+  if (openedFor !== lastOpenedFor) {
+    setLastOpenedFor(openedFor);
+    if (open) {
+      setDraft(initial);
+      setRefusal(null);
+      reset();
+    }
+  }
 
   const dirty =
     JSON.stringify({ ...draft, branch: effectiveBranch }) !==
@@ -141,8 +162,7 @@ export function PeriodDrawer({
     !editing;
 
   const save = async () => {
-    setTouched({ label: true, times: true });
-    if (!valid) return;
+    if (!attempt()) return;
     try {
       await onSave({
         label: draft.label.trim(),
@@ -188,49 +208,43 @@ export function PeriodDrawer({
         <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
           <Field
             label="Label *"
-            error={
-              labelEmpty
-                ? "A label is required."
-                : refusal?.field === "label"
-                  ? refusal.message
-                  : ""
-            }
+            error={errorFor("label") || (refusal?.field === "label" ? refusal.message : "")}
           >
             <Input
+              ref={register("label")}
               value={draft.label}
-              onChange={(e) => {
-                setEdited((t) => ({ ...t, label: true }));
-                patch({ label: e.target.value });
-              }}
-              onBlur={() => edited.label && setTouched((t) => ({ ...t, label: true }))}
+              onChange={(e) => patch({ label: e.target.value })}
+              onBlur={leave("label")}
               placeholder="e.g. Period 1"
-              aria-invalid={labelEmpty || refusal?.field === "label" || undefined}
+              aria-invalid={invalid("label") || (refusal?.field === "label" || undefined)}
             />
           </Field>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Field label="Start time *">
+            <Field label="Start time *" error={errorFor("start_time")}>
               <Input
+                ref={register("start_time")}
                 type="time"
                 value={draft.start_time}
                 onChange={(e) => patch({ start_time: e.target.value })}
-                onBlur={() => setTouched((t) => ({ ...t, times: true }))}
+                onBlur={leave("start_time")}
+                aria-invalid={invalid("start_time")}
               />
             </Field>
-            <Field label="End time *">
+            <Field label="End time *" error={errorFor("end_time")}>
               <Input
+                ref={register("end_time")}
                 type="time"
                 value={draft.end_time}
                 onChange={(e) => patch({ end_time: e.target.value })}
-                aria-invalid={endsBeforeStart || undefined}
+                onBlur={leave("end_time")}
+                aria-invalid={invalid("end_time")}
               />
             </Field>
           </div>
-          {(endsBeforeStart || refusal?.field === "times") && (
+          {refusal?.field === "times" && (
             <p className="mt-1.5 text-xs text-error-text text-pretty">
-              {endsBeforeStart
-                ? "The end time must be after the start time."
-                : refusal?.message}
+              {refusal.message}
             </p>
           )}
 
@@ -342,6 +356,11 @@ export function PeriodDrawer({
                           label: b.name,
                         }))}
                       />
+                      {errorFor("branch") && (
+                        <p className="mt-1.5 text-xs text-error-text text-pretty">
+                          {errorFor("branch")}
+                        </p>
+                      )}
                     </div>
                   )}
                   <p className="mt-2 text-xs text-gray-05 text-pretty">
@@ -360,14 +379,22 @@ export function PeriodDrawer({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
+        <div className="shrink-0 border-t border-white-02 pt-4">
+          <ProblemSummary problems={showing} />
+          <div className="flex items-center justify-end gap-2 px-5 pb-4">
           <Button variant="ghost" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={save} disabled={!valid || !dirty || saving}>
+          {/* Live even when the draft is incomplete: pressing it is how a
+              reader finds out what is missing. `dirty` only greys SAVE CHANGES,
+              where nothing-to-save explains itself. On an add form it would
+              grey the button on a blank drawer, which is the same dead control
+              with the reason removed. */}
+          <Button onClick={save} disabled={(editing && !dirty) || saving}>
             {saving && <Loader2 className="size-4 animate-spin" />}
             {editing ? "Save changes" : "Add period"}
           </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
