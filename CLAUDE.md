@@ -136,20 +136,32 @@ Every screen you build or change must render well at desktop **and** small
 widths - a user switching from PC to phone must never get a broken view.
 Horizontal page overflow is a bug, full stop.
 
-House conventions (proven app-wide in console-fe; apply them here):
-- The DashboardLayout children wrapper needs `grid grid-cols-1 min-w-0` so
-  nowrap tables can never stretch a page past the viewport. **This is now in
-  place here** (`dashboard-layout.tsx`), along with CustomTable's phone-card
-  mode (rows render as stacked label/value cards below `md`; dense tables opt
-  out with `mobile="scroll"`). The note that said otherwise was stale and would
-  have sent somebody to port a wrapper that already exists.
+House conventions. These hold in this repo and in console-fe, and the two
+are kept in step - a fix to one of them belongs in both:
+- The DashboardLayout children wrapper is `grid grid-cols-1 min-w-0`, so nowrap
+  tables can never stretch a page past the viewport. CustomTable has phone-card
+  mode: rows render as stacked label/value cards below `md`, and dense tables
+  opt out with `mobile="scroll"`. Both are in place - do not port them again.
 - **Every page's `<main>` is `PageShell`** (`src/components/layout/page-shell.tsx`),
-  never a hand-written class string. The wrapper above protects a BLOCK main; it
-  cannot protect a second grid declared inside it, and a grid without
-  `grid-cols-1` is sized to its min-content - so one nowrap table pushes the
-  whole page off the right of the screen. Two pages here had exactly that shape
-  before the shell landed. There is therefore no `grid` class to pass: there is
-  a `grid` prop, and it always emits `grid grid-cols-1 min-w-0` together.
+  never a hand-written class string. It owns the page padding, `min-w-0`, and
+  the grid guard; rhythm (`gap-*`, `space-y-*`), alignment and colour stay with
+  the page.
+  The guard is the reason it exists. The wrapper above protects a BLOCK main and
+  cannot protect a second grid declared inside it, and a grid column with no
+  width is sized to its min-content - so one nowrap table drags the whole page
+  off the right of the screen. **There is therefore no `grid` class to pass:
+  there is a `grid` prop, and it always emits `grid grid-cols-1 min-w-0`.**
+- **Scrolling boxes use `ScrollArea`** (`src/components/ui/scroll-area.tsx`),
+  not `overflow-y-auto` on the box itself. A native scrollbar takes its width
+  out of the element, so a table shifts its columns the moment it becomes
+  scrollable, and how much it takes depends on the reader's operating system and
+  pointing device - a layout checked on a Mac trackpad was never checked on
+  Windows with a mouse. ScrollArea floats a thin thumb over the content instead.
+  `Table` already routes through it, so every table gets this for free.
+  **The page itself keeps its native scroll**, deliberately: replacing the
+  window's scroller breaks anchor links, `scrollIntoView`, sticky headers and
+  the browser's scroll restoration. `index.css` styles that one thin so the two
+  look like the same scrollbar.
 - Toolbars/action rows get `flex-wrap`; tab strips `max-w-full
   overflow-x-auto` with `whitespace-nowrap` buttons; form grids
   `grid-cols-1 sm:grid-cols-N`; count-KPI strips `grid-cols-2 … lg:grid-cols-4`
@@ -161,8 +173,9 @@ House conventions (proven app-wide in console-fe; apply them here):
 
 **Verify, don't assume.** After any screen work run the overflow probe:
 `cd .claude && BASE_URL=<vite-url> ROUTES="/your/routes" node ./mobile-audit.mjs`
-(one-time: `cd .claude && npm init -y && npm i playwright`; pass EMAIL/PASSWORD
-for this app's seeded login). It drives each route logged-in at 390px (phone)
+(one-time: `cd .claude && npm init -y && npm i playwright`). **Pass EMAIL and
+PASSWORD**: the script's defaults are console-fe's seeded operator, so without
+them it fails at the login form on this app and reports nothing. It drives each route logged-in at 390px (phone)
 and 820px (tablet), screenshots both to `/tmp/verify-design/shots-responsive/`,
 and reports page-level horizontal overflow with the offending elements. **Look
 at the phone screenshots** - zero overflow with a crushed side-by-side layout
