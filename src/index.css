@@ -357,7 +357,7 @@
   scrollbar-width: thin;
   /* Thumb, then track. The track is transparent rather than a colour: the
      groove is the part that reads as furniture. */
-  scrollbar-color: color-mix(in srgb, var(--black-01, #101828) 22%, transparent)
+  scrollbar-color: color-mix(in srgb, var(--color-black-01, #212121) 22%, transparent)
     transparent;
 }
 
@@ -373,7 +373,7 @@
 
   *::-webkit-scrollbar-thumb {
     border-radius: 9999px;
-    background: color-mix(in srgb, var(--black-01, #101828) 22%, transparent);
+    background: color-mix(in srgb, var(--color-black-01, #212121) 22%, transparent);
     /* Inset by a transparent border so the thumb reads as narrower than the
        area it can be grabbed in - small to look at, easy to hit. */
     border: 2px solid transparent;
@@ -381,7 +381,7 @@
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background: color-mix(in srgb, var(--black-01, #101828) 42%, transparent);
+    background: color-mix(in srgb, var(--color-black-01, #212121) 42%, transparent);
     background-clip: padding-box;
   }
 
