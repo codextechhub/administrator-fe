@@ -19,6 +19,7 @@ import type {
   TimetableSlot,
 } from "@/redux/services/calendar/calendar-types";
 import type { Subject } from "@/redux/services/academics/academics-types";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { problemsOf, useFormProblems } from "./form-problems";
 import { ProblemSummary } from "./problem-summary";
 
@@ -155,7 +156,7 @@ export function LessonDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
           <Field
             label="Subject *"
             error={errorFor("subject")}
@@ -235,7 +236,7 @@ export function LessonDrawer({
           {refusal && (
             <p className="mt-4 text-xs text-error-text text-pretty">{refusal}</p>
           )}
-        </div>
+        </ScrollArea>
 
         <div className="shrink-0 border-t border-white-02 pt-4">
           <ProblemSummary problems={showing} />

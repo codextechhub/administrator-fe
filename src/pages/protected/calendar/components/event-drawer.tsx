@@ -15,6 +15,7 @@ import {
 import { SearchSelect } from "@/components/custom/search-select";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Field } from "@/pages/protected/academics/components/entity-drawer";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import { useBranchLens } from "@/hooks/use-branch-lens";
@@ -222,7 +223,7 @@ export function EventDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
           <Field
             label="Event name *"
             error={errorFor("name") || (refusal?.field === "name" ? refusal.message : "")}
@@ -411,7 +412,7 @@ export function EventDrawer({
               {refusal.message}
             </p>
           )}
-        </div>
+        </ScrollArea>
 
         <div className="shrink-0 border-t border-white-02 pt-4">
           <ProblemSummary problems={showing} />
@@ -473,7 +474,7 @@ export function EventDetail({
         </SheetHeader>
 
         {event && (
-          <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+          <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
             <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant={eventVariant(event.event_type)}
@@ -513,7 +514,7 @@ export function EventDetail({
                 <Row label="Description" value={event.description} />
               )}
             </dl>
-          </div>
+          </ScrollArea>
         )}
 
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">

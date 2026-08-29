@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type {
   ClashWarning,
   GridCell,
@@ -52,7 +53,7 @@ export function TimetableGrid({
   return (
     // Scrolls inside its own box. Six columns of readable width do not fit a
     // phone, and a page that scrolls sideways is a bug.
-    <div className="-mx-1 overflow-x-auto px-1">
+    <ScrollArea orientation="horizontal" className="-mx-1" viewportClassName="px-1">
       <table className="w-full min-w-[52rem] border-collapse text-left">
         <thead>
           <tr>
@@ -117,7 +118,7 @@ export function TimetableGrid({
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollArea>
   );
 }
 

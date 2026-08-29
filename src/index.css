@@ -330,6 +330,73 @@
   display: none;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Scrollbars.
+
+   Two mechanisms on purpose, because they answer two different problems.
+
+   `ScrollArea` (components/ui/scroll-area.tsx) is for boxes with a bounded
+   height: drawer bodies, dialog lists, table wrappers, grids that scroll
+   sideways. It hides the native scrollbar and floats a thumb over the content,
+   so nothing in the box moves when it becomes scrollable.
+
+   These rules are for everything else - the page itself, and any scroller not
+   converted yet. A native scrollbar cannot be made to overlay: it takes its
+   width out of the box whatever you style it. What it CAN be is thin and quiet,
+   so a screen does not have two scrollbars on it that look like they came from
+   different applications. Chrome, Edge and Firefox all read the two standard
+   properties now; the WebKit block below is for Safari, which does not.
+
+   The page keeps its native scroll deliberately. Replacing the window's
+   scroller breaks anchor links, `scrollIntoView` (which the forms rely on to
+   put the cursor in a missing field), sticky headers, and the browser's own
+   scroll restoration on back.
+   ───────────────────────────────────────────────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  /* Thumb, then track. The track is transparent rather than a colour: the
+     groove is the part that reads as furniture. */
+  scrollbar-color: color-mix(in srgb, var(--black-01, #101828) 22%, transparent)
+    transparent;
+}
+
+@supports selector(::-webkit-scrollbar) {
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--black-01, #101828) 22%, transparent);
+    /* Inset by a transparent border so the thumb reads as narrower than the
+       area it can be grabbed in - small to look at, easy to hit. */
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--black-01, #101828) 42%, transparent);
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/* A scrollbar on paper is a control nobody can press. */
+@media print {
+  * {
+    scrollbar-width: none;
+  }
+}
+
 @media print {
   /* The chrome is REMOVED rather than made invisible.
 

@@ -12,6 +12,7 @@ import {
 import { SearchSelect } from "@/components/custom/search-select";
 import { Field } from "@/pages/protected/academics/components/entity-drawer";
 import { parseApiError } from "@/utils/api-error";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type {
   ClassTimetableRow,
   DuplicateSummary,
@@ -130,7 +131,7 @@ export function DuplicateDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
           {sources.length === 0 ? (
             <p className="rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-sm text-gray-06 text-pretty">
               No other class has any lessons yet, so there is nothing to copy
@@ -275,7 +276,7 @@ export function DuplicateDrawer({
           {refusal && (
             <p className="mt-4 text-xs text-error-text text-pretty">{refusal}</p>
           )}
-        </div>
+        </ScrollArea>
 
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
           <Button variant="ghost" onClick={onClose} disabled={running}>

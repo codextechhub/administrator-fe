@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { SearchSelect } from "@/components/custom/search-select";
 import { Field } from "@/pages/protected/academics/components/entity-drawer";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import { useBranchLens } from "@/hooks/use-branch-lens";
@@ -205,7 +206,7 @@ export function PeriodDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
           <Field
             label="Label *"
             error={errorFor("label") || (refusal?.field === "label" ? refusal.message : "")}
@@ -377,7 +378,7 @@ export function PeriodDrawer({
               {refusal.message}
             </p>
           )}
-        </div>
+        </ScrollArea>
 
         <div className="shrink-0 border-t border-white-02 pt-4">
           <ProblemSummary problems={showing} />
