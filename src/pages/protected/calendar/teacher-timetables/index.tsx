@@ -136,16 +136,11 @@ export default function TeacherTimetables() {
             )}
           </div>
 
-          {/* The cross-branch case, said out loud. A person teaching at two
-              sites cannot be checked against one branch's grid alone, and this
-              is the line that tells a branch admin their view is partial. */}
-          {multiBranch && (week.summary.branches?.length ?? 0) > 1 && (
-            <p className="mt-3 rounded-lg border border-white-02 bg-white-05 px-3 py-2 text-xs text-gray-06 text-pretty">
-              {week.teacher.name} teaches at{" "}
-              {week.summary.branches!.join(" and ")}. This week is every lesson
-              they hold, wherever it happens.
-            </p>
-          )}
+          {/* The cross-branch case used to be a paragraph here saying the week
+              covers every branch. It is gone: the Branches figure above already
+              names them, and a sentence repeating a number the reader can see
+              is one more thing to read past on every teacher who works at two
+              branches. */}
 
           {warnings.length > 0 && (
             <div className="mt-4 rounded-lg border border-error-text/30 bg-error-text/5 px-3 py-2.5">
