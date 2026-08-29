@@ -877,7 +877,7 @@ set, and a leftover `{media: "screen"}` from an earlier step silently produced a
 exam PDF containing the whole application chrome - a harness fault that reads
 exactly like the app ignoring the print rules.
 
-### Phase B1 - The calendar import dataset (backend, parallel track)
+### Phase B1 - The calendar import dataset (backend) - **done**
 
 A different repo and a different reviewer, so it runs alongside phases 2 to 5
 rather than inside them. It must land **after** phase 1's audience write, so the
@@ -936,6 +936,35 @@ What it takes, in the order it has to happen:
 7. Tests: the school-may-import case, the cross-tenant refusal, the
    single-branch `branch` refusal, an `applies_to` name that resolves to
    nothing, and a rollback.
+
+**What shipped, and the one thing that changed from this plan.** All seven
+steps, plus a shape the plan did not name: the row resolver is shared. Rather
+than a validator in `validation_service.py` and a handler in
+`import_executor.py` each reading a row its own way, both call `resolve_row` in
+`vs_calendar/imports.py`. Validation and execution are separate passes minutes
+apart, and the way an import goes wrong quietly is the two disagreeing: a file
+passes with a green tick and then imports something else. The executor now
+writes only what the validator already read, and re-checks rather than trusting
+that validation ran.
+
+The refusals the plan asked for are all there and all worded as refusals rather
+than shrugs: an unknown `applies_to` name, a branch name at a single-branch
+school, a branch name that is another school's, a branch-scoped upload naming a
+different branch, a date outside the year, a duplicate inside one file. What is
+warned rather than refused is what the events API already warns about - a date
+outside every term, an overlap with an entry of the same kind - so a school gets
+the same answer whether it types an entry or uploads it.
+
+Driven end to end against a running server as Holy Cross's own school admin, and
+two things worth recording from that. The template list already narrows by
+`TENANT_DATASETS`, so the calendar became the only template a school is offered
+with no view change at all. And the school admin is correctly refused the
+rollback: `seed_import_permissions.py` withholds `import.rollbacks.run` from
+schools on purpose, so undoing an import is a support action with a person on
+the other end of it, which is the right answer and worth knowing before somebody
+files it as a bug.
+
+39 tests in `schools.vs_calendar.tests.test_imports`.
 
 **And it turns a frontend screen on.**
 [import.tsx](src/pages/protected/onboarding/import.tsx) reads the template list
