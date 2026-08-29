@@ -11,6 +11,6 @@ export const teachersRoutes = [
   {
     path: routesPath.PROTECTED.TEACHERS.INDEX,
     Component: Teachers,
-    handle: { title: "Teacher" } satisfies DashboardHandle,
+    handle: { title: "Teachers" } satisfies DashboardHandle,
   },
 ] as RouteObject[];

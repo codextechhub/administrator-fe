@@ -211,8 +211,12 @@ export default function DashboardLayout() {
                 </>
               )}
 
+              {/* No fallback string. Every route declares its title, and a
+                  greeting standing in for a missing one reads as deliberate -
+                  so the route that forgot ships looking finished. An empty
+                  header is the one thing nobody mistakes for a name. */}
               <h6 className="min-w-0 truncate text-base uppercase font-semibold text-black-01">
-                {title || "Welcome back!!"}
+                {title}
               </h6>
             </div>
 
