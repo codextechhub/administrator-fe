@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import type {
+  ClashWarning,
   ExamSlotWrite,
   Room,
   Sitting,
@@ -25,6 +26,8 @@ import type {
 import type { PaperValues } from "./paper-values";
 import { problemsOf, useFormProblems } from "./form-problems";
 import { ProblemSummary } from "./problem-summary";
+import { ClashPreview } from "./clash-preview";
+import { useClashPreview } from "./use-clash-preview";
 import type {
   SchoolClass,
   Subject,
@@ -75,6 +78,7 @@ export function PaperDrawer({
   onClose,
   onSave,
   onRemove,
+  onPreview,
 }: {
   open: boolean;
   initial: PaperValues;
@@ -92,6 +96,10 @@ export function PaperDrawer({
   onClose: () => void;
   onSave: (values: ExamSlotWrite) => Promise<unknown>;
   onRemove: () => Promise<void>;
+  /** Asks the server what this draft would clash with. Writes nothing. */
+  onPreview: (
+    values: PaperValues,
+  ) => Promise<{ refusal: string | null; warnings: ClashWarning[] }>;
 }) {
   const [values, setValues] = useState<PaperValues>(initial);
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(
@@ -120,6 +128,21 @@ export function PaperDrawer({
   );
   const { attempt, errorFor, invalid, showing, reset } = useFormProblems(problems);
 
+  // Asked once the paper is placed. A room or an invigilator can collide, and
+  // so can the class itself - two papers in one sitting is refused outright,
+  // which the preview reports separately so the form does not offer to
+  // override something the server will not do.
+  const clash = useClashPreview({
+    values,
+    ready:
+      open &&
+      !!values.school_class &&
+      !!values.subject &&
+      !!values.exam_date &&
+      !timesBackwards,
+    ask: onPreview,
+  });
+
   const openedFor = open ? JSON.stringify(initial) : "shut";
   const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
   if (openedFor !== lastOpenedFor) {
@@ -128,6 +151,7 @@ export function PaperDrawer({
       setValues(initial);
       setRefusal(null);
       reset();
+      clash.reset();
     }
   }
 
@@ -362,6 +386,14 @@ export function PaperDrawer({
               {refusal.message}
             </p>
           )}
+          <ClashPreview
+            warnings={clash.warnings}
+            refusal={clash.refusal}
+            asking={clash.asking}
+            acknowledged={clash.acknowledged}
+            onAcknowledge={clash.setAcknowledged}
+            confirmLabel="I know, schedule it anyway. The timetable cannot be published until it is resolved."
+          />
         </ScrollArea>
 
         <div className="shrink-0 border-t border-white-02 pt-4">
@@ -387,7 +419,10 @@ export function PaperDrawer({
           </Button>
           {/* Live even when the draft is incomplete: pressing it is how a
               reader finds out what is missing. */}
-          <Button onClick={save} disabled={saving}>
+          {/* Quiet on an unacknowledged clash, and on a refusal the server
+              will not accept however the form is filled. Both reasons are on
+              screen directly above it. */}
+          <Button onClick={save} disabled={saving || clash.blocked || !!clash.refusal}>
             {saving && <Loader2 className="size-4 animate-spin" />}
             {editing ? "Save changes" : "Add paper"}
           </Button>

@@ -25,6 +25,7 @@ import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { parseApiError } from "@/utils/api-error";
 import {
   useCreateExamSlotMutation,
+  usePreviewExamSlotMutation,
   useDeleteExamSlotMutation,
   useGetExamsQuery,
   useGetRoomsQuery,
@@ -100,6 +101,7 @@ export default function ExamScheduling() {
   const { data: teacherData } = useGetTeachersQuery({ session: lens.session });
 
   const [create, { isLoading: creating }] = useCreateExamSlotMutation();
+  const [previewExamSlot] = usePreviewExamSlotMutation();
   const [update, { isLoading: updating }] = useUpdateExamSlotMutation();
   const [remove, { isLoading: removing }] = useDeleteExamSlotMutation();
   const [publish, { isLoading: publishing }] = usePublishExamMutation();
@@ -120,6 +122,30 @@ export default function ExamScheduling() {
     // Saved AND flagged. Each sentence names the room or the person and the
     // sitting it collides with.
     for (const w of result.data?.warnings ?? []) toast.warning(w.detail);
+  };
+
+  // The same engine the save uses, asked before the save. An incomplete draft
+  // never reaches here: the drawer only asks once the paper is placed.
+  const previewPaper = async (values: PaperValues) => {
+    if (!exam) return { refusal: null, warnings: [] };
+    const result = await previewExamSlot({
+      examId: exam.id,
+      school_class: values.school_class!,
+      subject: values.subject!,
+      exam_date: values.exam_date,
+      sitting: values.sitting,
+      // Empty means "no answer", and must not become "00:00".
+      start_time: values.start_time || null,
+      end_time: values.end_time || null,
+      room: values.room,
+      invigilator: values.invigilator,
+      // The paper being edited is not a clash with itself.
+      ...(paper?.slot ? { exclude: paper.slot.id } : {}),
+    }).unwrap();
+    return {
+      refusal: result.data?.refusal ?? null,
+      warnings: result.data?.warnings ?? [],
+    };
   };
 
   const removePaper = async () => {
@@ -421,6 +447,7 @@ export default function ExamScheduling() {
         saving={creating || updating}
         removing={removing}
         onClose={() => setPaper(null)}
+        onPreview={previewPaper}
         onSave={savePaper}
         onRemove={removePaper}
       />
