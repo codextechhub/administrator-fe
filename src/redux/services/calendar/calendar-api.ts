@@ -12,6 +12,7 @@ import {
 import type {
   BellSchedule,
   CalendarCurrent,
+  ClashWarning,
   CalendarEvent,
   CalendarEventWrite,
   CalendarOverview,
@@ -292,6 +293,28 @@ export const calendarApi = baseApi.injectEndpoints({
       invalidatesTags: ["ClassTimetables", "TeacherTimetables", "CalendarOverview"],
     }),
 
+    /**
+     * What a lesson WOULD clash with. Writes nothing.
+     *
+     * Separate from the write rather than a flag on it, for the same reason the
+     * duplicate preview is: a caller cannot mistype a flag and perform the
+     * write it meant to preview. Provides no tags and invalidates none -
+     * nothing changed.
+     *
+     * `exclude` is the slot being edited, so a saved cell is never told it
+     * clashes with itself.
+     */
+    previewSlot: builder.mutation<
+      Envelope<{ warnings: ClashWarning[] }>,
+      SlotWrite & { exclude?: number }
+    >({
+      query: (body) => ({
+        url: `/academics/timetable/slots/preview/`,
+        method: "POST",
+        body,
+      }),
+    }),
+
     updateSlot: builder.mutation<
       Envelope<WithWarnings<TimetableSlot>>,
       { id: number } & Partial<SlotWrite>
@@ -439,6 +462,26 @@ export const calendarApi = baseApi.injectEndpoints({
       invalidatesTags: ["Exams"],
     }),
 
+    /**
+     * What a paper WOULD clash with, and whether it would be refused outright.
+     * Writes nothing.
+     *
+     * `refusal` is separate from `warnings` because the two are different
+     * answers: a class sitting two papers in one sitting is refused, and a form
+     * offering "add anyway" for it would offer something the server will not
+     * do.
+     */
+    previewExamSlot: builder.mutation<
+      Envelope<{ refusal: string | null; warnings: ClashWarning[] }>,
+      { examId: number; exclude?: number } & ExamSlotWrite
+    >({
+      query: ({ examId, ...body }) => ({
+        url: `/academics/exams/${examId}/slots/preview/`,
+        method: "POST",
+        body,
+      }),
+    }),
+
     createExamSlot: builder.mutation<
       Envelope<WithWarnings<ExamSlot>>,
       { examId: number } & ExamSlotWrite
@@ -498,6 +541,8 @@ export const {
   useDeletePeriodMutation,
   useGetClassTimetablesQuery,
   useGetClassTimetableQuery,
+  usePreviewSlotMutation,
+  usePreviewExamSlotMutation,
   useCreateSlotMutation,
   useUpdateSlotMutation,
   useDeleteSlotMutation,

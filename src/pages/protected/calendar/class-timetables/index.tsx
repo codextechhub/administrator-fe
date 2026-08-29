@@ -26,6 +26,7 @@ import { parseApiError } from "@/utils/api-error";
 import {
   useClearTimetableMutation,
   useCreateSlotMutation,
+  usePreviewSlotMutation,
   useDeleteSlotMutation,
   useDuplicateTimetableMutation,
   useGetClassTimetableQuery,
@@ -104,6 +105,7 @@ export default function ClassTimetables() {
   );
 
   const [createSlot, { isLoading: creating }] = useCreateSlotMutation();
+  const [previewSlot] = usePreviewSlotMutation();
   const [updateSlot, { isLoading: updating }] = useUpdateSlotMutation();
   const [deleteSlot, { isLoading: deleting }] = useDeleteSlotMutation();
   const [clear, { isLoading: clearing }] = useClearTimetableMutation();
@@ -152,6 +154,24 @@ export default function ClassTimetables() {
     // server's own sentence, naming who is double-booked and where.
     for (const w of result.data?.warnings ?? []) toast.warning(w.detail);
     return result.data?.warnings ?? [];
+  };
+
+  // Asks what this draft would clash with, from the same engine the save uses.
+  // The preview endpoint always takes the whole draft, including the class and
+  // the cell, so a change of teacher is asked about in the place it would land.
+  const previewLesson = async (values: LessonValues) => {
+    if (!lesson || !current) return { warnings: [] };
+    const result = await previewSlot({
+      school_class: current,
+      day_of_week: lesson.dayOfWeek as 1 | 2 | 3 | 4 | 5,
+      period: lesson.period,
+      subject: values.subject!,
+      teacher: values.teacher,
+      room: values.room,
+      // The cell being edited is not a clash with itself.
+      ...(lesson.slot ? { exclude: lesson.slot.id } : {}),
+    }).unwrap();
+    return { warnings: result.data?.warnings ?? [] };
   };
 
   const removeLesson = async () => {
@@ -421,6 +441,7 @@ export default function ClassTimetables() {
         onClose={() => setLesson(null)}
         onSave={saveLesson}
         onRemove={removeLesson}
+        onPreview={previewLesson}
       />
 
       <DuplicateDrawer

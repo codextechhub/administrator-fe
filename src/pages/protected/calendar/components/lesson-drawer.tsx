@@ -21,6 +21,8 @@ import type {
 import type { Subject } from "@/redux/services/academics/academics-types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { problemsOf, useFormProblems } from "./form-problems";
+import { ClashPreview } from "./clash-preview";
+import { useClashPreview } from "./use-clash-preview";
 import { ProblemSummary } from "./problem-summary";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -72,6 +74,7 @@ export function LessonDrawer({
   onClose,
   onSave,
   onRemove,
+  onPreview,
 }: {
   open: boolean;
   target: LessonTarget | null;
@@ -85,6 +88,8 @@ export function LessonDrawer({
   onClose: () => void;
   onSave: (values: LessonValues) => Promise<ClashWarning[]>;
   onRemove: () => Promise<void>;
+  /** Asks the server what this draft would clash with. Writes nothing. */
+  onPreview: (values: LessonValues) => Promise<{ warnings: ClashWarning[] }>;
 }) {
   const [values, setValues] = useState<LessonValues>({
     subject: null,
@@ -101,6 +106,15 @@ export function LessonDrawer({
   );
   const { attempt, errorFor, showing, reset } = useFormProblems(problems);
 
+  // Asked as soon as there is a person or a place to ask about. A subject on
+  // its own cannot clash with anything: two classes may study Mathematics at
+  // the same hour all week.
+  const clash = useClashPreview({
+    values,
+    ready: open && !!target && (!!values.teacher || !!values.room),
+    ask: onPreview,
+  });
+
   const openedFor = open && target ? `${target.dayOfWeek}:${target.period}:${target.slot?.id ?? "new"}` : "shut";
   const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
   if (openedFor !== lastOpenedFor) {
@@ -113,6 +127,7 @@ export function LessonDrawer({
       });
       setRefusal("");
       reset();
+      clash.reset();
     }
   }
 
@@ -227,15 +242,28 @@ export function LessonDrawer({
             </p>
           </div>
 
-          <p className="mt-5 rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-xs text-gray-06 text-pretty">
-            A clash does not stop this saving. If the teacher or the room is
-            already booked, both cells stay flagged in red and publishing is
-            blocked until it is resolved.
-          </p>
+          {/* The rule, while there is no clash to apply it to. Once one is
+              found the box below says the same thing about a real collision
+              and names it, so leaving this here would say it twice - once in
+              the abstract, once about Mr Eze, an inch apart. */}
+          {clash.warnings.length === 0 && (
+            <p className="mt-5 rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-xs text-gray-06 text-pretty">
+              A clash does not stop this saving. If the teacher or the room is
+              already booked, both cells stay flagged in red and publishing is
+              blocked until it is resolved.
+            </p>
+          )}
 
           {refusal && (
             <p className="mt-4 text-xs text-error-text text-pretty">{refusal}</p>
           )}
+          <ClashPreview
+            warnings={clash.warnings}
+            asking={clash.asking}
+            acknowledged={clash.acknowledged}
+            onAcknowledge={clash.setAcknowledged}
+            confirmLabel="I know, save it with the clash. The grid cannot be published until it is resolved."
+          />
         </ScrollArea>
 
         <div className="shrink-0 border-t border-white-02 pt-4">
@@ -260,8 +288,11 @@ export function LessonDrawer({
             Cancel
           </Button>
           {/* Live even when the draft is incomplete: pressing it is how a
-              reader finds out what is missing. */}
-          <Button onClick={save} disabled={saving}>
+              reader finds out what is missing. It DOES go quiet on an
+              unacknowledged clash, and that is not the same thing - the reason
+              is a box on screen an inch above it, with the tick that clears
+              it. */}
+          <Button onClick={save} disabled={saving || clash.blocked}>
             {saving && <Loader2 className="size-4 animate-spin" />}
             {editing ? "Save changes" : "Add lesson"}
           </Button>
