@@ -62,13 +62,19 @@ export function RouteProgress() {
   });
 
   // ── start on a route change ───────────────────────────────────────────────
-  useEffect(() => {
-    startedAt.current = Date.now();
+  //
+  // Adjusted during render rather than in an effect, which is the same pattern
+  // the drawers use for their `openedFor` reset. In an effect the bar would not
+  // appear until after the new screen had already painted once, which is a
+  // frame of exactly the silence it exists to fill.
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
     setVisible(true);
     // Straight to a visible fraction rather than from zero: a bar that starts
     // at nothing reads as a bar that has not started.
     setProgress(0.12);
-  }, [pathname]);
+  }
 
   // ── creep, and only while there is something to creep for ─────────────────
   //
@@ -79,6 +85,11 @@ export function RouteProgress() {
   // beginning.
   useEffect(() => {
     if (!visible) return;
+    // The clock is read here rather than during the render above: `Date.now`
+    // is impure, and a render that reads it is a render that cannot be
+    // repeated. Keyed on the path too, so a second navigation while the bar is
+    // still up restarts its clock instead of inheriting the first one's.
+    startedAt.current = Date.now();
     const creep = window.setInterval(() => {
       // Approaches the end without reaching it. The last stretch belongs to
       // the data actually arriving, so the bar must never claim to be done
@@ -86,7 +97,7 @@ export function RouteProgress() {
       setProgress((p) => (p >= 0.9 ? p : p + (0.9 - p) * 0.12));
     }, 180);
     return () => window.clearInterval(creep);
-  }, [visible]);
+  }, [visible, lastPath]);
 
   // ── finish when the screen settles ────────────────────────────────────────
   useEffect(() => {
