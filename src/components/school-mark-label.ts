@@ -29,3 +29,24 @@ export function markLabel(name?: string | null, slug?: string | null): string {
   if (trimmed.length <= NAME_LIMIT) return trimmed;
   return fallback || trimmed;
 }
+
+/**
+ * How big to set the name, given how much of it there is.
+ *
+ * A rule rather than a measurement, because measuring means rendering the text
+ * once to read its width and then rendering it again - a flash of the wrong
+ * size on every mark, to save a lookup with five entries in it.
+ *
+ * The numbers are for Dancing Script across the 190px back face. It is a narrow
+ * face, roughly 0.42em per character, so the longest label this can be handed
+ * (34 characters, the limit in `markLabel`) sets to about 171px at 12px and
+ * still has room either side.
+ */
+export function markFontSize(label: string): number {
+  const n = label.trim().length;
+  if (n <= 14) return 18;
+  if (n <= 20) return 16;
+  if (n <= 26) return 14;
+  if (n <= 30) return 13;
+  return 12;
+}

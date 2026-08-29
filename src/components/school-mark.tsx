@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { markLabel } from "./school-mark-label";
+import { markFontSize, markLabel } from "./school-mark-label";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The school's logo at the top of the sidebar, which turns over on hover to
@@ -21,7 +21,7 @@ import { markLabel } from "./school-mark-label";
 /** Height of the logo, in px. The flip box is sized from it. */
 const MARK_SIZE = 30;
 /** Width of the flip box. Constant, so the header cannot shift as it turns. */
-const MARK_WIDTH = 150;
+const MARK_WIDTH = 190;
 
 export function SchoolMark({
   logo,
@@ -75,7 +75,18 @@ export function SchoolMark({
         </span>
 
         <span className="school-mark__face school-mark__face--back px-1">
-          <span className="line-clamp-2 text-center font-mont text-[11px] font-semibold leading-[1.15] text-gray-01">
+          {/* One line, never two. The band that reveals the name sweeps left to
+              right, so a second line would be written at the same time as the
+              first - which is not how anybody writes. `markLabel` caps the
+              length so one line is always enough. */}
+          <span
+            className="school-mark__ink whitespace-nowrap text-center leading-none text-primary"
+            style={{
+              fontFamily: "var(--font-script)",
+              fontSize: markFontSize(label),
+              fontWeight: 600,
+            }}
+          >
             {label}
           </span>
         </span>

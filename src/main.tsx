@@ -4,6 +4,9 @@ import "./index.css";
 import App from "./App.tsx";
 import AppProvider from "./redux/provider.tsx";
 import { installStaleChunkReload } from "@/utils/stale-chunk";
+// The sidebar mark writes the school's name in this on hover; nothing else
+// uses it, and it is one variable file.
+import "@fontsource-variable/dancing-script";
 import "@fontsource/montserrat/400.css";
 import "@fontsource/montserrat/500.css";
 import "@fontsource/montserrat/600.css";

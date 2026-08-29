@@ -53,6 +53,8 @@
 
 @theme inline {
   --font-mont: 'Montserrat', system-ui, Helvetica, sans-serif;
+  /* The hand that writes the school's name on the sidebar mark. */
+  --font-script: 'Dancing Script Variable', 'Segoe Script', cursive;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -346,6 +348,13 @@
 .school-mark {
   --flip-in: 620ms;
   --flip-out: 560ms;
+  --draw-in: 760ms;
+  --draw-out: 320ms;
+  /* Hold the writing until the card is past side-on and the back face has come
+     round. Earlier and the name is being written while steeply foreshortened;
+     later and the mark sits blank for a beat mid-spin. Same hold the console
+     uses, for the same reason. */
+  --draw-start: 210ms;
   --spin: cubic-bezier(0.2, 0.72, 0.24, 1);
 
   position: relative;
@@ -392,9 +401,70 @@ button:focus-visible .school-mark__card {
   transform: rotateY(180deg);
 }
 
+/* ── the writing ──────────────────────────────────────────────────────────────
+
+   The console writes a fixed wordmark, so it can hand-author one pen stroke per
+   letter and animate each one's dash offset. A school's name is arbitrary text
+   and has no strokes to author, so the same illusion is built the other way
+   round: the name is already set, in a script face, and a soft-edged band
+   sweeps across it left to right so the letters arrive under the pen.
+
+   `@property` is what makes it a TRANSITION rather than a keyframe animation.
+   A custom property is not interpolable until it has been registered with a
+   syntax, and without that this could only have been an animation - which
+   would restart from the beginning every time the pointer crossed the mark
+   instead of reversing from wherever it had got to. */
+
+@property --school-mark-ink {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+.school-mark__ink {
+  --school-mark-ink: 0%;
+  /* The band is 14% wide, so the edge of the reveal is a soft nib rather than a
+     guillotine. It starts and ends past the text on both sides so the first and
+     last letters are not born half-written. */
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    #000 calc(var(--school-mark-ink) - 14%),
+    transparent var(--school-mark-ink)
+  );
+  mask-image: linear-gradient(
+    90deg,
+    #000 calc(var(--school-mark-ink) - 14%),
+    transparent var(--school-mark-ink)
+  );
+  transition: --school-mark-ink var(--draw-out) ease-in;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .school-mark:hover .school-mark__ink {
+    --school-mark-ink: 118%;
+    transition: --school-mark-ink var(--draw-in) ease-out var(--draw-start);
+  }
+}
+
+.school-mark:focus-visible .school-mark__ink,
+a:focus-visible .school-mark__ink,
+button:focus-visible .school-mark__ink {
+  --school-mark-ink: 118%;
+  transition: --school-mark-ink var(--draw-in) ease-out var(--draw-start);
+}
+
+/* Nothing here carries meaning that the motion is required to deliver: the name
+   is in the DOM and on the title either way. So for a reader who has asked for
+   less movement, the card turns without turning, and the name is simply there. */
 @media (prefers-reduced-motion: reduce) {
   .school-mark__card {
     transition: none;
+  }
+  .school-mark__ink {
+    --school-mark-ink: 118%;
+    transition: none;
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }
 
