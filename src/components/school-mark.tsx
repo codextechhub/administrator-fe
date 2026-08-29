@@ -18,10 +18,15 @@ import { markFontSize, markLabel } from "./school-mark-label";
 // rule rather than a hope - see `markLabel`.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Height of the logo, in px. The flip box is sized from it. */
+/** Height of the logo, in px. */
 const MARK_SIZE = 30;
-/** Width of the flip box. Constant, so the header cannot shift as it turns. */
-const MARK_WIDTH = 190;
+/**
+ * The flip box. Constant, so the header cannot shift as it turns, and taller
+ * than the logo: Great Vibes has long ascenders and deep descenders, and a box
+ * sized to the logo alone clips the loops off the tops and tails of the name.
+ */
+const MARK_WIDTH = 200;
+const MARK_HEIGHT = 44;
 
 export function SchoolMark({
   logo,
@@ -59,7 +64,7 @@ export function SchoolMark({
   return (
     <span
       className={cn("school-mark", className)}
-      style={{ height: MARK_SIZE, width: MARK_WIDTH }}
+      style={{ height: MARK_HEIGHT, width: MARK_WIDTH }}
       // The name in full, for a school whose back face shows the slug and for
       // anyone reading with a pointer but not a hover.
       title={name || undefined}
@@ -69,7 +74,7 @@ export function SchoolMark({
           <img
             src={src}
             alt=""
-            className="h-full w-auto"
+            className="w-auto"
             style={{ height: MARK_SIZE }}
           />
         </span>
@@ -84,7 +89,7 @@ export function SchoolMark({
             style={{
               fontFamily: "var(--font-script)",
               fontSize: markFontSize(label),
-              fontWeight: 600,
+              fontWeight: 400,
             }}
           >
             {label}

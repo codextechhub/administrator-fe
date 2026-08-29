@@ -53,8 +53,10 @@
 
 @theme inline {
   --font-mont: 'Montserrat', system-ui, Helvetica, sans-serif;
-  /* The hand that writes the school's name on the sidebar mark. */
-  --font-script: 'Dancing Script Variable', 'Segoe Script', cursive;
+  /* The hand that writes the school's name on the sidebar mark. Copperplate
+     rather than a casual script: a school's name belongs on a certificate, and
+     that is the register Great Vibes is in. */
+  --font-script: 'Great Vibes', 'Segoe Script', cursive;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
