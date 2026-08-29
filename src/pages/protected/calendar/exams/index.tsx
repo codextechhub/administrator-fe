@@ -3,6 +3,8 @@ import {
   AlertTriangle,
   CalendarPlus,
   ClipboardList,
+  LayoutGrid,
+  List,
   Pencil,
   Plus,
   Printer,
@@ -51,6 +53,17 @@ import {
 import { ExportButton } from "@/pages/protected/academics/components/export-button";
 import { RowActions } from "../components/row-actions";
 import { RowPicker } from "../components/row-picker";
+import { SegmentedToggle } from "@/components/custom/segmented-toggle";
+import { cn } from "@/lib/utils";
+import { PaperBoard } from "./paper-board";
+import { PaperFilterBar } from "./paper-filter-bar";
+import {
+  clashingIds,
+  filterOptions,
+  filterPapers,
+  NO_FILTERS,
+  type PaperFilters,
+} from "./paper-filters";
 import { PageShell } from "@/components/layout/page-shell";
 
 /**
@@ -102,6 +115,24 @@ export default function ExamScheduling() {
 
   const [create, { isLoading: creating }] = useCreateExamSlotMutation();
   const [previewExamSlot] = usePreviewExamSlotMutation();
+  const [filters, setFilters] = useState<PaperFilters>(NO_FILTERS);
+  // The board answers "when is what"; the list answers "show me every field of
+  // every row", which is what somebody checking an invigilator column against
+  // a staff rota wants. The list is also what prints.
+  const [view, setView] = useState<"board" | "list">("board");
+
+  // Plain calls, not `useMemo`. All three are pure passes over one exam's
+  // papers - a hundred rows at the outside - and the React Compiler memoises
+  // them on its own. Wrapping them by hand made it refuse to optimise the
+  // component at all, which is the opposite of what the wrapping was for.
+  //
+  // Warnings name the papers they are about, so the board can mark exactly
+  // which cards are in a clash rather than colouring a whole day.
+  const slots = exam?.slots ?? [];
+  const clashing = clashingIds(exam?.warnings);
+  const options = filterOptions(slots);
+  const shown = filterPapers(slots, filters, clashing);
+
   const [update, { isLoading: updating }] = useUpdateExamSlotMutation();
   const [remove, { isLoading: removing }] = useDeleteExamSlotMutation();
   const [publish, { isLoading: publishing }] = usePublishExamMutation();
@@ -368,7 +399,61 @@ export default function ExamScheduling() {
               }
             />
           ) : (
-            <div className="print-drop-last">
+            <>
+            <div className="print-hide mb-3 flex flex-wrap items-start justify-between gap-2">
+              <PaperFilterBar
+                filters={filters}
+                options={options}
+                clashCount={clashing.size}
+                showing={shown.length}
+                total={exam.slots.length}
+                onChange={setFilters}
+              />
+              <SegmentedToggle
+                ariaLabel="How to show the schedule"
+                value={view}
+                onChange={setView}
+                options={[
+                  { value: "board", label: "Board", icon: LayoutGrid },
+                  { value: "list", label: "List", icon: List },
+                ]}
+              />
+            </div>
+
+            {shown.length === 0 ? (
+              <OutlinedNotice
+                icon={ClipboardList}
+                title="No papers match"
+                body="Every paper in this schedule is filtered out. Clear a filter to see them again."
+                actionLabel="Clear all"
+                onAction={() => setFilters(NO_FILTERS)}
+              />
+            ) : view === "board" ? (
+              // Hidden on paper: the list is what prints, because a printed
+              // exam timetable is checked field by field against a rota.
+              <div className="print-hide">
+                <PaperBoard
+                  slots={shown}
+                  clashing={clashing}
+                  canCreate={!!canCreate && !published}
+                  onOpen={(slot) =>
+                    setPaper({ values: paperValuesFrom(slot), slot })
+                  }
+                  onAdd={(date, sitting) =>
+                    setPaper({
+                      values: {
+                        ...blankPaper(exam.start_date),
+                        exam_date: date,
+                        sitting: sitting as PaperValues["sitting"],
+                      },
+                      slot: null,
+                    })
+                  }
+                />
+              </div>
+            ) : null}
+
+            <div className={cn("print-drop-last", view === "board" && "hidden print:block")}>
             <CustomTable
               tableHeaderList={[
                 "Date",
@@ -379,8 +464,8 @@ export default function ExamScheduling() {
                 "Invigilator",
                 "Action",
               ]}
-              defaultBodyList={exam.slots}
-              tableBodyList={exam.slots.map((slot) => ({
+              defaultBodyList={shown}
+              tableBodyList={shown.map((slot) => ({
                 Date: formatDate(slot.exam_date),
                 Sitting: slot.sitting_label,
                 Class: slot.class_name,
@@ -428,6 +513,7 @@ export default function ExamScheduling() {
               emptyText="No papers"
             />
             </div>
+            </>
           )}
         </div>
       </Panel>
