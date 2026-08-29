@@ -18,10 +18,8 @@ import {
   BookOpen,
   CalendarClock,
   CalendarRange,
-  DollarSign,
   ListChecks,
   Rocket,
-  Settings,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P, type PermissionCode } from "@/permissions";
@@ -133,34 +131,6 @@ export function AppSidebar({
         isActive: location.startsWith(routesPath.PROTECTED.BRANCHES.INDEX),
         childActive: false,
         permission: P.BROWSE_BRANCHES,
-      },
-    ],
-    people: [
-      {
-        title: "Students",
-        url: routesPath.PROTECTED.STUDENTS.INDEX,
-        icon: TeamMgtIcon,
-        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.INDEX),
-        childActive: false,
-        permission: P.BROWSE_STUDENTS,
-      },
-      {
-        title: "Teachers",
-        url: routesPath.PROTECTED.TEACHERS.INDEX,
-        icon: TeamMgtIcon,
-        isActive: location.startsWith(routesPath.PROTECTED.TEACHERS.INDEX),
-        childActive: false,
-        permission: P.BROWSE_TEACHERS,
-      },
-      {
-        title: "Administrators",
-        url: routesPath.PROTECTED.ADMINISTRATORS.INDEX,
-        icon: TeamMgtIcon,
-        isActive: location.startsWith(
-          routesPath.PROTECTED.ADMINISTRATORS.INDEX,
-        ),
-        childActive: false,
-        permission: P.BROWSE_ADMINISTRATORS,
       },
     ],
     academics: [
@@ -343,32 +313,12 @@ export function AppSidebar({
         ],
       },
     ],
-    finance: [
-      {
-        title: "Finance",
-        url: "#",
-        icon: DollarSign,
-        isActive: location.startsWith("#"),
-        childActive: false,
-        permission: P.VIEW_FEES,
-      },
-      {
-        title: "Settings",
-        url: "#",
-        icon: Settings,
-        isActive: location.startsWith("#"),
-        childActive: false,
-        permission: P.VIEW_SETTINGS,
-      },
-    ],
   };
 
   // Filter each group's items by permission. A group whose items are all
   // filtered out is dropped entirely (its label disappears with it).
   const overview = data.overview.filter(canSee);
-  const people = data.people.filter(canSee);
   const academics = data.academics.filter(canSee);
-  const finance = data.finance.filter(canSee);
 
   const { state } = useSidebar();
   return (
@@ -418,14 +368,8 @@ export function AppSidebar({
               {overview.length > 0 && (
                 <NavMain items={overview} groupTitle="Overview" />
               )}
-              {people.length > 0 && (
-                <NavMain items={people} groupTitle="People" />
-              )}
               {academics.length > 0 && (
                 <NavMain items={academics} groupTitle="Academics" />
-              )}
-              {finance.length > 0 && (
-                <NavMain items={finance} groupTitle="Finance" />
               )}
             </>
           )}

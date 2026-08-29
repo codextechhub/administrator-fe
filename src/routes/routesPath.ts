@@ -37,9 +37,6 @@ export const routesPath = {
     // gets most of its post.
     NOTIFICATIONS: "/notifications",
     BRANCHES: { INDEX: "/branches" },
-    STUDENTS: { INDEX: "/students" },
-    TEACHERS: { INDEX: "/teachers" },
-    ADMINISTRATORS: { INDEX: "/administrators" },
     // Academic Structure. One module, one URL prefix: the overview and every
     // screen that hangs off it. Sessions and classes moved under here from
     // /academic/session and /classes when the module was reorganised - they are
@@ -87,7 +84,5 @@ export const routesPath = {
       TEACHERS: "/timetables/teachers",
       EXAMS: "/timetables/exams",
     },
-    FEES: { INDEX: "/school-fees" },
-    SETTINGS: { INDEX: "/settings" },
   },
 };

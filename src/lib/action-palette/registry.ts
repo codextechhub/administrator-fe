@@ -67,38 +67,6 @@ export const ACTIONS: ActionDef[] = [
     run: { to: R.NOTIFICATIONS },
   },
 
-  // ── People ─────────────────────────────────────────────────────────────────
-  {
-    id: "view-students",
-    label: "View students",
-    aliases: ["roster", "pupils", "learners"],
-    section: "People",
-    group: "Students",
-    kind: "view",
-    gate: { perm: P.BROWSE_STUDENTS },
-    run: { to: R.STUDENTS.INDEX },
-  },
-  {
-    id: "view-teachers",
-    label: "View teachers",
-    aliases: ["teaching staff"],
-    section: "People",
-    group: "Teachers",
-    kind: "view",
-    gate: { perm: P.BROWSE_TEACHERS },
-    run: { to: R.TEACHERS.INDEX },
-  },
-  {
-    id: "view-administrators",
-    label: "View administrators",
-    aliases: ["admins", "admin accounts"],
-    section: "People",
-    group: "Administrators",
-    kind: "view",
-    gate: { perm: P.BROWSE_ADMINISTRATORS },
-    run: { to: R.ADMINISTRATORS.INDEX },
-  },
-
   // ── Academics ──────────────────────────────────────────────────────────────
   {
     id: "view-academic-structure",
@@ -308,9 +276,6 @@ export const ACTIONS: ActionDef[] = [
 export const LIVE_ONLY_ACTION_IDS: readonly string[] = [
   "view-dashboard",
   "view-branches",
-  "view-students",
-  "view-teachers",
-  "view-administrators",
   "view-academic-session",
   "view-academic-calendar",
   "view-classes",

@@ -82,10 +82,10 @@ export default function TeacherTimetables() {
         <OutlinedNotice
           icon={Users}
           title="Nobody carries the teacher role yet"
-          body="A timetable names a person, so somebody has to be a teacher before there is a week to show. Give the role on the Teachers screen, then come back."
-          actionLabel="Go to Teachers"
+          body="A timetable names a person, so somebody has to carry the teacher role before there is a week to show. Grant it on Roles & Invitations, then come back."
+          actionLabel="Go to Roles & Invitations"
           onAction={() => {
-            window.location.assign(routesPath.PROTECTED.TEACHERS.INDEX);
+            window.location.assign(routesPath.PROTECTED.ONBOARDING.ROLES);
           }}
         />
       </PageShell>

@@ -140,18 +140,18 @@ describe("gating the account commands against the actor", () => {
 
   it("judges navigation by the identity in effect, not by the actor", () => {
     // The reverse of the rule above: while proxying as someone who cannot see
-    // students, the palette must not offer students just because the actor can.
-    const withoutStudents = ALL_PERMISSIONS.filter(
-      (key) => key !== resolvePermissionKey(P.BROWSE_STUDENTS),
+    // classes, the palette must not offer classes just because the actor can.
+    const withoutClasses = ALL_PERMISSIONS.filter(
+      (key) => key !== resolvePermissionKey(P.BROWSE_CLASSES),
     );
     const offered = ids(
       availableActions(
         ACTIONS,
-        { permissions: withoutStudents, actorPermissions: ALL_PERMISSIONS },
+        { permissions: withoutClasses, actorPermissions: ALL_PERMISSIONS },
         false,
       ),
     );
-    expect(offered).not.toContain("view-students");
+    expect(offered).not.toContain("view-classes");
   });
 });
 

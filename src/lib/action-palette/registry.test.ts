@@ -15,19 +15,17 @@ import { describe, expect, it } from "vitest";
 import { P, resolvePermissionKey, type PermissionCode } from "@/permissions";
 import { routesPath } from "@/routes/routesPath";
 import { academicRoutes } from "@/routes/protected/academic-routes";
-import { administratorRoutes } from "@/routes/protected/administrator-routes";
 import { branchesRoutes } from "@/routes/protected/branches-routes";
 import { classesRoutes } from "@/routes/protected/classes-routes";
 import { onboardingRoutes, onboardingWelcomeRoute } from "@/routes/protected/onboarding-routes";
 import { overviewRoutes } from "@/routes/protected/overview-routes";
-import { studentsRoutes } from "@/routes/protected/students-routes";
-import { teachersRoutes } from "@/routes/protected/teachers-routes";
 import { ACTIONS, LIVE_ONLY_ACTION_IDS, PENDING_ONLY_ACTION_IDS } from "./registry";
 import type { ActionDef } from "./types";
 
 // The paths the router genuinely mounts. Taken from the route modules rather
-// than from routesPath, because routesPath also names paths nothing serves:
-// /school-fees and /settings are in it, and the sidebar points both at "#".
+// than from routesPath, because the two can drift: a path can be named without
+// anything mounting it, which is exactly how /school-fees and /settings sat in
+// the sidebar pointing at "#" until the stubs were removed.
 // Every one of these modules is import-cheap (lazy() page imports plus
 // type-only handles), so pulling them in costs no page bundle.
 //
@@ -39,9 +37,6 @@ const SERVED_PATHS = new Set(
     ...onboardingRoutes,
     ...overviewRoutes,
     ...branchesRoutes,
-    ...studentsRoutes,
-    ...teachersRoutes,
-    ...administratorRoutes,
     ...academicRoutes,
     ...classesRoutes,
   ]

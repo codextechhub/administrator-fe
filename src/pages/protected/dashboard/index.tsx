@@ -236,8 +236,6 @@ export default function Dashboard() {
     { label: "Academic Structure", to: R.ACADEMIC_STRUCTURE.INDEX, icon: GraduationCap, show: canSeeStructure },
     { label: "Calendar", to: R.ACADEMIC_CALENDAR.INDEX, icon: CalendarDays, show: canSeeCalendar },
     { label: "Timetables", to: R.TIMETABLES.CLASSES, icon: LayoutGrid, show: canSeeTimetables },
-    { label: "Students", to: R.STUDENTS.INDEX, icon: Users, show: hasPermission(P.BROWSE_STUDENTS) },
-    { label: "Teachers", to: R.TEACHERS.INDEX, icon: BookOpen, show: hasPermission(P.BROWSE_TEACHERS) },
     { label: "Branches", to: R.BRANCHES.INDEX, icon: DoorOpen, show: hasPermission(P.BROWSE_BRANCHES) },
   ].filter((m) => m.show);
 
