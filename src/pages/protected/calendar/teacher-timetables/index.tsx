@@ -38,8 +38,15 @@ export default function TeacherTimetables() {
   const { lens, multiBranch } = useAcademicsLens();
   const [teacherId, setTeacherId] = useState<number | null>(null);
 
+  // The LIST reads the branch lens; the GRID below never does. A branch
+  // administrator should not scroll past another branch's staff to find their
+  // own, but Mr Eze teaches at Lekki on Monday to Wednesday and at Ikeja on
+  // Thursday and Friday, and a week filtered to one of them shows three
+  // lessons and two empty days - which is how Lekki books him for a Thursday
+  // that Ikeja already has.
   const { data: listData, isLoading: listLoading } = useGetTeachersQuery({
     session: lens.session,
+    branch: lens.branch,
   });
   const teachers = useMemo(() => listData?.data ?? [], [listData]);
 

@@ -2,10 +2,12 @@ import { baseApi } from "../base-api";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import {
   branchParam,
+  examParams,
   eventParams,
   periodParams,
   roomParams,
   sessionParam,
+  teacherParams,
 } from "./calendar-params";
 import type {
   BellSchedule,
@@ -377,15 +379,12 @@ export const calendarApi = baseApi.injectEndpoints({
      */
     getTeachers: builder.query<
       Envelope<TeacherRow[]>,
-      { search?: string; session?: number } | void
+      { search?: string; session?: number; branch?: number | "all" } | void
     >({
       query: (args) => ({
         url: `/academics/timetable/teachers/`,
         method: "GET",
-        params: {
-          ...(args?.search?.trim() ? { search: args.search.trim() } : {}),
-          ...sessionParam(args?.session),
-        },
+        params: teacherParams(args ?? {}),
       }),
       providesTags: ["TeacherTimetables"],
     }),
@@ -412,11 +411,14 @@ export const calendarApi = baseApi.injectEndpoints({
      * screen's blocking empty state, and it means the calendar holds no
      * EXAM_PERIOD event rather than that anything is broken.
      */
-    getExams: builder.query<Envelope<Exam[]>, { session?: number } | void>({
+    getExams: builder.query<
+      Envelope<Exam[]>,
+      { session?: number; branch?: number | "all" } | void
+    >({
       query: (args) => ({
         url: `/academics/exams/`,
         method: "GET",
-        params: sessionParam(args?.session),
+        params: examParams(args ?? {}),
       }),
       providesTags: ["Exams"],
     }),

@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   branchParam,
   eventParams,
+  examParams,
   periodParams,
   roomParams,
   sessionParam,
+  teacherParams,
 } from "./calendar-params";
 
 // The failure these pin is not a wrong list, it is a PLAUSIBLE one. A dropped
@@ -104,5 +106,38 @@ describe("bell schedule params", () => {
 
   it("carries the session, because a bell schedule belongs to one year", () => {
     expect(periodParams({ session: 3, day: 1 })).toEqual({ session: 3, day: 1 });
+  });
+});
+
+describe("teacherParams", () => {
+  it("sends the branch, because the LIST is a per-branch question", () => {
+    expect(teacherParams({ branch: 4, session: 9 })).toEqual({
+      branch: 4,
+      session: 9,
+    });
+  });
+
+  it("drops the branch when the lens is on every branch", () => {
+    expect(teacherParams({ branch: "all", session: 9 })).toEqual({ session: 9 });
+  });
+
+  it("trims a search and omits an empty one", () => {
+    expect(teacherParams({ search: "  eze " })).toEqual({ search: "eze" });
+    expect(teacherParams({ search: "   " })).toEqual({});
+  });
+});
+
+describe("examParams", () => {
+  it("sends the branch even though an exam has no branch column", () => {
+    // The server reads the scope from the exam period on the calendar. The
+    // client sends the lens the same way it does everywhere else.
+    expect(examParams({ branch: 2, session: 7 })).toEqual({
+      branch: 2,
+      session: 7,
+    });
+  });
+
+  it("drops the branch when the lens is on every branch", () => {
+    expect(examParams({ branch: "all" })).toEqual({});
   });
 });

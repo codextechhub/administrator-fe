@@ -62,6 +62,43 @@ export function roomParams(args: RoomListArgs = {}): Params {
   };
 }
 
+/**
+ * The teacher picker.
+ *
+ * **The list takes the branch lens; a teacher's grid never does.** They are
+ * different questions. "Who are my teachers" is answerable per branch and a
+ * branch admin wants it answered that way. "What is Mr Eze's week" is not: he
+ * teaches at Lekki on Monday to Wednesday and at Ikeja on Thursday and Friday,
+ * and a week filtered to Lekki shows three lessons and two free days, which is
+ * how Lekki books a Thursday that Ikeja already has. There is deliberately no
+ * `teacherGridParams`.
+ */
+export function teacherParams(
+  args: { search?: string; session?: number; branch?: number | "all" } = {},
+): Params {
+  return {
+    ...branchParam(args.branch),
+    ...sessionParam(args.session),
+    ...(args.search?.trim() ? { search: args.search.trim() } : {}),
+  };
+}
+
+/**
+ * The exam timetables.
+ *
+ * An exam carries no branch of its own: it hangs off an exam period on the
+ * calendar, and the server reads the scope from there. So the lens is sent the
+ * same way as everywhere else and the server does the indirection.
+ */
+export function examParams(
+  args: { session?: number; branch?: number | "all" } = {},
+): Params {
+  return {
+    ...branchParam(args.branch),
+    ...sessionParam(args.session),
+  };
+}
+
 export function periodParams(args: PeriodListArgs = {}): Params {
   const { branch, session, day, is_active } = args;
   return {

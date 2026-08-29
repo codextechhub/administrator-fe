@@ -90,6 +90,10 @@ export default function ClassTimetables() {
   const grid = gridData?.data;
 
   const { data: subjectData } = useGetSubjectsQuery(lens);
+  // Deliberately unnarrowed, unlike the teacher screen's list. This is the
+  // picker that ASSIGNS a teacher to a lesson, and Mr Eze teaches at both
+  // branches: filtering it would make him unschedulable at the second one.
+  // What makes the wide picker safe is that the clash query is wide too.
   const { data: teacherData } = useGetTeachersQuery({ session: lens.session });
   // Rooms at THIS class's branch: the server refuses a room anywhere else.
   const { data: roomData } = useGetRoomsQuery(

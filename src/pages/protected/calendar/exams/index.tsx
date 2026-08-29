@@ -80,6 +80,7 @@ export default function ExamScheduling() {
 
   const { data, isLoading, isError, refetch } = useGetExamsQuery({
     session: lens.session,
+    branch: lens.branch,
   });
   const exams = useMemo(() => data?.data ?? [], [data]);
 
@@ -92,6 +93,9 @@ export default function ExamScheduling() {
     branch: lens.branch,
     active: "true",
   });
+  // Invigilators are NOT narrowed by the lens, unlike the teacher screen's own
+  // list. This is the picker for putting somebody in a room, and a school
+  // borrowing an invigilator from its other branch for a morning is ordinary.
   const { data: teacherData } = useGetTeachersQuery({ session: lens.session });
 
   const [create, { isLoading: creating }] = useCreateExamSlotMutation();
