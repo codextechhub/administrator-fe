@@ -331,6 +331,74 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   The sidebar mark.
+
+   The school's logo, which turns over on hover to write the school's name and
+   turns back when the pointer leaves. Ported from console-fe's `.app-logo`,
+   minus the calligraphy: the console flips to a fixed hand-drawn wordmark, and
+   a school's name is arbitrary text that has to be set rather than drawn.
+
+   Transitions rather than keyframes, for the reason the console records: they
+   reverse from wherever they had got to, so flicking the pointer across the
+   logo never leaves it stranded side-on.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.school-mark {
+  --flip-in: 620ms;
+  --flip-out: 560ms;
+  --spin: cubic-bezier(0.2, 0.72, 0.24, 1);
+
+  position: relative;
+  display: inline-block;
+  perspective: 620px;
+}
+
+.school-mark__card {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform var(--flip-out) var(--spin);
+}
+
+/* Gated behind a real pointer. Touch browsers keep `:hover` applied after a tap,
+   which would leave the mark flipped on a phone with no way to turn it back. */
+@media (hover: hover) and (pointer: fine) {
+  .school-mark:hover .school-mark__card {
+    transform: rotateY(180deg);
+    transition: transform var(--flip-in) var(--spin) 0ms;
+  }
+}
+
+.school-mark:focus-visible .school-mark__card,
+a:focus-visible .school-mark__card,
+button:focus-visible .school-mark__card {
+  transform: rotateY(180deg);
+  transition: transform var(--flip-in) var(--spin) 0ms;
+}
+
+.school-mark__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.school-mark__face--back {
+  transform: rotateY(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .school-mark__card {
+    transition: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
    Scrollbars.
 
    Two mechanisms on purpose, because they answer two different problems.

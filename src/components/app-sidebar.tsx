@@ -6,16 +6,14 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
 import { HomeIcon, TeamMgtIcon } from "@/assets/navbar-svg";
 import { NavAccordionProvider, NavMain } from "./nav-main";
 import { routesPath } from "@/routes/routesPath";
-import { useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 import {
   BookOpen,
   CalendarClock,
@@ -31,6 +29,7 @@ import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { LensRail } from "./layout/lens-pills";
+import { SchoolMark } from "./school-mark";
 
 // A nav item may declare a permission (single code or a list). When absent the
 // item always renders. `permissionMode` decides whether a list requires ANY
@@ -75,7 +74,6 @@ export function AppSidebar({
   // The raw school.logo is an auth-gated /media/ URL a browser <img> can't load;
   // the hook fetches it with the token and returns a renderable blob: URL.
   const logoBlobUrl = useSchoolLogo();
-  const roleLabel = humanizeRole(user?.role);
 
   // A nav item is visible when it declares no permission, or when the current
   // user satisfies the declared permission(s) per the item's mode.
@@ -383,29 +381,25 @@ export function AppSidebar({
         <SidebarHeader className="h-15 justify-center border-b border-white-02 bg-white p-0 px-2">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton
-                size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground h-11 hover:bg-transparent cursor-pointer mx-auto justify-center overflow-hidden"
-                tooltip={schoolName}
+              {/* The mark alone, the way the console shows its own. The name
+                  and the role used to sit beside it in a block wide enough to
+                  need its own truncation; the name is now one hover away and
+                  the role is on the account menu, where a reader looks for it.
+
+                  Collapsed to the icon rail there is no width for the name to
+                  turn into, so it stays a plain logo there. */}
+              <Link
+                to={routesPath.PROTECTED.OVERVIEW.INDEX}
+                aria-label={schoolName ? `${schoolName} - go to dashboard` : "Go to dashboard"}
+                className="mx-auto flex h-11 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <div className={cn("size-fit ")}>
-                  <img
-                    src={logoBlobUrl ?? "/image/logo.png"}
-                    alt="school logo"
-                    className="size-7.5"
-                  />
-                </div>
-                {state !== "collapsed" && (
-                  <div className="max-w-45">
-                    <h4 className="text-sm font-semibold text-gray-01 font-mont truncate">
-                      {schoolName}
-                    </h4>
-                    <p className="text-xs text-gray-06 truncate">
-                      {roleLabel}
-                    </p>
-                  </div>
-                )}
-              </SidebarMenuButton>
+                <SchoolMark
+                  logo={logoBlobUrl}
+                  name={schoolName}
+                  slug={school?.slug}
+                  animate={state !== "collapsed"}
+                />
+              </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
@@ -451,15 +445,4 @@ export function AppSidebar({
 
     </>
   );
-}
-
-// Turn a backend role token ("SCHOOL_ADMIN", "branch_admin") into a display
-// label ("School Admin"). Falls back to an empty string when nothing is set.
-function humanizeRole(value?: string | null): string {
-  if (!value) return "";
-  return value
-    .replace(/[_-]+/g, " ")
-    .trim()
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
