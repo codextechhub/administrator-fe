@@ -159,7 +159,15 @@ export function PaperFilterBar({
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-72 p-3">
+          {/* Capped and scrolling. Five groups of options is taller than a
+              laptop screen the moment a school has entered a fortnight of
+              papers - the last group ran off the bottom with no way to reach
+              it. Each group keeps its own inner cap so one long list of
+              classes cannot push the others out of sight either. */}
+          <PopoverContent
+            align="start"
+            className="max-h-[min(70vh,32rem)] w-72 overflow-y-auto p-3"
+          >
             <div className="grid gap-3">
               <Group
                 title="Class"
