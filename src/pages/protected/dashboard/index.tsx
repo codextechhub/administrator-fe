@@ -24,6 +24,7 @@ import { useGetAcademicOverviewQuery } from "@/redux/services/academics/academic
 import { useGetCalendarOverviewQuery } from "@/redux/services/calendar/calendar-api";
 import { useGetOnboardingStateQuery } from "@/redux/services/onboarding/onboarding-api";
 import { buildAttention } from "./attention";
+import { HeroBuildings } from "./hero-buildings";
 import { FocusPanel } from "./focus-panel";
 
 const R = routesPath.PROTECTED;
@@ -242,22 +243,56 @@ export default function Dashboard() {
   return (
     <PageShell className="space-y-6">
       {/* ── who, when, and where in the year ─────────────────────────────── */}
-      <section className="rounded-2xl bg-primary px-5 py-4.5 text-white">
-        <p className="flex items-center gap-1.5 text-[11px] font-medium text-white/60">
-          <CalendarDays className="size-3.5" />
-          {today}
-        </p>
-        <h1 className="mt-1.5 font-mont text-xl font-semibold tracking-tight">
-          {greeting(new Date().getHours())}
-          {user?.first_name ? `, ${user.first_name}` : ""}.
-        </h1>
-        <p className="mt-1 text-xs leading-5 text-white/65 text-pretty">
-          {term
-            ? `${term.name} of ${sessionName ?? "this year"}, day ${taught} of ${teachable} taught.`
-            : sessionName
-              ? `${sessionName}. No term covers today, so nothing is being taught right now.`
-              : "No academic year is set up yet, so there is nothing to teach into."}
-        </p>
+      {/* The panel the console's own hero is built the same way: a diagonal
+          gradient, a 28px grid of hairlines so it is not a flat rectangle, two
+          soft lights drifting behind it, and the school itself drawn at the
+          right. Everything is stacked in ONE background-image rather than in
+          layered elements, so the whole thing costs one paint and cannot fall
+          out of alignment. */}
+      <section
+        className="relative isolate overflow-hidden rounded-2xl px-5 py-4.5 text-white"
+        style={{
+          backgroundImage: [
+            "linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px)",
+            // Teal-petrol rather than the app's navy: the hero is the one
+            // surface that is not a control, and painting it in the button
+            // colour made it read as a very large button. Cool light at the
+            // top, warm gold low down - gold because a school's own iconography
+            // is crests and certificates, and it is the note the copperplate on
+            // the sidebar mark is already playing.
+            "radial-gradient(circle at 8% -10%, rgba(120,214,220,.22), transparent 42%)",
+            "radial-gradient(circle at 99% 118%, rgba(214,168,90,.22), transparent 40%)",
+            "linear-gradient(118deg, #0E313C 0%, #14495A 54%, #0A2029 100%)",
+          ].join(", "),
+          backgroundSize: "28px 28px, 28px 28px, auto, auto, auto",
+        }}
+      >
+        <div className="hero-ambient pointer-events-none absolute -right-20 -top-24 size-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="hero-ambient-delayed pointer-events-none absolute -bottom-24 left-[34%] size-56 rounded-full bg-white/[0.06] blur-3xl" />
+
+        {/* Behind the text and clipped by the panel. `max-w-[55%]` so the
+            greeting always wins the room it needs - on a phone the drawing is
+            gone entirely rather than squeezed behind three lines of type. */}
+        <HeroBuildings className="pointer-events-none absolute bottom-0 right-3 hidden h-[82%] max-w-[52%] text-white/[0.17] sm:block" />
+
+        <div className="relative min-w-0 max-w-xl">
+          <p className="flex items-center gap-1.5 text-[11px] font-medium text-white/60">
+            <CalendarDays className="size-3.5" />
+            {today}
+          </p>
+          <h1 className="mt-1.5 font-mont text-xl font-semibold tracking-tight">
+            {greeting(new Date().getHours())}
+            {user?.first_name ? `, ${user.first_name}` : ""}.
+          </h1>
+          <p className="mt-1 text-xs leading-5 text-white/70 text-pretty">
+            {term
+              ? `${term.name} of ${sessionName ?? "this year"}, day ${taught} of ${teachable} taught.`
+              : sessionName
+                ? `${sessionName}. No term covers today, so nothing is being taught right now.`
+                : "No academic year is set up yet, so there is nothing to teach into."}
+          </p>
+        </div>
       </section>
 
       {/* ── today's focus ───────────────────────────────────────────────── */}

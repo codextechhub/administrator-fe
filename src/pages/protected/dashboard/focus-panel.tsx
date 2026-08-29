@@ -169,7 +169,12 @@ export function FocusPanel({ items }: { items: AttentionItem[] }) {
       aria-label="Action needed"
       onMouseEnter={() => setHoveredOpen(true)}
       onMouseLeave={() => setHoveredOpen(false)}
-      className="rounded-2xl border border-white-02 bg-white p-4 sm:p-5"
+      // Warm, not white. Every other box on this page is a white panel
+      // reporting a number; this one is the only thing asking to be acted on,
+      // and a card that looks like all the others is one a reader learns to
+      // scroll past. The wash is faint on purpose - the cards inside carry
+      // their own red and amber, and a loud container would compete with them.
+      className="rounded-2xl border border-yellow-01/45 bg-[linear-gradient(112deg,rgba(214,168,90,.10)_0%,rgba(214,168,90,.04)_46%,rgba(255,255,255,0)_100%)] p-4 sm:p-5"
     >
       <div className="flex min-w-0 items-center gap-3">
         <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-3">

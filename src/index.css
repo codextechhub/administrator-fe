@@ -335,6 +335,43 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   The dashboard hero.
+
+   Two soft lights drifting behind the greeting, slowly and out of phase, so the
+   panel is not a flat rectangle. Ported from console-fe's overview, where the
+   same pair sits behind its own hero.
+
+   The movement is the whole reason they are here, so a reader who has asked for
+   less of it gets none: the lights stay where they are and the panel is simply
+   a gradient.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@keyframes hero-ambient-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-18px, 14px, 0) scale(1.08);
+  }
+}
+
+.hero-ambient {
+  animation: hero-ambient-drift 14s ease-in-out infinite;
+}
+
+.hero-ambient-delayed {
+  animation: hero-ambient-drift 18s ease-in-out -6s infinite reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ambient,
+  .hero-ambient-delayed {
+    animation: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
    The sidebar mark.
 
    The school's logo, which turns over on hover to write the school's name and
