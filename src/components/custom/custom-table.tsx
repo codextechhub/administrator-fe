@@ -339,13 +339,20 @@ const CustomTable = ({
               {tableBodyList?.length > 0 ? (
                 <>
                   {tableBodyList?.map((item: any, rowIndex: any) => {
-                    // to ignore some data that might be needed when accessing row object, table row: value Object.values(item) is changed to FORMATTED_DATA?.map((data) => Object.values(data))
-
-                    //  if tableBodyList object has _slug key it will be ignored when rendering table data
+                    // Underscore keys are row metadata the table never renders
+                    // - an id the row menu needs to find its record back, and
+                    // nothing a reader should see.
+                    //
+                    // This used to filter the single literal key "_slug" while
+                    // the card renderer above already filtered every "_" key.
+                    // The two disagreed, so a row carrying "_id" was hidden on
+                    // a phone and rendered as a first column on a desktop,
+                    // shifting every value one cell left: the admission number
+                    // sat under Student, the class under Admission no., and the
+                    // table read as though the data were wrong rather than the
+                    // layout. Same rule in both places now.
                     const FORMATTED_DATA = Object?.entries(item)
-                      .filter(([key]) => {
-                        return key !== "_slug";
-                      })
+                      .filter(([key]) => !key.startsWith("_"))
                       ?.map((d) => {
                         return {
                           [d[0]]: d[1],

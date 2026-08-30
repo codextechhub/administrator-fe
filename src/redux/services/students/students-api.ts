@@ -55,16 +55,21 @@ export const studentsApi = baseApi.injectEndpoints({
     /**
      * The directory's header: the tiles, the status bar and the capacity panel.
      *
-     * Aggregated over the same scoped queryset the list uses, so the figures
-     * can never describe more students than the table below them shows.
-     *
-     * NOTE: it does NOT yet honour `?branch=`. The list does. Until the backend
-     * ask lands, a branch lens narrows the table and leaves these figures
-     * whole-school - which is why the directory must not print them as though
-     * they described the filtered set.
+     * Aggregated over the same scoped queryset the list uses, and narrowed by
+     * the same `?branch=`, so the figures can never describe a different set of
+     * students from the table below them. That agreement is the whole point:
+     * the summary used not to take a branch, and the tiles sat there saying 87
+     * over a table showing 49.
      */
-    getStudentSummary: builder.query<Envelope<StudentSummary>, void>({
-      query: () => ({ url: `/students/summary/`, method: "GET" }),
+    getStudentSummary: builder.query<
+      Envelope<StudentSummary>,
+      { branch?: number } | void
+    >({
+      query: (args) => ({
+        url: `/students/summary/`,
+        method: "GET",
+        params: listParams(args as StudentListArgs | void),
+      }),
       providesTags: ["Students"],
     }),
 
@@ -84,8 +89,15 @@ export const studentsApi = baseApi.injectEndpoints({
      * in applicants and leavers - and this is a count in front of a registrar
      * all day, so a wrong definition is a wrong number all day.
      */
-    getUnplacedStudents: builder.query<PaginatedEnvelope<StudentRow>, void>({
-      query: () => ({ url: `/students/unplaced/`, method: "GET" }),
+    getUnplacedStudents: builder.query<
+      PaginatedEnvelope<StudentRow>,
+      { branch?: number } | void
+    >({
+      query: (args) => ({
+        url: `/students/unplaced/`,
+        method: "GET",
+        params: listParams(args as StudentListArgs | void),
+      }),
       providesTags: ["Students"],
     }),
 
@@ -126,7 +138,7 @@ export const studentsApi = baseApi.injectEndpoints({
 
     getGuardians: builder.query<
       PaginatedEnvelope<GuardianRow>,
-      { search?: string; page?: number } | void
+      { search?: string; page?: number; branch?: number } | void
     >({
       query: (args) => ({
         url: `/guardians/`,

@@ -89,3 +89,52 @@ describe("CustomTable loading skeleton", () => {
     expect(html).not.toContain('aria-hidden="true"');
   });
 });
+
+// Row metadata: a caller carries an id on the row so the row menu can find its
+// record back, and the reader must never see it. The table renderer used to
+// filter the single literal key "_slug" while the card renderer filtered every
+// "_" key, so a row carrying "_id" was hidden on a phone and rendered as an
+// extra first column on a desktop - shifting every value one cell left.
+describe("CustomTable row metadata", () => {
+  const COLUMNS = ["Student", "Class", "Status"];
+  const rows = [{ _id: 42, Student: "Ada Nwosu", Class: "JSS1 A", Status: "Active" }];
+
+  function cellsOf(markup: string) {
+    const doc = new DOMParser().parseFromString(markup, "text/html");
+    const body = doc.querySelectorAll("tbody tr");
+    return [...(body[0]?.querySelectorAll("td") ?? [])].map((td) =>
+      (td.textContent ?? "").trim(),
+    );
+  }
+
+  it("never renders an underscore key as a column", () => {
+    const cells = cellsOf(
+      renderToStaticMarkup(
+        <CustomTable tableHeaderList={COLUMNS} tableBodyList={rows} />,
+      ),
+    );
+    expect(cells).not.toContain("42");
+  });
+
+  it("keeps the values under the headers they belong to", () => {
+    const cells = cellsOf(
+      renderToStaticMarkup(
+        <CustomTable tableHeaderList={COLUMNS} tableBodyList={rows} />,
+      ),
+    );
+    expect(cells.slice(0, 3)).toEqual(["Ada Nwosu", "JSS1 A", "Active"]);
+  });
+
+  it("still honours the original _slug spelling", () => {
+    const cells = cellsOf(
+      renderToStaticMarkup(
+        <CustomTable
+          tableHeaderList={COLUMNS}
+          tableBodyList={[{ _slug: 7, Student: "Obi Eze", Class: "JSS2 B", Status: "Active" }]}
+        />,
+      ),
+    );
+    expect(cells).not.toContain("7");
+    expect(cells.slice(0, 3)).toEqual(["Obi Eze", "JSS2 B", "Active"]);
+  });
+});

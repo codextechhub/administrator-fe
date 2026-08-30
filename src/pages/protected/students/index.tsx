@@ -35,13 +35,11 @@ import { statusChipClass } from "./status-chip";
  * mutation is written. The row menu's Edit, Change status and Transfer arrive
  * with the drawer bundle.
  *
- * **The tiles and the table come from two different endpoints**, and only one
- * of them honours `?branch=` today. `/students/` narrows; `/students/summary/`
- * ignores it and answers for the whole school. So while a branch lens is
- * applied the tiles say so in words rather than printing a whole-school figure
- * over a branch's rows - 87 above 49 with nothing marking the difference is how
- * a registrar reports the wrong number. Remove the caveat when the backend ask
- * lands; do not remove it by hiding the tiles.
+ * **The tiles and the table come from two different endpoints and must agree.**
+ * Both are given the same branch. They did not use to be: `/students/summary/`
+ * took no branch, so the tiles read 87 over a table showing 49, with nothing on
+ * the page marking which number was which. If a figure here is ever fed from a
+ * call that does not carry `branch`, that gap comes straight back.
  */
 export default function StudentDirectory() {
   const navigate = useNavigate();
@@ -77,8 +75,9 @@ export default function StudentDirectory() {
     isError: listError,
     refetch,
   } = useGetStudentsQuery(listArgs);
+  // The same branch the table gets. These two used to disagree.
   const { data: summaryData, isLoading: summaryLoading } =
-    useGetStudentSummaryQuery();
+    useGetStudentSummaryQuery({ branch });
   // The filter dropdowns' options. Classes are Academic Structure's, not ours.
   const { data: classesData } = useGetClassesQuery();
 
@@ -102,7 +101,6 @@ export default function StudentDirectory() {
     (level !== "all" ? 1 : 0) +
     (status !== "all" ? 1 : 0);
   const anyFilter = facets > 0 || search.trim().length > 0;
-  const branchNarrowed = branch !== undefined;
 
   const chips = [
     search.trim() && { label: `"${search.trim()}"`, clear: () => setSearch("") },
@@ -171,13 +169,6 @@ export default function StudentDirectory() {
           emphasis={Boolean(summary?.unassigned)}
         />
       </section>
-
-      {branchNarrowed && (
-        <p className="text-xs text-gray-05">
-          The table below shows {branchLens.label} only. The figures above cover
-          the whole school - the summary does not take a branch yet.
-        </p>
-      )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <StatusBar
