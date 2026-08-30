@@ -5,9 +5,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useMatches } from "react-router";
+
 import { cn } from "@/lib/utils";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { useSessionLens } from "@/hooks/use-session-lens";
+
+/** Which lenses a route reads. Omit for both, which is what most screens want. */
+export type LensChoice = "both" | "branch" | "session";
+
+/**
+ * Read `lenses` off the deepest matched route.
+ *
+ * Same merge order DashboardLayout uses for its own handle, so a nested screen
+ * can narrow its parent's lenses without the parent knowing about it.
+ */
+function useLensHandle(): { lenses?: LensChoice } {
+  const matches = useMatches();
+  return matches.reduce<{ lenses?: LensChoice }>(
+    (acc, m) => ({ ...acc, ...((m.handle as { lenses?: LensChoice } | undefined) ?? {}) }),
+    {},
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The two lenses: which branch you are looking at, and which year.
@@ -160,12 +179,33 @@ export function LensRail({ collapsed }: { collapsed: boolean }) {
   const branch = useBranchLens();
   const session = useSessionLens();
 
-  if (!branch.applies && !session.applies) return null;
+  // Which lenses the screen underneath actually reads. A lens belongs to the
+  // screens that read it: dashboard-layout says so in DashboardHandle, and this
+  // is where that becomes true rather than aspirational. Before it did, the
+  // rail rendered both pills on every page from the sidebar, and the handle
+  // gated only the read-only notice in the header.
+  //
+  // The case that forced it is the one that comment names by name - a session
+  // pill over the student roster. Student Management has no session dimension
+  // to move: a student's status, branch, guardians and documents are all
+  // current-state, and only the class placement is recorded per year. Turning
+  // the pill there would relabel the header and change not one of the 84 rows
+  // beneath it, with nothing on screen admitting it. See section 2.0 of
+  // docs/students-design-phases.md.
+  //
+  // Default is BOTH, so every existing route keeps exactly what it had.
+  const { lenses = "both" } = useLensHandle();
+  const wantsBranch = lenses === "both" || lenses === "branch";
+  const wantsSession = lenses === "both" || lenses === "session";
+
+  const showBranch = wantsBranch && branch.applies;
+  const showSession = wantsSession && session.applies;
+  if (!showBranch && !showSession) return null;
 
   return (
     <div className="flex flex-col gap-1.5 border-t border-white-02 px-2 py-2.5">
-      <BranchPill collapsed={collapsed} />
-      <SessionPill collapsed={collapsed} />
+      {showBranch && <BranchPill collapsed={collapsed} />}
+      {showSession && <SessionPill collapsed={collapsed} />}
     </div>
   );
 }

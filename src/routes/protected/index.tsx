@@ -9,6 +9,7 @@ import { overviewRoutes } from "./overview-routes";
 import { branchesRoutes } from "./branches-routes";
 import { academicRoutes } from "./academic-routes";
 import { classesRoutes } from "./classes-routes";
+import { studentsRoutes } from "./students-routes";
 import { onboardingRoutes, onboardingWelcomeRoute } from "./onboarding-routes";
 
 export const protectedRoutes = [
@@ -23,6 +24,7 @@ export const protectedRoutes = [
       ...branchesRoutes,
       ...academicRoutes,
       ...classesRoutes,
+      ...studentsRoutes,
     ],
   },
 ] as RouteObject[];

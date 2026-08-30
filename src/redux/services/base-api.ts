@@ -381,6 +381,11 @@ export const baseApi = createApi({
     "Users",
     "Branches",
     "Students",
+    // Separate from Students, because a guardian is reachable from more than
+    // one child: linking one changes both students' pages and the guardian's
+    // own, and folding it into Students would refetch the whole directory
+    // every time a contact detail moved.
+    "Guardians",
     "Teachers",
     "Administrators",
     "Sessions",

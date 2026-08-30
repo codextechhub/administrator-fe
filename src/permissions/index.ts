@@ -15,7 +15,7 @@
 //   AA = action         01=view   02=create  03=update  04=delete
 //                       05=approve 08=manage  09=suspend  10=reactivate
 //                       11=assign  12=start   13=end   14=run   15=execute
-//                       16=publish
+//                       16=publish 17=import  18=export
 //                       39=view_sensitive
 //
 // ── Adding a permission ───────────────────────────────────────────────────────
@@ -46,6 +46,8 @@ const REGISTRY: Record<string, string> = {
   "100302": "school.students.create",
   "100303": "school.students.update",
   "100308": "school.students.manage",
+  "100317": "school.students.import",
+  "100318": "school.students.export",
   "100339": "school.students.view_sensitive",
 
   // ── school / teachers  (MM=10, RR=04) ──────────────────────────────────────
@@ -229,6 +231,11 @@ export const P = {
   ENROLL_STUDENT:          "100302",  // enroll / add a new student
   MODIFY_STUDENT:          "100303",  // edit an existing student's record
   MANAGE_STUDENTS:         "100308",  // student lifecycle: transfer, withdraw, graduate
+  // Both are real backend keys (vs_students/constants.py) seeded onto school
+  // roles, and neither had a code here - so the import wizard and the export
+  // button had no way to be gated at all.
+  IMPORT_STUDENTS:         "100317",  // load a roll from a spreadsheet
+  EXPORT_STUDENTS:         "100318",  // export the directory as it is filtered
   VIEW_STUDENT_SENSITIVE:  "100339",  // read FLS-gated sensitive student fields
 
   // ── Teacher Management ─────────────────────────────────────────────────────

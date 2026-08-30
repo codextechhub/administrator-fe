@@ -56,6 +56,26 @@ export const routesPath = {
       SUBJECTS: "/academic-structure/subjects",
       ASSIGNMENTS: "/academic-structure/assignments",
     },
+    // Student Management. One prefix for the whole module: the directory is
+    // its front door and everything else hangs off it, the way Academic
+    // Structure is organised.
+    //
+    // The profile is a route rather than a drawer because it is a page in its
+    // own right - six tabs, its own actions - and because a registrar sends
+    // a colleague a link to a child's record.
+    STUDENTS: {
+      INDEX: "/students",
+      PROFILE: "/students/:id",
+      PROFILE_ID: (id: string | number) => `/students/${id}`,
+      APPLICANTS: "/students/applicants",
+      GUARDIANS: "/students/guardians",
+      GUARDIAN_DETAILS: "/students/guardians/:id",
+      GUARDIAN_DETAILS_ID: (id: string | number) => `/students/guardians/${id}`,
+      ENROL: "/students/enrol",
+      ASSIGN: "/students/classes",
+      PROMOTION: "/students/promotion",
+      IMPORT: "/students/import",
+    },
     // The academic calendar is its OWN module now, not a child of academic
     // management. Spelled correctly here; the old /academic/calender paths
     // redirect.

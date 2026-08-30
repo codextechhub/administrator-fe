@@ -29,7 +29,7 @@ import {
 import { NotLiveNotice } from "@/pages/protected/onboarding/components/not-live-notice";
 import { OnboardingStatusStrip } from "@/pages/protected/onboarding/components/onboarding-status-strip";
 import { AppSearch } from "./app-search";
-import { ReadOnlyNotice } from "./lens-pills";
+import { ReadOnlyNotice, type LensChoice } from "./lens-pills";
 import { NotificationsBell } from "@/components/custom/notifications-bell";
 import { SupportSheet } from "@/components/layout/support-sheet";
 import { SUPPORT_OPEN_EVENT } from "@/components/layout/support-open";
@@ -60,14 +60,27 @@ export type DashboardHandle = {
    */
   onboarding?: boolean;
   /**
-   * Put the branch and session pills in the header.
+   * This screen reads a lens, so show the read-only notice when the year is
+   * archived.
    *
-   * Opt-in per route rather than global, because a lens belongs to the screens
-   * that actually read it. A session pill over the student roster would be a
-   * control that changes nothing, and a branch pill on a screen that does not
-   * filter by branch is worse: it looks like it narrowed the page.
+   * Note this does NOT control the pills. They live in the sidebar's LensRail
+   * and are governed by `lenses` below - which is the flag that finally makes
+   * the rule in the next comment true.
    */
   lens?: boolean;
+  /**
+   * WHICH lenses this screen reads. Defaults to both.
+   *
+   * A lens belongs to the screens that actually read it. A session pill over
+   * the student roster would be a control that changes nothing, and a branch
+   * pill on a screen that does not filter by branch is worse: it looks like it
+   * narrowed the page.
+   *
+   * Set `"branch"` on a screen with no session dimension, `"session"` on one
+   * with no branch dimension. Omit it and both pills render, which is what
+   * every screen written before this flag existed expects.
+   */
+  lenses?: LensChoice;
   /**
    * This screen is open to a school that has NOT gone live.
    *

@@ -20,6 +20,7 @@ import {
   CalendarRange,
   ListChecks,
   Rocket,
+  Users,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P, type PermissionCode } from "@/permissions";
@@ -131,6 +132,24 @@ export function AppSidebar({
         isActive: location.startsWith(routesPath.PROTECTED.BRANCHES.INDEX),
         childActive: false,
         permission: P.BROWSE_BRANCHES,
+      },
+    ],
+    people: [
+      {
+        // Student Management. Only the directory is listed today: the profile
+        // hangs off it and needs no door of its own, and Applicants, Guardians,
+        // Classes & Transfers and Promotion join this list in the phases that
+        // build them. A nav item that 404s is a door drawn on a wall.
+        //
+        // The design puts live counts on Applicants and "No class". Those
+        // belong on the items they describe, so they arrive with those screens
+        // rather than being parked on the directory now.
+        title: "Students",
+        url: routesPath.PROTECTED.STUDENTS.INDEX,
+        icon: Users,
+        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.INDEX),
+        childActive: false,
+        permission: P.BROWSE_STUDENTS,
       },
     ],
     academics: [
@@ -318,6 +337,7 @@ export function AppSidebar({
   // Filter each group's items by permission. A group whose items are all
   // filtered out is dropped entirely (its label disappears with it).
   const overview = data.overview.filter(canSee);
+  const people = data.people.filter(canSee);
   const academics = data.academics.filter(canSee);
 
   const { state } = useSidebar();
@@ -367,6 +387,9 @@ export function AppSidebar({
             <>
               {overview.length > 0 && (
                 <NavMain items={overview} groupTitle="Overview" />
+              )}
+              {people.length > 0 && (
+                <NavMain items={people} groupTitle="People" />
               )}
               {academics.length > 0 && (
                 <NavMain items={academics} groupTitle="Academics" />
