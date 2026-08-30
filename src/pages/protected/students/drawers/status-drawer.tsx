@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
-import { apiErrorMessage } from "@/utils/api-error";
+import { apiDetailMessage } from "@/utils/api-error";
 import { useChangeStudentStatusMutation } from "@/redux/services/students/students-api";
 import type {
   AllowedTransition,
@@ -81,7 +81,7 @@ export function StatusDrawer({
       onClose();
     } catch (error) {
       setConfirming(false);
-      toast.error(apiErrorMessage(error, "We could not change that status."));
+      toast.error(apiDetailMessage(error, "We could not change that status."));
     }
   }
 

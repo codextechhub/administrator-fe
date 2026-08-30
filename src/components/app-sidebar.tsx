@@ -20,6 +20,7 @@ import {
   CalendarRange,
   ListChecks,
   Rocket,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -147,7 +148,21 @@ export function AppSidebar({
         title: "Students",
         url: routesPath.PROTECTED.STUDENTS.INDEX,
         icon: Users,
-        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.INDEX),
+        // Every student screen lives under /students, so a bare startsWith
+        // lights this item up on Applicants too and two rows look selected at
+        // once. The directory owns the prefix EXCEPT where a sibling item owns
+        // a deeper path of its own.
+        isActive:
+          location.startsWith(routesPath.PROTECTED.STUDENTS.INDEX) &&
+          !location.startsWith(routesPath.PROTECTED.STUDENTS.APPLICANTS),
+        childActive: false,
+        permission: P.BROWSE_STUDENTS,
+      },
+      {
+        title: "Applicants",
+        url: routesPath.PROTECTED.STUDENTS.APPLICANTS,
+        icon: UserPlus,
+        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.APPLICANTS),
         childActive: false,
         permission: P.BROWSE_STUDENTS,
       },

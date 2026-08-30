@@ -4,6 +4,8 @@ import { LayoutGrid, List, Search, Users, X } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
 import { Button } from "@/components/ui/button";
+import PermissionGate from "@/components/custom/permission-gate";
+import { P } from "@/permissions";
 import { PageShell } from "@/components/layout/page-shell";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -241,6 +243,15 @@ export default function StudentDirectory() {
             </option>
           ))}
         </NativeSelect>
+
+        <PermissionGate permission={P.ENROLL_STUDENT}>
+          <Button
+            size="sm"
+            onClick={() => navigate(routesPath.PROTECTED.STUDENTS.ENROL)}
+          >
+            Enrol a student
+          </Button>
+        </PermissionGate>
 
         <div className="inline-flex rounded-full border border-white-02 bg-white p-0.5">
           <ViewButton

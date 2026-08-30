@@ -289,6 +289,62 @@ export interface StudentWrite {
   enrolment_date: string;
 }
 
+/** One guardian on an enrolment: either an existing id, or a new name+phone. */
+export interface GuardianOnEnrolment {
+  guardian_id?: number;
+  full_name?: string;
+  phone?: string;
+  email?: string;
+  relationship: string;
+  is_primary: boolean;
+}
+
+/**
+ * Enrolling a student, or saving them as an applicant.
+ *
+ * One shape with a flag rather than two, mirroring the backend: two payloads
+ * would be two sets of rules, and the second would be the one that forgets the
+ * duplicate check.
+ *
+ * The flag decides which of two fields is required. An enrolment needs
+ * `school_class` - a child joining the school joins a class. An applicant needs
+ * `applied_for`, a LEVEL, because they have not been placed in anything yet and
+ * recording a class for them would claim a seat nobody gave them.
+ *
+ * `student_number` is optional here even though the design treats it as
+ * required. Whether a school issues one, and in what format, is the school's
+ * own rule and lives in the admission policy - see AdmissionPolicy.
+ */
+export interface EnrolWrite {
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+  date_of_birth: string;
+  gender: Gender;
+  nationality?: string;
+  state_of_origin?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  previous_school?: string;
+  blood_group?: string;
+  allergies?: string;
+  conditions?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  student_number?: string;
+  enrolment_date?: string;
+  /** Required unless `as_applicant`. */
+  school_class?: number | null;
+  /** A LEVEL id. Required when `as_applicant`. */
+  applied_for?: number | null;
+  as_applicant?: boolean;
+  /** Acknowledgements, never preferences. Send false and let the server ask. */
+  allow_over_capacity?: boolean;
+  confirm_duplicate?: boolean;
+  guardians: GuardianOnEnrolment[];
+}
+
 /** The eight the backend accepts. An aunt recorded as OTHER is a contact the
  *  school cannot tell from a neighbour, and it knew which when it typed her in. */
 export const RELATIONSHIPS = [

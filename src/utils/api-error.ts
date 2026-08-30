@@ -76,6 +76,26 @@ export function apiErrorMessage(error: unknown, fallback: string): string {
  * up showing "that address already has an account" as a page-level toast with
  * no indication of which field to change.
  */
+/**
+ * The most specific sentence the server gave, for a screen with no field to
+ * put it under.
+ *
+ * Some refusals carry their reason in `message` ("SSS1 B belongs to the Annex,
+ * and this student is at the Main Branch."). Others - anything raised by a
+ * serializer - leave `message` as the generic "An error occurred. Check the
+ * error details for more information." and put the real sentence in
+ * `detail.<field>`. A caller that reads only `message` shows the generic line
+ * and hides the one that says what to do: "This school has more than one
+ * branch, so say which one."
+ *
+ * So: a field detail wins, then a real message, then the fallback.
+ */
+export function apiDetailMessage(error: unknown, fallback: string): string {
+  const first = Object.values(fieldErrors(error))[0];
+  if (first) return first;
+  return apiErrorMessage(error, fallback);
+}
+
 export function fieldErrors(error: unknown): Record<string, string> {
   const { detail } = parseApiError(error);
   const out: Record<string, string> = {};

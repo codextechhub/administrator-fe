@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, useId } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import {
   Sheet,
@@ -81,7 +82,17 @@ export function DrawerShell({
   );
 }
 
-/** A labelled field. `error` shows only once the field has been touched. */
+/**
+ * A labelled field. `error` shows only once the field has been touched.
+ *
+ * The label is tied to the control with `htmlFor`/`id` rather than by wrapping
+ * it. A wrapping `<label>` looks equivalent and is not: the accessible name is
+ * computed from the label's text, and an embedded control contributes its own
+ * content to that text - so a `<select>` inside one announced as "Gender Select
+ * a gender Female Male", reading its entire option list back as the name of the
+ * field. The hint and the error are tied on with `aria-describedby`, so they are
+ * announced as description rather than swallowed into the name too.
+ */
 export function Field({
   label,
   error,
@@ -93,16 +104,31 @@ export function Field({
   hint?: string;
   children: ReactNode;
 }) {
+  const id = useId();
+  const noteId = `${id}-note`;
+  const note = error ?? hint;
+
   return (
-    <label className="grid gap-1.5">
-      <span className="text-xs font-medium text-gray-05">{label}</span>
-      {children}
-      {error ? (
-        <span className="text-xs text-red-600">{error}</span>
-      ) : hint ? (
-        <span className="text-xs text-gray-05">{hint}</span>
-      ) : null}
-    </label>
+    <div className="grid gap-1.5">
+      <label htmlFor={id} className="text-xs font-medium text-gray-05">
+        {label}
+      </label>
+      {isValidElement(children)
+        ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+            id,
+            ...(note ? { "aria-describedby": noteId } : {}),
+            ...(error ? { "aria-invalid": true } : {}),
+          })
+        : children}
+      {note && (
+        <span
+          id={noteId}
+          className={error ? "text-xs text-red-600" : "text-xs text-gray-05"}
+        >
+          {note}
+        </span>
+      )}
+    </div>
   );
 }
 

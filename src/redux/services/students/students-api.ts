@@ -2,6 +2,7 @@ import { baseApi } from "../base-api";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import type {
   AdmissionPolicy,
+  EnrolWrite,
   StudentStatus,
   StudentWrite,
   ClassHistoryRow,
@@ -303,6 +304,65 @@ export const studentsApi = baseApi.injectEndpoints({
       providesTags: ["Students"],
     }),
 
+    /**
+     * Enrol a student, or save them as an applicant. One route, one flag.
+     *
+     * Two endpoints would be two sets of rules, and the second one would be
+     * the one that forgets the duplicate check.
+     *
+     * `confirm_duplicate` and `allow_over_capacity` are both acknowledgements
+     * rather than preferences: send them false, let the server refuse, and only
+     * then ask. Pre-setting either answers a question the server meant for the
+     * registrar - "is this a different child with the same name and birthday?"
+     * is not ours to answer.
+     */
+    enrolStudent: builder.mutation<Envelope<StudentDetail>, EnrolWrite>({
+      query: (body) => ({ url: `/students/`, method: "POST", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students", "Guardians"],
+    }),
+
+    /**
+     * Put an applicant on the roll.
+     *
+     * It does NOT place them in a class, and that is the model rather than an
+     * omission: an enrolled student with no class is the "unassigned" state the
+     * whole module tracks, and the class is assigned with its own reason and
+     * audit line afterwards.
+     */
+    confirmApplicant: builder.mutation<
+      Envelope<StudentDetail>,
+      { id: number; student_number?: string; reason?: string; effective_date?: string }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/students/${id}/confirm/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
+    /**
+     * Close an application.
+     *
+     * Not the same as withdrawing a student: the applicant was never on the
+     * roll, and a school looking up why a family did not join needs the two
+     * kept apart.
+     */
+    rejectApplicant: builder.mutation<
+      Envelope<StudentDetail>,
+      { id: number; reason: string; effective_date?: string }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/students/${id}/reject/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
     /** Read with `view`, so the enrolment form can render the rule's hint. */
     getAdmissionPolicy: builder.query<Envelope<AdmissionPolicy>, void>({
       query: () => ({ url: `/students/admission-number-policy/`, method: "GET" }),
@@ -330,4 +390,7 @@ export const {
   useAssignClassMutation,
   useLinkGuardianMutation,
   useUnlinkGuardianMutation,
+  useEnrolStudentMutation,
+  useConfirmApplicantMutation,
+  useRejectApplicantMutation,
 } = studentsApi;

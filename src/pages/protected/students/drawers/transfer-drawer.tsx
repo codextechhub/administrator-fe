@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { NativeSelect } from "@/components/ui/native-select";
-import { apiErrorMessage } from "@/utils/api-error";
+import { apiDetailMessage } from "@/utils/api-error";
 import { useGetClassesQuery } from "@/redux/services/academics/academics-api";
 import {
   useAssignClassMutation,
@@ -92,7 +92,7 @@ export function TransferDrawer({
       reset();
       onClose();
     } catch (error) {
-      const message = apiErrorMessage(error, "We could not move that student.");
+      const message = apiDetailMessage(error, "We could not move that student.");
       // The server refuses an over-capacity placement until it is acknowledged.
       // Rather than translating its refusal into our own guess, offer the
       // acknowledgement and let the next attempt carry it.

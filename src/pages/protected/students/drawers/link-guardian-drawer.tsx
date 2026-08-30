@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
-import { apiErrorMessage } from "@/utils/api-error";
+import { apiDetailMessage } from "@/utils/api-error";
 import {
   useGetGuardiansQuery,
   useGetStudentGuardiansQuery,
@@ -98,7 +98,7 @@ export function LinkGuardianDrawer({
       reset();
       onClose();
     } catch (error) {
-      toast.error(apiErrorMessage(error, "We could not link that guardian."));
+      toast.error(apiDetailMessage(error, "We could not link that guardian."));
     }
   }
 

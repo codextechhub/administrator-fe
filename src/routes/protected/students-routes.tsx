@@ -7,6 +7,8 @@ import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 // shipping in the main bundle. The Suspense fallback lives in routes/lazy-root.
 const StudentDirectory = lazy(() => import("@/pages/protected/students"));
 const StudentProfile = lazy(() => import("@/pages/protected/students/profile"));
+const EnrolStudent = lazy(() => import("@/pages/protected/students/enrol"));
+const Applicants = lazy(() => import("@/pages/protected/students/applicants"));
 
 const S = routesPath.PROTECTED.STUDENTS;
 
@@ -32,6 +34,26 @@ export const studentsRoutes = [
     Component: StudentDirectory,
     handle: {
       title: "Student Directory",
+      lens: true,
+      lenses: "branch",
+    } satisfies DashboardHandle,
+  },
+  {
+    path: S.APPLICANTS,
+    Component: Applicants,
+    handle: {
+      title: "Applicants",
+      hasBack: true,
+      lens: true,
+      lenses: "branch",
+    } satisfies DashboardHandle,
+  },
+  {
+    path: S.ENROL,
+    Component: EnrolStudent,
+    handle: {
+      title: "Enrol a student",
+      hasBack: true,
       lens: true,
       lenses: "branch",
     } satisfies DashboardHandle,
