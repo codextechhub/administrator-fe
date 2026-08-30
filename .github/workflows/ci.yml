@@ -1,0 +1,55 @@
+name: CI
+
+# staging as well as main, unlike console-fe's. This repo deploys by resetting
+# staging to main and force-pushing it (deploy-staging.sh), so staging is a
+# branch that reaches an environment and has to be tested like one.
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc -b
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npx vite build
+        env:
+          # The build reads these; neither is contacted, and a real URL here
+          # would bake a live backend into a CI artefact nobody deploys.
+          VITE_BACKEND_URL: https://ci.invalid/v1
+          VITE_APP_BASE_DOMAIN: ci.invalid
+
+      # There is deliberately no Lint step yet, and this comment is the reason
+      # rather than an oversight.
+      #
+      # console-fe runs `npx eslint . --max-warnings 0` because that codebase is
+      # at zero problems. This one is at 18 - 14 errors and 4 warnings - so the
+      # same step would fail on every push from the first one, and a red build
+      # nobody can turn green is a build people learn to ignore.
+      #
+      # The alternative, a lint step with continue-on-error, is worse: a check
+      # that cannot fail is not a check, and its presence would say the code is
+      # linted when it is not.
+      #
+      # So: clear the 14 errors, then add the step here exactly as console-fe
+      # has it. The errors are react-refresh/only-export-components (files
+      # exporting a component and a constant together), one
+      # @typescript-eslint/no-explicit-any, and one react-hooks/purity. Tracked
+      # in todo.md.
