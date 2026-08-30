@@ -206,7 +206,7 @@ export function PeriodDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
+        <ScrollArea className="flex-1" viewportClassName="px-5 py-5">
           <Field
             label="Label *"
             error={errorFor("label") || (refusal?.field === "label" ? refusal.message : "")}

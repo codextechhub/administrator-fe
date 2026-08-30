@@ -62,7 +62,23 @@ function ScrollArea({
       // a touchpad flick is not silent.
       type="hover"
       scrollHideDelay={400}
-      className={cn("relative", className)}
+      // `min-h-0 min-w-0` in the BASE, not left to callers.
+      //
+      // This component takes the overflow off the element and puts it on the
+      // viewport inside. That is the whole point, and it has one consequence
+      // that is invisible until it bites: an `overflow-y-auto` element is a
+      // scroll container, and a scroll container's `min-height: auto` resolves
+      // to zero - so as a flex child it shrank to the space available and
+      // scrolled. This Root is NOT a scroll container, so `min-height: auto`
+      // resolves to its CONTENT, and `flex-1` cannot shrink it below that.
+      //
+      // The drawer that found it: the event form's body grew to 1339px inside a
+      // 700px sheet. Nothing scrolled, and the Cancel and Add buttons were
+      // pushed off the screen entirely.
+      //
+      // Every caller that swaps `overflow-*` for this component inherits the
+      // same trap, so the fix belongs here rather than in each of them.
+      className={cn("relative min-h-0 min-w-0", className)}
       {...props}
     >
       <ScrollAreaPrimitive.Viewport

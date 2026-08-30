@@ -131,7 +131,7 @@ export function DuplicateDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
+        <ScrollArea className="flex-1" viewportClassName="px-5 py-5">
           {sources.length === 0 ? (
             <p className="rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-sm text-gray-06 text-pretty">
               No other class has any lessons yet, so there is nothing to copy

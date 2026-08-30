@@ -157,7 +157,7 @@ export function RoomDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
+        <ScrollArea className="flex-1" viewportClassName="px-5 py-5">
           <Field
             label="Room name *"
             error={errorFor("name") || (refusal?.field === "name" ? refusal.message : "")}

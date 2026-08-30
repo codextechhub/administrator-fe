@@ -171,7 +171,7 @@ export function LessonDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
+        <ScrollArea className="flex-1" viewportClassName="px-5 py-5">
           <Field
             label="Subject *"
             error={errorFor("subject")}
