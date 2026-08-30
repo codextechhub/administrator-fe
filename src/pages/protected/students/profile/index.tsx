@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router";
 import { UserRound } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +20,7 @@ import type {
   StudentStatus,
 } from "@/redux/services/students/students-types";
 
+import { StudentDrawers, type DrawerRequest } from "../drawers";
 import { formatDate, formatDateTime, titleCaseCode } from "../format";
 import { statusChipClass } from "../status-chip";
 import { Lifecycle } from "./lifecycle";
@@ -50,6 +52,7 @@ export default function StudentProfile() {
   const { id } = useParams();
   const studentId = Number(id);
   const [tab, setTab] = useState<TabKey>("overview");
+  const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetStudentQuery(studentId, {
     skip: !Number.isFinite(studentId),
@@ -117,6 +120,39 @@ export default function StudentProfile() {
             </div>
 
             <Lifecycle status={student.status} />
+
+            {/* Wraps rather than scrolls: four actions on a phone belong on two
+                rows, not behind a sideways drag. */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDrawer({ kind: "edit", studentId: student.id })}
+              >
+                Edit record
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDrawer({ kind: "status", studentId: student.id })}
+              >
+                Change status
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDrawer({ kind: "transfer", studentId: student.id })}
+              >
+                {student.class_name ? "Transfer class" : "Assign a class"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDrawer({ kind: "guardian", studentId: student.id })}
+              >
+                Link a guardian
+              </Button>
+            </div>
           </>
         )}
       </header>
@@ -151,6 +187,8 @@ export default function StudentProfile() {
       {tab === "medical" && <MedicalTab loading={isLoading} student={student} />}
       {tab === "documents" && <DocumentsTab studentId={studentId} />}
       {tab === "history" && <HistoryTab studentId={studentId} />}
+
+      <StudentDrawers request={drawer} onClose={() => setDrawer(null)} />
     </PageShell>
   );
 }

@@ -1,0 +1,229 @@
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+
+import { NativeSelect } from "@/components/ui/native-select";
+import { cn } from "@/lib/utils";
+import { apiErrorMessage } from "@/utils/api-error";
+import { useUpdateStudentMutation } from "@/redux/services/students/students-api";
+import type {
+  StudentDetail,
+  StudentWrite,
+} from "@/redux/services/students/students-types";
+
+import { DrawerShell, Field, errorInputClass, inputClass } from "./drawer-shell";
+
+// The fields, grouped the way the design groups them, with the label used both
+// on the form and in the "what changed" line - so the two can never disagree.
+const SECTIONS = {
+  bio: [
+    { key: "first_name", label: "First name" },
+    { key: "middle_name", label: "Middle name" },
+    { key: "last_name", label: "Last name" },
+    { key: "date_of_birth", label: "Date of birth", type: "date" },
+    { key: "gender", label: "Gender", type: "gender" },
+    { key: "nationality", label: "Nationality" },
+    { key: "state_of_origin", label: "State of origin" },
+  ],
+  contact: [
+    { key: "address", label: "Home address" },
+    { key: "phone", label: "Student phone" },
+    { key: "email", label: "Student email", type: "email" },
+  ],
+  medical: [
+    { key: "blood_group", label: "Blood group" },
+    { key: "allergies", label: "Allergies" },
+    { key: "conditions", label: "Conditions" },
+    { key: "emergency_contact_name", label: "Emergency contact" },
+    { key: "emergency_contact_phone", label: "Emergency phone" },
+  ],
+} as const;
+
+type SectionKey = keyof typeof SECTIONS;
+type FieldKey = keyof StudentWrite;
+
+const TABS: { key: SectionKey; label: string }[] = [
+  { key: "bio", label: "Biography" },
+  { key: "contact", label: "Contact" },
+  { key: "medical", label: "Medical" },
+];
+
+/** Under 2 or over 25 is a typed year, not a pupil. Matches the backend's rule. */
+function dobProblem(value: string): string {
+  if (!value) return "A date of birth is required.";
+  const today = new Date().toISOString().slice(0, 10);
+  if (value > today) return "That date is in the future.";
+  const years = Number(today.slice(0, 4)) - Number(value.slice(0, 4));
+  if (years < 2) return "That would make the student under 2 years old.";
+  if (years > 25) return "That would make the student over 25. Check the year.";
+  return "";
+}
+
+/**
+ * Edit a record.
+ *
+ * **Class and status are not here, and the form says so.** Each moves through
+ * its own drawer so it keeps its reason, its effective date and its own audit
+ * line. The backend's write serializer refuses both, so putting them here would
+ * be a field that looks editable and 400s.
+ *
+ * **Only what changed is sent.** A PATCH of every field would rewrite values
+ * the user never touched, and on this record that matters twice over: the three
+ * medical fields need `view_sensitive` to WRITE, so echoing them back
+ * unchanged would turn an address correction into a 403 for a caller who can
+ * see the form but not those fields.
+ */
+export function EditDrawer({
+  student,
+  open,
+  onClose,
+}: {
+  student: StudentDetail;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [section, setSection] = useState<SectionKey>("bio");
+  const [draft, setDraft] = useState<Partial<StudentWrite>>({});
+  const [update, { isLoading }] = useUpdateStudentMutation();
+
+  // The server drops the medical fields entirely for a caller without the key.
+  const canSeeMedical = student.blood_group !== undefined;
+
+  const value = (key: FieldKey): string => {
+    if (key in draft) return String(draft[key] ?? "");
+    const current = (student as unknown as Record<string, unknown>)[key];
+    return current == null ? "" : String(current);
+  };
+
+  const problems = useMemo(() => {
+    const out: Partial<Record<FieldKey, string>> = {};
+    if (!value("first_name").trim()) out.first_name = "A first name is required.";
+    if (!value("last_name").trim()) out.last_name = "A last name is required.";
+    const dob = dobProblem(value("date_of_birth"));
+    if (dob) out.date_of_birth = dob;
+    if (!value("gender")) out.gender = "Pick a gender.";
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, student]);
+
+  // What actually changed, so the line names fields rather than saying "edited".
+  const changed = useMemo(() => {
+    const all = [...SECTIONS.bio, ...SECTIONS.contact, ...SECTIONS.medical];
+    return all.filter((f) => {
+      if (!(f.key in draft)) return false;
+      const before = (student as unknown as Record<string, unknown>)[f.key];
+      return String(draft[f.key as FieldKey] ?? "").trim() !== String(before ?? "").trim();
+    });
+  }, [draft, student]);
+
+  const valid = Object.keys(problems).length === 0 && changed.length > 0;
+
+  async function save() {
+    if (!valid) return;
+    // Built by assignment through a mutable record rather than keyed writes:
+    // StudentWrite's fields are not all `string` (gender is a union), so a
+    // per-key write cannot be proven sound without narrowing each one, and the
+    // values are all strings off the same form anyway.
+    const body: Record<string, string> = {};
+    for (const f of changed) {
+      body[f.key] = String(draft[f.key as FieldKey] ?? "").trim();
+    }
+    try {
+      await update({ id: student.id, ...(body as Partial<StudentWrite>) }).unwrap();
+      toast.success(`${student.full_name}'s record updated.`);
+      setDraft({});
+      onClose();
+    } catch (error) {
+      toast.error(apiErrorMessage(error, "We could not save those changes."));
+    }
+  }
+
+  const fields = SECTIONS[section];
+
+  return (
+    <DrawerShell
+      open={open}
+      onClose={() => {
+        setDraft({});
+        onClose();
+      }}
+      title="Edit record"
+      subtitle={`${student.full_name} · ${student.student_number || "no admission number"}`}
+      saveLabel="Save changes"
+      onSave={save}
+      canSave={valid}
+      saving={isLoading}
+    >
+      <div className="mb-4 flex max-w-full gap-1 overflow-x-auto">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setSection(t.key)}
+            className={cn(
+              "whitespace-nowrap rounded-full px-3 py-1.5 text-sm",
+              section === t.key
+                ? "bg-white-03 font-semibold text-primary"
+                : "text-gray-05 hover:text-black-01",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {section === "medical" && !canSeeMedical ? (
+        <p className="rounded-lg bg-gray-04 px-3 py-2 text-sm text-gray-05">
+          Medical details are restricted. You do not hold the permission that
+          allows reading or changing them.
+        </p>
+      ) : (
+        <div className="grid gap-3.5">
+          {fields.map((f) => {
+            const key = f.key as FieldKey;
+            const err = problems[key];
+            const type = "type" in f ? f.type : "text";
+            return (
+              <Field key={f.key} label={f.label} error={err}>
+                {type === "gender" ? (
+                  <NativeSelect
+                    value={value(key)}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, [key]: e.target.value }))
+                    }
+                    className="h-9"
+                  >
+                    <option value="">Select a gender</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="MALE">Male</option>
+                  </NativeSelect>
+                ) : (
+                  <input
+                    type={type === "date" ? "date" : type === "email" ? "email" : "text"}
+                    value={value(key)}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, [key]: e.target.value }))
+                    }
+                    className={err ? errorInputClass : inputClass}
+                  />
+                )}
+              </Field>
+            );
+          })}
+        </div>
+      )}
+
+      <p className="mt-4 rounded-lg bg-gray-04 px-3 py-2 text-xs text-gray-05">
+        Class and status are not edited here. Use Transfer class and Change
+        status, so each move keeps its own reason and audit line.
+      </p>
+
+      <p className="mt-2 text-xs text-gray-05" aria-live="polite">
+        {changed.length === 0
+          ? "Nothing changed yet."
+          : changed.length === 1
+            ? `1 change: ${changed[0].label.toLowerCase()}.`
+            : `${changed.length} changes: ${changed.map((c) => c.label.toLowerCase()).join(", ")}.`}
+      </p>
+    </DrawerShell>
+  );
+}

@@ -2,6 +2,8 @@ import { baseApi } from "../base-api";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import type {
   AdmissionPolicy,
+  StudentStatus,
+  StudentWrite,
   ClassHistoryRow,
   GuardianDetail,
   GuardianRow,
@@ -139,6 +141,156 @@ export const studentsApi = baseApi.injectEndpoints({
       providesTags: ["Guardians"],
     }),
 
+    // ── writes ────────────────────────────────────────────────────────────
+    //
+    // **Every one of them is `silent`.** base-api fires a global toast for a
+    // 400, built from the FIRST entry in the error's `detail` map - which for
+    // these routes is a bare value with no sentence around it. Refusing a
+    // cross-branch transfer produced two toasts: the envelope's actual message
+    // ("SSS1 B belongs to the Annex, and this student is at the Main Branch.
+    // Move the student's branch or pick a class at the Main Branch.") and,
+    // under it, the words "Lagoon View Academy Main Branch" on their own.
+    // Every drawer here handles its own errors and shows the message, so the
+    // global one is silenced rather than left to contradict it.
+    //
+    // Four routes, and which one to use is not a style choice. Class and status
+    // each move through their OWN endpoint so each keeps its reason, its
+    // effective date and its own audit line - the record has to be able to say
+    // WHY a child left a class, and a PATCH that silently changed it could not.
+    // `PATCH /students/<id>/` therefore accepts neither.
+
+    updateStudent: builder.mutation<
+      Envelope<StudentDetail>,
+      { id: number } & Partial<StudentWrite>
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/students/${id}/`,
+        method: "PATCH",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
+    /**
+     * Move a student along the state machine.
+     *
+     * `to_status` must be one the server offered in `allowed_transitions` on
+     * the detail payload. The screen never derives that list: a transition the
+     * backend refuses should not be a button at all.
+     */
+    changeStudentStatus: builder.mutation<
+      Envelope<StudentDetail>,
+      {
+        id: number;
+        to_status: StudentStatus;
+        reason: string;
+        effective_date?: string;
+        destination_school?: string;
+      }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/students/${id}/status/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
+    /**
+     * Assign or transfer. One route for both: the difference is whether the
+     * student already had a class, which the server knows and the screen does
+     * not need to encode twice.
+     *
+     * `allow_over_capacity` is an acknowledgement, not a preference. Send false
+     * first; the server refuses with a capacity error, and only then does the
+     * screen ask and resend with true.
+     */
+    assignClass: builder.mutation<
+      Envelope<StudentDetail>,
+      {
+        id: number;
+        school_class: number;
+        reason?: string;
+        effective_date?: string;
+        allow_over_capacity?: boolean;
+      }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/students/${id}/assign-class/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
+    /** Link an existing guardian by id, or create one inline by name + phone. */
+    linkGuardian: builder.mutation<
+      Envelope<StudentGuardianLink[]>,
+      {
+        id: number;
+        guardian_id?: number;
+        full_name?: string;
+        phone?: string;
+        email?: string;
+        relationship: string;
+        is_primary?: boolean;
+      }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/students/${id}/guardians/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students", "Guardians"],
+    }),
+
+    /**
+     * Remove the LINK, not the guardian.
+     *
+     * The guardian record stays in the school's book - they may stand for
+     * another child, and deleting the person because one link ended would take
+     * a sibling's contact with it.
+     */
+    unlinkGuardian: builder.mutation<
+      Envelope<null>,
+      { id: number; guardianId: number }
+    >({
+      query: ({ id, guardianId }) => ({
+        url: `/students/${id}/guardians/${guardianId}/`,
+        method: "DELETE",
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students", "Guardians"],
+    }),
+
+    /**
+     * One class's roster, for its seat count.
+     *
+     * The transfer drawer needs "29 of 30 seats used" for the class being moved
+     * INTO. There is no endpoint returning seats for every class at once (see
+     * the phase 2 backend ask), so this is fetched for the one class the user
+     * picked - which is also all the design shows, since its destination meta
+     * only appears after a selection.
+     */
+    getClassRoster: builder.query<
+      PaginatedEnvelope<StudentRow> & {
+        seats_used: number;
+        capacity: number | null;
+        class_name: string;
+      },
+      number
+    >({
+      query: (classId) => ({
+        url: `/students/classes/${classId}/roster/`,
+        method: "GET",
+      }),
+      providesTags: ["Students"],
+    }),
+
     /** Read with `view`, so the enrolment form can render the rule's hint. */
     getAdmissionPolicy: builder.query<Envelope<AdmissionPolicy>, void>({
       query: () => ({ url: `/students/admission-number-policy/`, method: "GET" }),
@@ -160,4 +312,10 @@ export const {
   useGetGuardiansQuery,
   useGetGuardianQuery,
   useGetAdmissionPolicyQuery,
+  useGetClassRosterQuery,
+  useUpdateStudentMutation,
+  useChangeStudentStatusMutation,
+  useAssignClassMutation,
+  useLinkGuardianMutation,
+  useUnlinkGuardianMutation,
 } = studentsApi;

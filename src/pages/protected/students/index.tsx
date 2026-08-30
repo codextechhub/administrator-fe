@@ -21,6 +21,7 @@ import type {
 } from "@/redux/services/students/students-types";
 import { useGetClassesQuery } from "@/redux/services/academics/academics-api";
 
+import { StudentDrawers, type DrawerRequest } from "./drawers";
 import { CapacityPanel } from "./capacity-panel";
 import { StatusBar } from "./status-bar";
 import { StudentCards } from "./student-cards";
@@ -52,6 +53,7 @@ export default function StudentDirectory() {
   const [status, setStatus] = useState<StudentStatus | "all">("all");
   const [page, setPage] = useState(1);
   const [view, setView] = useState<"list" | "cards">("list");
+  const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
 
   // "all" is the pill's word for "every branch"; the API wants the key absent.
   const branch =
@@ -312,7 +314,40 @@ export default function StudentDirectory() {
           ]}
           loading={listLoading || isFetching}
           defaultBodyList={rows}
+          dropDown
+          dropDownList={[
+            {
+              label: "Open profile",
+              onActionClick: (row: { _id: number }) =>
+                navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(row._id)),
+            },
+            {
+              label: "Edit record",
+              onActionClick: (row: { _id: number }) =>
+                setDrawer({ kind: "edit", studentId: row._id }),
+            },
+            {
+              label: "Change status",
+              onActionClick: (row: { _id: number }) =>
+                setDrawer({ kind: "status", studentId: row._id }),
+            },
+            {
+              // One item, two words, because the route is the same either way
+              // and the difference is only whether the student had a class.
+              label: "Assign or transfer class",
+              onActionClick: (row: { _id: number }) =>
+                setDrawer({ kind: "transfer", studentId: row._id }),
+            },
+            {
+              label: "Link a guardian",
+              onActionClick: (row: { _id: number }) =>
+                setDrawer({ kind: "guardian", studentId: row._id }),
+            },
+          ]}
           tableBodyList={rows.map((s) => ({
+            // Carried so the row menu can find the student back; CustomTable
+            // hands the DISPLAY row to onActionClick, not the source record.
+            _id: s.id,
             Student: s.full_name,
             // "Not issued" rather than a dash: an applicant legitimately has no
             // number yet, which is a different thing from a missing value.
@@ -351,6 +386,8 @@ export default function StudentDirectory() {
           }
         />
       )}
+
+      <StudentDrawers request={drawer} onClose={() => setDrawer(null)} />
     </PageShell>
   );
 }

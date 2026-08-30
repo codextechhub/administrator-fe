@@ -252,6 +252,66 @@ export interface AdmissionPolicy {
   hint: string;
 }
 
+/**
+ * The editable half of a student record.
+ *
+ * **Class and status are absent, and that is the contract, not an omission.**
+ * Each moves through its own endpoint so it keeps its reason, its effective
+ * date and its own audit line: the record has to be able to answer why a child
+ * left a class, and a PATCH that quietly changed it could not. The backend's
+ * write serializer refuses both, and so does this type.
+ *
+ * `branch` is refused explicitly too - a school that types a branch and gets a
+ * 200 believes the student moved.
+ *
+ * The three medical fields need `school.students.view_sensitive` to WRITE as
+ * well as to read, and `enrolment_date` needs `school.students.manage`. Sending
+ * one without the key is a 403, not a silent drop.
+ */
+export interface StudentWrite {
+  student_number: string;
+  first_name: string;
+  middle_name: string;
+  last_name: string;
+  date_of_birth: string;
+  gender: Gender;
+  nationality: string;
+  state_of_origin: string;
+  address: string;
+  phone: string;
+  email: string;
+  previous_school: string;
+  blood_group: string;
+  allergies: string;
+  conditions: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  enrolment_date: string;
+}
+
+/** The eight the backend accepts. An aunt recorded as OTHER is a contact the
+ *  school cannot tell from a neighbour, and it knew which when it typed her in. */
+export const RELATIONSHIPS = [
+  { value: "MOTHER", label: "Mother" },
+  { value: "FATHER", label: "Father" },
+  { value: "UNCLE", label: "Uncle" },
+  { value: "AUNT", label: "Aunt" },
+  { value: "GRANDPARENT", label: "Grandparent" },
+  { value: "LEGAL_GUARDIAN", label: "Legal guardian" },
+  { value: "SIBLING", label: "Sibling" },
+  { value: "OTHER", label: "Other" },
+] as const;
+
+/** Why a student moved class. Sent as the code, shown as the label. */
+export const TRANSFER_REASONS = [
+  { value: "PARENT_REQUEST", label: "Parent request" },
+  { value: "STREAM_CHANGE", label: "Stream change" },
+  { value: "CLASS_BALANCING", label: "Class balancing" },
+  { value: "BEHAVIOUR", label: "Behaviour" },
+  { value: "ACADEMIC_PLACEMENT", label: "Academic placement" },
+  { value: "OTHER", label: "Other" },
+] as const;
+
 /** What the directory sends up. Every value is optional; "all" means unset. */
 export interface StudentListArgs {
   search?: string;
