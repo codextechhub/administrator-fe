@@ -46,7 +46,9 @@ export default function OnboardingImportValidation() {
   const issues = useGetImportIssuesQuery(batchId, { skip: !batchId });
 
   const batch = (batches.data ?? []).find((b) => b.id === batchId);
-  const rows = issues.data ?? [];
+  // Memoised for the reason import.tsx memoises `offered`: the fallback
+  // allocates a new array every render, so the memos below it never hit.
+  const rows = useMemo(() => issues.data ?? [], [issues.data]);
 
   const counts = useMemo(() => {
     const errors = rows.filter((i) => i.severity === "error").length;

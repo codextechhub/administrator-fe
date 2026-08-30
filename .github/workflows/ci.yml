@@ -25,6 +25,10 @@ jobs:
       - name: Typecheck
         run: npx tsc -b
 
+      # The codebase is at zero ESLint problems - keep it there.
+      - name: Lint
+        run: npx eslint . --max-warnings 0
+
       - name: Unit tests
         run: npm test
 
@@ -35,21 +39,3 @@ jobs:
           # would bake a live backend into a CI artefact nobody deploys.
           VITE_BACKEND_URL: https://ci.invalid/v1
           VITE_APP_BASE_DOMAIN: ci.invalid
-
-      # There is deliberately no Lint step yet, and this comment is the reason
-      # rather than an oversight.
-      #
-      # console-fe runs `npx eslint . --max-warnings 0` because that codebase is
-      # at zero problems. This one is at 18 - 14 errors and 4 warnings - so the
-      # same step would fail on every push from the first one, and a red build
-      # nobody can turn green is a build people learn to ignore.
-      #
-      # The alternative, a lint step with continue-on-error, is worse: a check
-      # that cannot fail is not a check, and its presence would say the code is
-      # linted when it is not.
-      #
-      # So: clear the 14 errors, then add the step here exactly as console-fe
-      # has it. The errors are react-refresh/only-export-components (files
-      # exporting a component and a constant together), one
-      # @typescript-eslint/no-explicit-any, and one react-hooks/purity. Tracked
-      # in todo.md.

@@ -102,7 +102,10 @@ export default function OnboardingImport() {
   const [query, setQuery] = useState("");
   const [pending, setPending] = useState<ImportTemplateSummary | null>(null);
 
-  const offered = templates.data ?? [];
+  // Memoised, not `templates.data ?? []` inline: the fallback allocates a
+  // new array on every render, so every memo below it recomputed on every
+  // render and the memos were doing nothing at all.
+  const offered = useMemo(() => templates.data ?? [], [templates.data]);
   const canImport = hasPermission(P.START_IMPORT);
 
   /**
@@ -130,6 +133,11 @@ export default function OnboardingImport() {
         required_columns: entry.req,
         slug: entry.slug,
         placeholder: true as const,
+        // Stated rather than left off. Without it the merged union has the
+        // property on one arm only, every read of it is a type error, and the
+        // row callback was widened to `any` to get at it - which turned off
+        // checking for every other field on the row as well.
+        can_import: false,
       };
     });
     // Anything the server offers that the design never listed still belongs on
@@ -223,7 +231,7 @@ export default function OnboardingImport() {
 
   const templateRows = useMemo(
     () =>
-      visible.map((template: any) => {
+      visible.map((template) => {
         const locked =
           template.placeholder || template.can_import === false;
         return {

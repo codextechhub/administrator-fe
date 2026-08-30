@@ -19,7 +19,10 @@ const useInactivityLogout = ({
   onWarning,
   onLogout,
 }: UseInactivityLogoutOptions) => {
-  const [lastActivity, setLastActivity] = useState<number>(Date.now());
+  // Lazy initialiser: the bare form evaluates Date.now() on every render
+  // and throws the result away on all but the first, which is what the
+  // purity rule objects to. The clock is read once, when the hook mounts.
+  const [lastActivity, setLastActivity] = useState<number>(() => Date.now());
   const [state, setState] = useState<InactivityState>({
     timeRemaining: timeoutDuration,
     isWarning: false,
