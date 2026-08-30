@@ -20,7 +20,7 @@
  * `full` is the three buildings; `centre` is the main block alone.
  *
  * One drawing, two windows onto it. A phone has room for a mark and not for a
- * campus - shrinking all three to fit turns the columns and the clock into
+ * whole frontage - shrinking all three to fit turns the columns and the clock into
  * grey mush - so the small screen gets the portico and the tower at a size
  * where they are still legible as a building.
  */

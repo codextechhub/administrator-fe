@@ -499,7 +499,7 @@ export default function OnboardingImport() {
           </p>
           <p>
             Branches are opened by CodeX rather than uploaded. Ask the team if
-            you need another campus.
+            you need another branch.
           </p>
         </div>
         <p className="mt-3 text-[11px] text-gray-05">

@@ -1,4 +1,4 @@
-/** One campus, as `/v1/i/me/branches/` returns it. */
+/** One branch, as `/v1/i/me/branches/` returns it. */
 export interface SchoolBranch {
   id: number;
   /** The per-school number a school knows its own sites by. */
@@ -16,7 +16,7 @@ export interface SchoolBranch {
   /**
    * Null until the product has a Student, Teacher or Class model.
    *
-   * Null, not zero: zero would claim the campus has none, which is a different
+   * Null, not zero: zero would claim the branch has none, which is a different
    * and false statement. The screen renders a dash.
    */
   students_count: number | null;

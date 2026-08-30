@@ -46,6 +46,10 @@ export const ACTIONS: ActionDef[] = [
   {
     id: "view-branches",
     label: "View branches",
+    // "campuses" and "sites" are what a user may TYPE, not what we write.
+    // The house rule bans the word from our own copy; it does not ban us from
+    // recognising it when somebody reaches for it. These are match keys and
+    // are never rendered, so they stay.
     aliases: ["campuses", "sites"],
     section: "Overview",
     group: "Branches",

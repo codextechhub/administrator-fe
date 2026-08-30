@@ -73,7 +73,7 @@ const DATASET_LABEL: Record<string, string> = {
 };
 
 const DATASET_BLURB: Record<string, string> = {
-  branches: "Your campuses, and the administrator who runs each one.",
+  branches: "Your branches, and the administrator who runs each one.",
   bank_statements: "Transactions from your bank, for reconciling payments.",
 };
 

@@ -45,8 +45,8 @@ describe("termState", () => {
 
 describe("scopeOf", () => {
   it("renders the server's sentence when there is one", () => {
-    expect(scopeOf(session({ scope_label: "Lekki Campus, Ikeja Campus" }))).toBe(
-      "Lekki Campus, Ikeja Campus",
+    expect(scopeOf(session({ scope_label: "Lekki Branch, Ikeja Branch" }))).toBe(
+      "Lekki Branch, Ikeja Branch",
     );
   });
 

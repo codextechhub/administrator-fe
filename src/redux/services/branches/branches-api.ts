@@ -3,7 +3,7 @@ import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types
 import type { SchoolBranch } from "./branches-types";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// A school's own campuses, at /v1/i/me/branches/.
+// A school's own branches, at /v1/i/me/branches/.
 //
 // Read-only, and deliberately not the platform's branch endpoints. Those demand
 // `platform.branches.view` / `.create` / `.update`, which no school role holds -
