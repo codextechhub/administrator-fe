@@ -412,7 +412,32 @@ export default function Promotion() {
  * because repeating "this class has no target" under 25 names buries the two
  * rows that actually need a decision.
  */
+/**
+ * Where to go and fix a class-wide cause.
+ *
+ * Every one of these sentences ends by telling a registrar to change something
+ * in Academic Structure, and each names a DIFFERENT screen: an unwired level is
+ * fixed on Programmes & Levels, a missing class on Classes & Arms. Printing the
+ * instruction without the door means reading it, leaving, and hunting for the
+ * screen it meant.
+ */
+const FIX: Record<string, { label: string; to: string }> = {
+  LEVEL_NOT_WIRED: {
+    label: "Set its promotion target",
+    to: routesPath.PROTECTED.ACADEMIC_STRUCTURE.PROGRAMS,
+  },
+  NO_CLASS_AT_NEXT_LEVEL: {
+    label: "Add the class",
+    to: routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES,
+  },
+  NO_CLASS_TO_REPEAT: {
+    label: "Add the class",
+    to: routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES,
+  },
+};
+
 function Exceptions({ plan }: { plan: PromotionPlan }) {
+  const navigate = useNavigate();
   const { by_class: byClass, by_student: byStudent } = plan.exceptions;
   if (byClass.length === 0 && byStudent.length === 0) return null;
 
@@ -435,6 +460,15 @@ function Exceptions({ plan }: { plan: PromotionPlan }) {
               </span>
             </p>
             <p className="text-xs text-gray-05">{e.reason}</p>
+            {FIX[e.cause] && (
+              <button
+                type="button"
+                onClick={() => navigate(FIX[e.cause].to)}
+                className="mt-1 text-xs text-primary underline-offset-2 hover:underline"
+              >
+                {FIX[e.cause].label}
+              </button>
+            )}
           </li>
         ))}
         {byStudent.map((e) => (
@@ -449,6 +483,17 @@ function Exceptions({ plan }: { plan: PromotionPlan }) {
               </span>
             </p>
             <p className="text-xs text-gray-05">{e.reason}</p>
+            {/* A per-student cause is fixed on that student, so the door is
+                their record rather than a settings screen. */}
+            <button
+              type="button"
+              onClick={() =>
+                navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(e.student))
+              }
+              className="mt-1 text-xs text-primary underline-offset-2 hover:underline"
+            >
+              Open {e.name}
+            </button>
           </li>
         ))}
       </ul>
