@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { ChevronRight, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { routesPath } from "@/routes/routesPath";
+import { P, resolvePermissionKey } from "@/permissions";
+import { useSearchStudentsQuery } from "@/redux/services/students/students-api";
 import { useAppSelector } from "@/redux/store";
 import {
   selectActorPermissions,
@@ -42,12 +45,16 @@ type SearchVariant = "desktop" | "mobile";
  * can see what the box offers without committing to a full-screen takeover,
  * and Escape puts them back on the page they were already reading.
  *
- * **It launches actions. It does not search the school.** There is no search
- * endpoint in the backend - not closed, absent - so a box that promised to find
- * a student by name would be a lie in the most prominent place on the page.
- * The placeholder is the broad "Search your workspace" that console uses, and
- * the honesty is carried where it is actually needed: the empty state says out
- * loud that this reaches actions and screens rather than records.
+ * **It launches actions, and it finds students.** For a long time it did only
+ * the first, because there was no search endpoint - not closed, absent - and a
+ * box promising to find a child by name would have been a lie in the most
+ * prominent place on the page. M11 shipped `/v1/students/search/`, so the
+ * promise is now kept: type two characters and matching students appear above
+ * the actions, gated on the same key the directory checks.
+ *
+ * Students come FIRST when they match. Somebody typing "Chiamaka" wants the
+ * child, not an action whose description happens to contain those letters, and
+ * a name is a far more specific thing to have typed than a verb.
  *
  * What it can offer comes from three filters, each with its own owner:
  * permissions (the registry's gate, same key the screen checks), tenant
@@ -133,16 +140,35 @@ export function AppSearch({
   const results = trimmed ? ranked : defaults;
   const view = useMemo(() => buildPaletteView(results, expanded), [results, expanded]);
 
+  // Students, when the caller may read them and has typed enough to mean it.
+  // One character is a keystroke rather than a search, which is also the rule
+  // the endpoint itself applies.
+  const canSeeStudents = permissions.includes(
+    resolvePermissionKey(P.BROWSE_STUDENTS),
+  );
+  const { data: studentHits } = useSearchStudentsQuery(trimmed, {
+    skip: !resultsOpen || !canSeeStudents || trimmed.length < 2,
+  });
+  const students = useMemo(
+    () => (trimmed.length >= 2 ? (studentHits?.data ?? []).slice(0, 5) : []),
+    [studentHits, trimmed],
+  );
+  const studentCount = students.length;
+  /** Every navigable row: students first, then the actions. */
+  const totalRows = studentCount + view.rows.length;
+
   // Where each action sits in the flat row order, so a rendered row can label
   // itself with the index the arrow keys use.
   const rowIndexByActionId = useMemo(() => {
     const index = new Map<string, number>();
     view.rows.forEach((row, position) => {
-      if (row.kind === "action") index.set(row.result.action.id, position);
+      // Offset by the student rows above, so a rendered action labels itself
+      // with the index the arrow keys actually use.
+      if (row.kind === "action") index.set(row.result.action.id, position + studentCount);
     });
     return index;
-  }, [view.rows]);
-  const showAllIndex = view.truncated ? view.rows.length - 1 : -1;
+  }, [view.rows, studentCount]);
+  const showAllIndex = view.truncated ? studentCount + view.rows.length - 1 : -1;
 
   // Before a character is typed the list is this user's own most-reached
   // actions. With no history yet every score is zero and registry order stands
@@ -171,6 +197,19 @@ export function AppSearch({
   const expandResults = () => {
     setExpanded(true);
     setActiveRow(0);
+  };
+
+  /**
+   * Open a student's record.
+   *
+   * Deliberately NOT recorded as a pick: the frecency store learns which
+   * ACTIONS this person reaches for, and feeding it one row per child would
+   * teach it nothing and grow without bound.
+   */
+  const openStudent = (id: number) => {
+    closeSearch();
+    setMobileOpen(false);
+    navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(id));
   };
 
   const run = (action: ActionDef) => {
@@ -204,7 +243,7 @@ export function AppSearch({
         setResultsOpen(true);
         return;
       }
-      const count = view.rows.length;
+      const count = totalRows;
       if (!count) return;
       const step = event.key === "ArrowDown" ? 1 : -1;
       setActiveRow((index) => (index + step + count) % count);
@@ -219,7 +258,11 @@ export function AppSearch({
       // the confirmation opened and its Cancel button was pressed by the same
       // keypress, so it appeared to flash and vanish.
       event.preventDefault();
-      const target = view.rows[activeRow] ?? view.rows[0];
+      if (activeRow < studentCount) {
+        openStudent(students[activeRow].id);
+        return;
+      }
+      const target = view.rows[activeRow - studentCount] ?? view.rows[0];
       if (!target) return;
       if (target.kind === "show-all") expandResults();
       else run(target.result.action);
@@ -238,7 +281,7 @@ export function AppSearch({
     "aria-expanded": resultsOpen,
     "aria-controls": `app-search-listbox-${variant}`,
     "aria-activedescendant":
-      resultsOpen && activeRow < view.rows.length
+      resultsOpen && activeRow < totalRows
         ? `app-search-option-${variant}-${activeRow}`
         : undefined,
     onFocus: () => setResultsOpen(true),
@@ -311,11 +354,45 @@ export function AppSearch({
       )}
     >
       <div className="max-h-[min(60vh,26rem)] overflow-y-auto">
-        {view.rows.length === 0 ? (
-          // Said out loud, because the box still looks like it should find
-          // people.
+        {studentCount > 0 && (
+          <section aria-labelledby={`app-search-${variant}-students`}>
+            {renderSectionHeader(`app-search-${variant}-students`, "Students")}
+            {students.map((student, index) => (
+              <button
+                key={student.id}
+                id={`app-search-option-${variant}-${index}`}
+                type="button"
+                role="option"
+                aria-selected={activeRow === index}
+                // Mouse-down would blur the input and close the list before the
+                // click landed, so the row could never be clicked at all.
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setActiveRow(index)}
+                onClick={() => openStudent(student.id)}
+                className={cn(
+                  "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left",
+                  activeRow === index && "bg-gray-50",
+                )}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-sm text-black-01">
+                    {student.full_name}
+                  </span>
+                  <span className="block truncate text-xs text-gray-400">
+                    {student.student_number || "No admission number"}
+                    {student.class_name ? ` · ${student.class_name}` : ""}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </section>
+        )}
+
+        {view.rows.length === 0 && studentCount === 0 ? (
           <p className="px-3 py-4 text-center text-xs text-gray-400">
-            Nothing matches. This launches actions and screens, not records.
+            {canSeeStudents && trimmed.length === 1
+              ? "Keep typing to search students."
+              : "Nothing matches - no action, screen or student by that name."}
           </p>
         ) : view.groups ? (
           view.groups.map((group) => (
@@ -330,7 +407,11 @@ export function AppSearch({
           <section aria-labelledby={`app-search-${variant}-heading`}>
             {renderSectionHeader(`app-search-${variant}-heading`, heading)}
             {view.rows.map((row, index) =>
-              row.kind === "action" ? renderRow(row.result, index, variant) : null,
+              // Offset past the student rows, or two rows would claim the
+              // same index and the arrow keys would highlight both.
+              row.kind === "action"
+                ? renderRow(row.result, index + studentCount, variant)
+                : null,
             )}
           </section>
         )}
