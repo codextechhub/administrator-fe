@@ -182,6 +182,11 @@ export default function StudentDirectory() {
         <CapacityPanel
           loading={summaryLoading}
           rows={summary?.nearest_capacity ?? []}
+          onOpenClass={(classId) =>
+            navigate(
+              `${routesPath.PROTECTED.STUDENTS.ASSIGN}?tab=roster&class=${classId}`,
+            )
+          }
         />
       </div>
 

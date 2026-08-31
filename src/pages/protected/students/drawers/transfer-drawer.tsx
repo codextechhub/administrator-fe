@@ -42,7 +42,17 @@ export function TransferDrawer({
   open,
   onClose,
 }: {
-  student: StudentDetail;
+  /**
+   * Only what this drawer actually reads.
+   *
+   * Asking for a whole StudentDetail would force the class register to fetch
+   * one per row just to offer a Move button, when the row it already has
+   * carries every field used here.
+   */
+  student: Pick<
+    StudentDetail,
+    "id" | "first_name" | "full_name" | "class_name" | "branch"
+  >;
   open: boolean;
   onClose: () => void;
 }) {
@@ -52,8 +62,14 @@ export function TransferDrawer({
   const [override, setOverride] = useState(false);
 
   const { data: classesData } = useGetClassesQuery();
+  // The student's own branch, or school-wide, and nothing else: the server
+  // refuses a placement that crosses branches, so offering one here would walk
+  // the registrar into a refusal. A class with no branch is school-wide, and at
+  // a single-branch school the field is absent so nothing is filtered out.
   const classes = (classesData?.data ?? []).filter(
-    (c) => c.name !== student.class_name,
+    (c) =>
+      c.name !== student.class_name &&
+      (c.branch == null || student.branch == null || c.branch === student.branch),
   );
 
   const destinationId = Number(destination) || 0;

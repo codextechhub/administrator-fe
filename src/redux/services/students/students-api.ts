@@ -2,6 +2,7 @@ import { baseApi } from "../base-api";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import type {
   AdmissionPolicy,
+  BulkResultRow,
   EnrolWrite,
   StudentStatus,
   StudentWrite,
@@ -305,6 +306,38 @@ export const studentsApi = baseApi.injectEndpoints({
     }),
 
     /**
+     * Seat several students in one class.
+     *
+     * **The response is per-student, and the screen must say so.** A registrar
+     * who picked twenty and mistyped one keeps the nineteen: each student is
+     * its own transaction and the reply names what happened to each. Reporting
+     * this as a single "Done" would hide the two that were refused, and the
+     * children nobody placed are exactly the ones the screen exists to find.
+     *
+     * Capacity is checked ONCE against the whole selection, so twenty-five into
+     * a ten-seat class warns about the total rather than fifteen times about
+     * the overflow.
+     */
+    bulkAssignClass: builder.mutation<
+      Envelope<{ results: BulkResultRow[]; assigned: number }>,
+      {
+        student_ids: number[];
+        school_class: number;
+        reason?: string;
+        effective_date?: string;
+        allow_over_capacity?: boolean;
+      }
+    >({
+      query: (body) => ({
+        url: `/students/bulk/assign-class/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
+    /**
      * Enrol a student, or save them as an applicant. One route, one flag.
      *
      * Two endpoints would be two sets of rules, and the second one would be
@@ -385,6 +418,7 @@ export const {
   useGetGuardianQuery,
   useGetAdmissionPolicyQuery,
   useGetClassRosterQuery,
+  useBulkAssignClassMutation,
   useUpdateStudentMutation,
   useChangeStudentStatusMutation,
   useAssignClassMutation,

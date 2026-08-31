@@ -18,6 +18,7 @@ import {
   BookOpen,
   CalendarClock,
   CalendarRange,
+  ArrowLeftRight,
   ListChecks,
   Rocket,
   UserPlus,
@@ -165,6 +166,17 @@ export function AppSidebar({
         isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.APPLICANTS),
         childActive: false,
         permission: P.BROWSE_STUDENTS,
+      },
+      {
+        // Placing children, and reading a register. Its own door because the
+        // unplaced list is a worklist somebody is asked to empty, not a view
+        // of the directory.
+        title: "Classes & Transfers",
+        url: routesPath.PROTECTED.STUDENTS.ASSIGN,
+        icon: ArrowLeftRight,
+        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.ASSIGN),
+        childActive: false,
+        permission: P.ASSIGN_CLASS,
       },
     ],
     academics: [

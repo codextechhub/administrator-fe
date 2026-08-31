@@ -19,9 +19,12 @@ import type { StudentSummary } from "@/redux/services/students/students-types";
 export function CapacityPanel({
   rows,
   loading,
+  onOpenClass,
 }: {
   rows: StudentSummary["nearest_capacity"];
   loading?: boolean;
+  /** Open this class's register. The panel names a problem; this is the fix. */
+  onOpenClass?: (classId: number) => void;
 }) {
   return (
     <section className="min-w-0 rounded-xl border border-white-02 bg-white p-4">
@@ -47,6 +50,12 @@ export function CapacityPanel({
             const full = c.remaining === 0;
             return (
               <li key={c.id} className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => onOpenClass?.(c.id)}
+                  disabled={!onOpenClass}
+                  className="w-full min-w-0 text-left disabled:cursor-default"
+                >
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="truncate text-sm text-black-01">{c.name}</span>
                   <span className="shrink-0 text-xs text-gray-05">
@@ -72,6 +81,7 @@ export function CapacityPanel({
                       ? "Full"
                       : `${c.remaining} ${c.remaining === 1 ? "seat" : "seats"} free`}
                 </p>
+                </button>
               </li>
             );
           })}

@@ -289,6 +289,21 @@ export interface StudentWrite {
   enrolment_date: string;
 }
 
+/**
+ * What happened to ONE student in a bulk action.
+ *
+ * Never all-or-nothing: a caller who selected twenty and mistyped one should
+ * not lose the nineteen. `ok` is per row, and a false one carries the reason.
+ */
+export interface BulkResultRow {
+  student: number;
+  /** "" when the id matched no student at this school. */
+  name: string;
+  ok: boolean;
+  code: string;
+  message: string;
+}
+
 /** One guardian on an enrolment: either an existing id, or a new name+phone. */
 export interface GuardianOnEnrolment {
   guardian_id?: number;
