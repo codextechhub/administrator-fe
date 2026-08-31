@@ -702,10 +702,11 @@ again next time a module is built alongside its backend.
 Nothing in the eight phases. These are the loose ends the build created or
 uncovered, in the order they are worth doing.
 
-1. **The onboarding import page is out of date.** It still says the students
-   dataset has "no template and no model behind them yet", and carries a
-   placeholder row for Students. `students_v1` is seeded and phase 7 uses it, so
-   both should go.
+1. ~~The onboarding import page is out of date.~~ **Fixed.** Its prose claimed
+   the students dataset had no template and no model; the merge logic was
+   already correct, so only the comments and the redundant placeholder needed
+   to go. Required templates now sort first, because a live template arrives
+   through the server's list and was landing under the optional placeholders.
 2. **`school.students.import` / `.export` may be missing in other environments.**
    They exist in code and in the "Student Bulk Data" group but had no `Permission`
    rows in the local database until `seed_all_permissions` was re-run. Staging is

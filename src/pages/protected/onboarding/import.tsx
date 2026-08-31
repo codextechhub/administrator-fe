@@ -39,20 +39,27 @@ import { PageShell } from "@/components/layout/page-shell";
  * branches the branch API refuses them, through this engine. A list written
  * here would drift from that rule in the dangerous direction.
  *
- * **Today that list is empty, and the design already has a state for it.** The
- * three datasets this step exists for have no template and no model behind them
- * yet. The empty ring is the design's own answer, and the Required datasets card
- * above it still names all three, so a school sees what is coming rather than a
- * blank screen that looks broken.
+ * **Students is real now; staff and parents are not.** M11 seeded `students_v1`
+ * and built the module behind it, so that row is a live template a school can
+ * download and import against. The other two have no template and no model yet,
+ * and the design's own empty state carries them: the Required datasets card
+ * names all three regardless, so a school sees what is coming rather than a
+ * screen that looks broken.
+ *
+ * Note the two halves are independent. The card reads availability from the
+ * server's list, and the table merges the server's templates over the
+ * placeholders by dataset slug - so seeding one dataset lights up one row and
+ * leaves the rest as they were, with no edit here.
  */
 
 /**
  * The three datasets this step is about, in the design's order.
  *
- * Named here rather than read from the server because the server has no
- * template for any of them yet - and the progress card has to show a school
- * what the step wants regardless. Each maps to a dataset slug that will exist;
- * until it does, `state` reads "Not available yet" from the absent template.
+ * Named here rather than read from the server because the step's requirements
+ * are the step's, not the catalogue's: a school must load all three to close
+ * it, whether or not a template exists for each yet. `state` reads "Not
+ * available yet" for any the server does not offer, which today is staff and
+ * parents - students has been live since M11 seeded `students_v1`.
  */
 const REQUIRED_DATASETS = [
   { slug: "students", name: "Students" },
@@ -63,18 +70,22 @@ const REQUIRED_DATASETS = [
 /**
  * The templates this step is for, exactly as the design lists them.
  *
- * Written here because the backend has none of them yet - there is no Student,
+ * Written here for the datasets the backend cannot serve yet - there is no
  * Staff or Parent model to import into. A school still needs to see what the
- * step will ask for, so each is shown with its real column counts and its
- * controls greyed out. When a template is seeded, the server's copy replaces
- * the placeholder by dataset slug and its controls come alive.
+ * step will ask for, so each is shown with its column counts and its controls
+ * greyed out. When a template is seeded, the server's copy replaces the
+ * placeholder by dataset slug and its controls come alive.
+ *
+ * **Students is deliberately not among them.** It has a real template, so the
+ * server supplies that row with its real fifteen columns. A placeholder would
+ * only ever be seen in an environment where the migration has not run, and
+ * there it would promise an invented eighteen - a number nothing can back.
  *
  * The datasets CodeX loads on a school's behalf - schools, branches, CX users,
  * bank statements - are NOT here and are not offered by the server either.
  * They are not a school's to load, so listing them would only be noise.
  */
 const PLACEHOLDER_TEMPLATES = [
-  { slug: "students", name: "Students Import", code: "STU_V3", cols: 18, req: 11 },
   { slug: "staff", name: "Staff Import", code: "STF_V2", cols: 14, req: 8 },
   { slug: "parents", name: "Parents Import", code: "PAR_V2", cols: 11, req: 6 },
   { slug: "structure", name: "Classes / Structure Import", code: "STR_V1", cols: 9, req: 5 },
@@ -112,9 +123,14 @@ export default function OnboardingImport() {
    * The rows the table shows: the design's five, with any real template the
    * server offers taking the place of its placeholder.
    *
-   * Merged by dataset slug rather than replacing the list wholesale, so a
-   * backend that seeds Students first shows four placeholders and one live row
-   * instead of dropping the other four out of sight.
+   * Merged by dataset slug rather than replacing the list wholesale, so seeding
+   * one dataset lights up one row and leaves the rest as they were. Students is
+   * live and arrives through the server's list; the four without a template
+   * still show, greyed.
+   *
+   * The rows carry no `slug` of their own - `dataset_type` already is one, and
+   * a second copy meant casting a server value into the placeholder union,
+   * which claimed a dataset we had never listed was one of the four we had.
    */
   const rows = useMemo(() => {
     const live = new Map(offered.map((t) => [t.dataset_type, t]));
@@ -122,7 +138,7 @@ export default function OnboardingImport() {
       const real = live.get(entry.slug);
       if (real) {
         live.delete(entry.slug);
-        return { ...real, slug: entry.slug, placeholder: false as const };
+        return { ...real, placeholder: false as const };
       }
       return {
         id: -1,
@@ -131,7 +147,6 @@ export default function OnboardingImport() {
         dataset_type: entry.slug,
         total_columns: entry.cols,
         required_columns: entry.req,
-        slug: entry.slug,
         placeholder: true as const,
         // Stated rather than left off. Without it the merged union has the
         // property on one arm only, every read of it is a type error, and the
@@ -143,13 +158,17 @@ export default function OnboardingImport() {
     // Anything the server offers that the design never listed still belongs on
     // the table - the server decides what a school may load, not this file.
     for (const extra of live.values()) {
-      merged.push({
-        ...extra,
-        slug: extra.dataset_type as (typeof PLACEHOLDER_TEMPLATES)[number]["slug"],
-        placeholder: false as const,
-      });
+      merged.push({ ...extra, placeholder: false as const });
     }
-    return merged;
+    // Required first. A live template arrives through the loop above and would
+    // otherwise land at the BOTTOM, under the optional placeholders - so the
+    // one dataset the step actually needs sat below two it does not, purely
+    // because the server had it and the others were hard-coded.
+    return merged.sort(
+      (a, b) =>
+        Number(REQUIRED_SLUGS.has(b.dataset_type)) -
+        Number(REQUIRED_SLUGS.has(a.dataset_type)),
+    );
   }, [offered]);
 
   const visible = useMemo(() => {
