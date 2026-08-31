@@ -4,6 +4,9 @@ import type {
   AdmissionPolicy,
   BulkResultRow,
   ClassSeats,
+  PromotionBatch,
+  PromotionOutcome,
+  PromotionPlan,
   EnrolWrite,
   StudentStatus,
   StudentWrite,
@@ -431,6 +434,36 @@ export const studentsApi = baseApi.injectEndpoints({
       providesTags: ["Students", "Classes"],
     }),
 
+    /**
+     * What a promotion WOULD do. Writes nothing.
+     *
+     * It runs the same classification the run does, so overrides must be sent
+     * here too: a preview computed from different inputs is not a preview, it
+     * is a second opinion, and the counts on the confirm step would not be the
+     * ones the run acts on.
+     */
+    previewPromotion: builder.mutation<
+      Envelope<PromotionPlan>,
+      { to_session: number; overrides?: Record<string, PromotionOutcome> }
+    >({
+      query: (body) => ({
+        url: `/students/promotions/preview/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+    }),
+
+    /** Run it. Writes placements, and cannot be undone from the screen. */
+    runPromotion: builder.mutation<
+      Envelope<PromotionBatch>,
+      { to_session: number; overrides?: Record<string, PromotionOutcome> }
+    >({
+      query: (body) => ({ url: `/students/promotions/`, method: "POST", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students", "Classes"],
+    }),
+
     /** Read with `view`, so the enrolment form can render the rule's hint. */
     getAdmissionPolicy: builder.query<Envelope<AdmissionPolicy>, void>({
       query: () => ({ url: `/students/admission-number-policy/`, method: "GET" }),
@@ -454,6 +487,8 @@ export const {
   useGetGuardianQuery,
   useGetAdmissionPolicyQuery,
   useGetClassSeatsQuery,
+  usePreviewPromotionMutation,
+  useRunPromotionMutation,
   useGetClassRosterQuery,
   useBulkAssignClassMutation,
   useUpdateStudentMutation,

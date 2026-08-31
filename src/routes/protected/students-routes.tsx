@@ -8,6 +8,7 @@ import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 const StudentDirectory = lazy(() => import("@/pages/protected/students"));
 const StudentProfile = lazy(() => import("@/pages/protected/students/profile"));
 const EnrolStudent = lazy(() => import("@/pages/protected/students/enrol"));
+const Promotion = lazy(() => import("@/pages/protected/students/promotion"));
 const Guardians = lazy(() => import("@/pages/protected/students/guardians"));
 const GuardianDetail = lazy(
   () => import("@/pages/protected/students/guardians/detail"),
@@ -101,6 +102,15 @@ export const studentsRoutes = [
     handle: {
       title: "Guardian",
       hasBack: true,
+      lens: true,
+      lenses: "branch",
+    } satisfies DashboardHandle,
+  },
+  {
+    path: S.PROMOTION,
+    Component: Promotion,
+    handle: {
+      title: "Promotion",
       lens: true,
       lenses: "branch",
     } satisfies DashboardHandle,

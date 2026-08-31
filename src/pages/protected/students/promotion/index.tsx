@@ -1,0 +1,457 @@
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router";
+import { toast } from "sonner";
+import { GraduationCap } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
+import { PageShell } from "@/components/layout/page-shell";
+import { Skeleton } from "@/components/ui/skeleton";
+import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
+import { routesPath } from "@/routes/routesPath";
+import { cn } from "@/lib/utils";
+import { apiDetailMessage } from "@/utils/api-error";
+import { useGetSessionsQuery } from "@/redux/services/academics/academics-api";
+import {
+  usePreviewPromotionMutation,
+  useRunPromotionMutation,
+} from "@/redux/services/students/students-api";
+import type {
+  PromotionBatch,
+  PromotionOutcome,
+  PromotionPlan,
+} from "@/redux/services/students/students-types";
+
+import { ConfirmDialog } from "../drawers/confirm-dialog";
+import { ClassGroups } from "./class-groups";
+import { OUTCOME, destinationOf } from "./outcome";
+
+const STEPS = ["Target year", "Review students", "Confirm", "Done"];
+
+/**
+ * The end-of-session move.
+ *
+ * **The preview is the server's, not ours.** It runs the same classification
+ * the run does, so the overrides go to BOTH: counts computed here from the
+ * override map would be a second opinion, and the number on the confirm step
+ * has to be the number the run acts on. Every step that changes an override
+ * re-previews rather than doing the arithmetic itself.
+ *
+ * **Nothing is silently skipped.** A student the run will not touch appears on
+ * the exception list with the reason, and the reasons are the server's own
+ * sentences - printed verbatim, because they say whose problem each one is.
+ * Class-wide causes collapse to one row however many students they cover;
+ * per-student causes get one each.
+ *
+ * **The target year is usually empty, and that is the normal case.** A school
+ * copies its structure forward before promoting into it, so "there is no class
+ * at the next level" is what this screen says most of the first time it is
+ * opened - and it says where to go and fix it rather than showing a wall of
+ * held students with no explanation.
+ */
+export default function Promotion() {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(0);
+  const [target, setTarget] = useState("");
+  const [overrides, setOverrides] = useState<Record<string, PromotionOutcome>>({});
+  const [plan, setPlan] = useState<PromotionPlan | null>(null);
+  const [done, setDone] = useState<PromotionBatch | null>(null);
+  const [confirming, setConfirming] = useState(false);
+
+  const { data: sessionsData, isLoading: sessionsLoading } = useGetSessionsQuery();
+  const [preview, { isLoading: previewing }] = usePreviewPromotionMutation();
+  const [run, { isLoading: running }] = useRunPromotionMutation();
+
+  const sessions = useMemo(() => sessionsData?.data ?? [], [sessionsData]);
+  // A promotion moves INTO a year that has not started. The active year is
+  // where everyone already is, and an archived one refuses writes outright -
+  // offering either would be offering a refusal.
+  const targets = sessions.filter((s) => s.status === "DRAFT");
+  const active = sessions.find((s) => s.status === "ACTIVE");
+
+  async function refreshPlan(next = overrides) {
+    if (!target) return null;
+    try {
+      const result = await preview({
+        to_session: Number(target),
+        overrides: next,
+      }).unwrap();
+      setPlan(result.data);
+      return result.data;
+    } catch (error) {
+      toast.error(apiDetailMessage(error, "We could not preview that promotion."));
+      return null;
+    }
+  }
+
+  async function toReview() {
+    const fresh = await refreshPlan();
+    if (fresh) setStep(1);
+  }
+
+  async function toConfirm() {
+    // Re-previewed with the overrides in hand, so the confirm step's counts
+    // are the ones the run will produce and not our own arithmetic.
+    const fresh = await refreshPlan();
+    if (fresh) setStep(2);
+  }
+
+  function setOutcome(studentId: number, outcome: PromotionOutcome) {
+    setOverrides((o) => ({ ...o, [String(studentId)]: outcome }));
+  }
+
+  function setClassOutcome(classId: number, outcome: PromotionOutcome) {
+    if (!plan) return;
+    const next = { ...overrides };
+    for (const s of plan.students) {
+      if (s.from_class_id === classId) next[String(s.id)] = outcome;
+    }
+    setOverrides(next);
+  }
+
+  async function execute() {
+    setConfirming(false);
+    try {
+      const result = await run({
+        to_session: Number(target),
+        overrides,
+      }).unwrap();
+      setDone(result.data);
+      setStep(3);
+      toast.success(result.message);
+    } catch (error) {
+      toast.error(apiDetailMessage(error, "We could not run that promotion."));
+    }
+  }
+
+  const counts = plan?.counts;
+  const nothingToMove = plan != null && plan.counts.candidates === 0;
+  // Every candidate held means the target year has no structure to land in.
+  // Naming that beats a list of held students nobody can act on.
+  const allHeld =
+    plan != null &&
+    plan.counts.candidates > 0 &&
+    plan.counts.hold === plan.counts.candidates;
+
+  if (!sessionsLoading && targets.length === 0) {
+    return (
+      <PageShell>
+        <OutlinedNotice
+          icon={GraduationCap}
+          title="There is no year to promote into"
+          body="A promotion moves students into a year that has not started yet. Create next year in Academic Structure, copy this year's classes into it, and come back."
+          actionLabel="Go to Sessions"
+          onAction={() =>
+            navigate(routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS)
+          }
+        />
+      </PageShell>
+    );
+  }
+
+  return (
+    <PageShell className="content-start gap-5" grid>
+      {/* Hidden on phones, where four labels do not fit: the strip scrolls and
+          what a reader sees is "Target yea / Review studer / Dor" - clipped
+          words that read as broken. Nothing is lost, because the footer already
+          says "Step 2 of 4 · Review students" on every width. */}
+      <ol className="hidden max-w-full gap-1 overflow-x-auto pb-1 sm:flex">
+        {STEPS.map((label, i) => (
+          <li key={label} className="min-w-0">
+            <span
+              aria-current={i === step ? "step" : undefined}
+              className={cn(
+                "flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1.5 text-sm",
+                i === step && "bg-white-03 font-semibold text-primary",
+                i !== step && "text-gray-05",
+              )}
+            >
+              <span
+                className={cn(
+                  "grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-semibold",
+                  i < step && "bg-green-700 text-white",
+                  i === step && "bg-primary text-white",
+                  i > step && "bg-gray-04 text-gray-05",
+                )}
+              >
+                {i + 1}
+              </span>
+              {label}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      {/* ── 1. the target year, and what each class maps to ─────────────── */}
+      {step === 0 && (
+        <section className="grid gap-4">
+          <div className="max-w-sm">
+            <label htmlFor="target-year" className="text-xs font-medium text-gray-05">
+              Promote into
+            </label>
+            <NativeSelect
+              id="target-year"
+              value={target}
+              onChange={(e) => {
+                setTarget(e.target.value);
+                setPlan(null);
+                setOverrides({});
+              }}
+              className="mt-1 h-9"
+            >
+              <option value="">Select a year</option>
+              {targets.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <p className="mt-1.5 text-xs text-gray-05">
+              {active
+                ? `Students move out of ${active.name} into the year you pick.`
+                : "Students move out of the current year into the year you pick."}
+            </p>
+          </div>
+
+          {plan && (
+            <>
+              <div className="rounded-xl border border-white-02 bg-white p-4">
+                <p className="text-xs font-medium text-gray-05">
+                  Where each class goes
+                </p>
+                <ul className="mt-3 grid gap-2">
+                  {plan.level_map.map((row) => (
+                    <li
+                      key={row.from_id}
+                      className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
+                    >
+                      <span className="min-w-0 text-black-01">{row.from}</span>
+                      <span className="flex flex-wrap items-baseline gap-2">
+                        <span className={destinationOf(plan, row).tone}>
+                          {destinationOf(plan, row).label}
+                        </span>
+                        <span className="text-xs text-gray-05">
+                          {row.students}{" "}
+                          {row.students === 1 ? "student" : "students"}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <Exceptions plan={plan} />
+            </>
+          )}
+        </section>
+      )}
+
+      {/* ── 2. per-class review ─────────────────────────────────────────── */}
+      {step === 1 && plan && (
+        <>
+          {allHeld && (
+            <p className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+              Every student would be held, because {plan.to_session} has no
+              classes to move them into yet. Copy this year's classes forward in
+              Academic Structure first - the promotion has nowhere to land until
+              you do.
+            </p>
+          )}
+          <ClassGroups
+            plan={plan}
+            overrides={overrides}
+            onSetStudent={setOutcome}
+            onSetClass={setClassOutcome}
+          />
+          <Exceptions plan={plan} />
+        </>
+      )}
+
+      {/* ── 3. confirm ──────────────────────────────────────────────────── */}
+      {step === 2 && counts && (
+        <section className="grid gap-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {(["promote", "repeat", "graduate", "hold"] as const).map((k) => (
+              <div
+                key={k}
+                className="min-w-0 rounded-xl border border-white-02 bg-white p-4"
+              >
+                <p className="text-xs font-medium text-gray-05">
+                  {OUTCOME[k.toUpperCase() as PromotionOutcome].label}
+                </p>
+                <p className="mt-1 text-2xl font-semibold text-black-01">
+                  {counts[k]}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="text-sm text-gray-05">
+            {counts.candidates === 1
+              ? `1 student moves into ${plan?.to_session}. `
+              : `${counts.candidates} students move into ${plan?.to_session}. `}
+            {counts.graduate > 0 &&
+              (counts.graduate === 1
+                ? "1 leaves the roll as a graduate. "
+                : `${counts.graduate} leave the roll as graduates. `)}
+            {counts.excluded > 0 &&
+              (counts.excluded === 1
+                ? `1 student on the roll is not a candidate and stays in ${plan?.from_session}. `
+                : `${counts.excluded} students on the roll are not candidates and stay in ${plan?.from_session}. `)}
+            This cannot be undone from here.
+          </p>
+          <Exceptions plan={plan!} />
+        </section>
+      )}
+
+      {/* ── 4. done ─────────────────────────────────────────────────────── */}
+      {step === 3 && done && (
+        <section className="grid gap-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              ["Promoted", done.promoted],
+              ["Repeated", done.repeated],
+              ["Graduated", done.graduated],
+              ["Held", done.held],
+            ].map(([label, value]) => (
+              <div
+                key={String(label)}
+                className="min-w-0 rounded-xl border border-white-02 bg-white p-4"
+              >
+                <p className="text-xs font-medium text-gray-05">{label}</p>
+                <p className="mt-1 text-2xl font-semibold text-black-01">
+                  {value}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="text-sm text-gray-05">
+            {done.from_session_name} to {done.to_session_name}. Every move is on
+            the students&apos; own history.
+            {done.failed > 0 &&
+              ` ${done.failed} could not be written and were left where they are.`}
+          </p>
+          <div>
+            <Button onClick={() => navigate(routesPath.PROTECTED.STUDENTS.INDEX)}>
+              Back to the directory
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {previewing && !plan && <Skeleton className="h-40 w-full rounded-xl" />}
+
+      {/* ── the footer ──────────────────────────────────────────────────── */}
+      {step < 3 && (
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white-02 pt-4">
+          <span className="mr-auto text-xs text-gray-05">
+            Step {step + 1} of {STEPS.length} · {STEPS[step]}
+          </span>
+          {/* Step 2 keeps its way back: the per-student overrides are the whole
+              point of it, and this is the last moment before a run that cannot
+              be undone from here. */}
+          {step > 0 && (
+            <Button variant="outline" onClick={() => setStep(step - 1)}>
+              Back
+            </Button>
+          )}
+          {step === 0 && (
+            <>
+              {target && !plan && (
+                <Button onClick={() => refreshPlan()} disabled={previewing}>
+                  {previewing ? "Checking…" : "Check this year"}
+                </Button>
+              )}
+              {plan && (
+                <Button onClick={toReview} disabled={previewing || nothingToMove}>
+                  Review students
+                </Button>
+              )}
+            </>
+          )}
+          {step === 1 && (
+            <Button onClick={toConfirm} disabled={previewing}>
+              {previewing ? "Recalculating…" : "Preview and confirm"}
+            </Button>
+          )}
+          {step === 2 && (
+            <Button
+              onClick={() => setConfirming(true)}
+              disabled={running || counts?.candidates === 0}
+            >
+              Run promotion
+            </Button>
+          )}
+        </div>
+      )}
+
+      {nothingToMove && step === 0 && (
+        <p className="text-sm text-gray-05">
+          Nobody in {plan?.from_session} is a candidate for promotion.
+        </p>
+      )}
+
+      <ConfirmDialog
+        open={confirming}
+        onCancel={() => setConfirming(false)}
+        onConfirm={execute}
+        title={`Promote ${counts?.candidates ?? 0} students into ${plan?.to_session}?`}
+        body={`This moves every student to their target class in one action and cannot be undone from here.${
+          counts?.graduate ? ` ${counts.graduate} will leave the roll as graduates.` : ""
+        }`}
+        confirmLabel="Run promotion"
+        busy={running}
+      />
+    </PageShell>
+  );
+}
+
+/**
+ * Why students are not simply moving up.
+ *
+ * Class-wide causes collapse to one row however many students they cover, and
+ * per-student causes get one each - the split the server already makes, kept
+ * because repeating "this class has no target" under 25 names buries the two
+ * rows that actually need a decision.
+ */
+function Exceptions({ plan }: { plan: PromotionPlan }) {
+  const { by_class: byClass, by_student: byStudent } = plan.exceptions;
+  if (byClass.length === 0 && byStudent.length === 0) return null;
+
+  return (
+    <section className="rounded-xl border border-white-02 bg-white p-4">
+      <p className="text-xs font-medium text-gray-05">
+        {byClass.length + byStudent.length}{" "}
+        {byClass.length + byStudent.length === 1 ? "exception" : "exceptions"}
+      </p>
+      <ul className="mt-3 grid gap-2.5">
+        {byClass.map((e) => (
+          <li
+            key={`c-${e.class}-${e.cause}`}
+            className="border-l-2 border-amber-400 pl-3"
+          >
+            <p className="text-sm font-medium text-black-01">
+              {e.class_name}
+              <span className="ml-2 text-xs font-normal text-gray-05">
+                {e.students} {e.students === 1 ? "student" : "students"}
+              </span>
+            </p>
+            <p className="text-xs text-gray-05">{e.reason}</p>
+          </li>
+        ))}
+        {byStudent.map((e) => (
+          <li
+            key={`s-${e.student}`}
+            className="border-l-2 border-amber-400 pl-3"
+          >
+            <p className="text-sm font-medium text-black-01">
+              {e.name}
+              <span className="ml-2 text-xs font-normal text-gray-05">
+                {e.class}
+              </span>
+            </p>
+            <p className="text-xs text-gray-05">{e.reason}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}

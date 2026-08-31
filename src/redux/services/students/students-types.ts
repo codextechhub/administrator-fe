@@ -252,6 +252,90 @@ export interface GuardianDetail extends GuardianSummary {
   }[];
 }
 
+export type PromotionOutcome = "PROMOTE" | "REPEAT" | "GRADUATE" | "HOLD";
+
+/** Why a class or a student is not simply moving up. A fixed vocabulary. */
+export type PromotionCause =
+  | "TERMINAL_LEVEL"
+  | "NO_CLASS_AT_NEXT_LEVEL"
+  | "LEVEL_NOT_WIRED"
+  | "STUDENT_SUSPENDED"
+  | "NO_CLASS_ASSIGNED"
+  | "NO_CLASS_TO_REPEAT";
+
+export interface PromotionPlan {
+  from_session: string;
+  to_session: string;
+  counts: {
+    promote: number;
+    repeat: number;
+    graduate: number;
+    hold: number;
+    candidates: number;
+    excluded: number;
+  };
+  /**
+   * One row per source class.
+   *
+   * `terminal` means the level SAYS pupils leave after it. A class with no
+   * target that is not terminal is a level nobody has wired, which is a
+   * different thing and reads as "not set" rather than "Graduates".
+   */
+  level_map: {
+    from: string;
+    from_id: number;
+    to: string | null;
+    to_id: number | null;
+    terminal: boolean;
+    students: number;
+  }[];
+  /**
+   * Class-wide causes collapse to one row however many students they cover;
+   * per-student causes get one each. Repeating a class-wide cause per student
+   * would bury the rows that actually need a decision.
+   */
+  exceptions: {
+    by_class: {
+      class: number;
+      class_name: string;
+      cause: PromotionCause;
+      reason: string;
+      students: number;
+    }[];
+    by_student: {
+      student: number;
+      name: string;
+      class: string;
+      cause: PromotionCause;
+      reason: string;
+    }[];
+  };
+  students: {
+    id: number;
+    name: string;
+    student_number: string;
+    from_class: string;
+    from_class_id: number;
+    to_class: string | null;
+    outcome: PromotionOutcome;
+  }[];
+}
+
+/** What a completed run did. */
+export interface PromotionBatch {
+  id: number;
+  from_session_name: string;
+  to_session_name: string;
+  total: number;
+  promoted: number;
+  repeated: number;
+  graduated: number;
+  held: number;
+  excluded: number;
+  failed: number;
+  created_at: string;
+}
+
 /**
  * One class with its live seat count.
  *

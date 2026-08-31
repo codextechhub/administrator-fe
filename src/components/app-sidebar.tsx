@@ -20,6 +20,7 @@ import {
   CalendarRange,
   ArrowLeftRight,
   Contact,
+  GraduationCap,
   ListChecks,
   Rocket,
   UserPlus,
@@ -188,6 +189,16 @@ export function AppSidebar({
         isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.GUARDIANS),
         childActive: false,
         permission: P.BROWSE_STUDENTS,
+      },
+      {
+        // The end-of-session move. Its own door because it is a thing a school
+        // does once a year, deliberately, and not a view of anything.
+        title: "Promotion",
+        url: routesPath.PROTECTED.STUDENTS.PROMOTION,
+        icon: GraduationCap,
+        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.PROMOTION),
+        childActive: false,
+        permission: P.MANAGE_STUDENTS,
       },
     ],
     academics: [
