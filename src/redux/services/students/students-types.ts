@@ -213,6 +213,20 @@ export interface HistoryEntry {
   actor: string;
 }
 
+/**
+ * One hit in the student type-ahead.
+ *
+ * Four fields, deliberately: the backend refuses to put an address or a
+ * guardian's number into a list that appears under somebody's cursor.
+ */
+export interface StudentSearchHit {
+  id: number;
+  full_name: string;
+  student_number: string;
+  /** "" when the student is not in a class. */
+  class_name: string;
+}
+
 /** The guardian directory row. */
 export interface GuardianRow {
   id: number;

@@ -15,6 +15,7 @@ import type {
   StudentGuardianLink,
   StudentListArgs,
   StudentRow,
+  StudentSearchHit,
   StudentSubject,
   StudentSummary,
 } from "./students-types";
@@ -241,6 +242,22 @@ export const studentsApi = baseApi.injectEndpoints({
     }),
 
     /** Link an existing guardian by id, or create one inline by name + phone. */
+    /**
+     * The type-ahead: students by name or admission number.
+     *
+     * Capped and never paginated - a palette that paginates is a list, and this
+     * is not one. Four fields only: a type-ahead is the wrong place to put a
+     * child's address in front of somebody.
+     */
+    searchStudents: builder.query<Envelope<StudentSearchHit[]>, string>({
+      query: (q) => ({
+        url: `/students/search/`,
+        method: "GET",
+        params: { q },
+      }),
+      providesTags: ["Students"],
+    }),
+
     linkGuardian: builder.mutation<
       Envelope<StudentGuardianLink[]>,
       {
@@ -415,6 +432,7 @@ export const {
   useGetStudentDocumentsQuery,
   useGetStudentHistoryQuery,
   useGetGuardiansQuery,
+  useSearchStudentsQuery,
   useGetGuardianQuery,
   useGetAdmissionPolicyQuery,
   useGetClassRosterQuery,

@@ -8,6 +8,10 @@ import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 const StudentDirectory = lazy(() => import("@/pages/protected/students"));
 const StudentProfile = lazy(() => import("@/pages/protected/students/profile"));
 const EnrolStudent = lazy(() => import("@/pages/protected/students/enrol"));
+const Guardians = lazy(() => import("@/pages/protected/students/guardians"));
+const GuardianDetail = lazy(
+  () => import("@/pages/protected/students/guardians/detail"),
+);
 const ClassesAndTransfers = lazy(
   () => import("@/pages/protected/students/classes"),
 );
@@ -78,6 +82,25 @@ export const studentsRoutes = [
     Component: ClassesAndTransfers,
     handle: {
       title: "Classes & Transfers",
+      lens: true,
+      lenses: "branch",
+    } satisfies DashboardHandle,
+  },
+  {
+    path: S.GUARDIANS,
+    Component: Guardians,
+    handle: {
+      title: "Guardians",
+      lens: true,
+      lenses: "branch",
+    } satisfies DashboardHandle,
+  },
+  {
+    path: S.GUARDIAN_DETAILS,
+    Component: GuardianDetail,
+    handle: {
+      title: "Guardian",
+      hasBack: true,
       lens: true,
       lenses: "branch",
     } satisfies DashboardHandle,

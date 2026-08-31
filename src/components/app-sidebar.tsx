@@ -19,6 +19,7 @@ import {
   CalendarClock,
   CalendarRange,
   ArrowLeftRight,
+  Contact,
   ListChecks,
   Rocket,
   UserPlus,
@@ -177,6 +178,16 @@ export function AppSidebar({
         isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.ASSIGN),
         childActive: false,
         permission: P.ASSIGN_CLASS,
+      },
+      {
+        // The households. Its own door because "who do we call about this
+        // family" is a question asked without a student in mind.
+        title: "Guardians",
+        url: routesPath.PROTECTED.STUDENTS.GUARDIANS,
+        icon: Contact,
+        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.GUARDIANS),
+        childActive: false,
+        permission: P.BROWSE_STUDENTS,
       },
     ],
     academics: [

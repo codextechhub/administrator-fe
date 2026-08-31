@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { routesPath } from "@/routes/routesPath";
 import {
   useGetStudentClassHistoryQuery,
   useGetStudentDocumentsQuery,
@@ -248,6 +249,7 @@ function Overview({
 // ── Guardians ───────────────────────────────────────────────────────────────
 
 function GuardiansTab({ studentId }: { studentId: number }) {
+  const navigate = useNavigate();
   const { data, isLoading } = useGetStudentGuardiansQuery(studentId);
   const links = data?.data ?? [];
 
@@ -280,14 +282,47 @@ function GuardiansTab({ studentId }: { studentId: number }) {
               },
             ]}
           />
-          {link.siblings.length > 0 && (
-            <p className="mt-3 border-t border-white-02 pt-3 text-xs text-gray-05">
-              Also guardian of{" "}
-              {link.siblings
-                .map((s) => `${s.name}${s.class ? ` (${s.class})` : ""}`)
-                .join(", ")}
-            </p>
-          )}
+          <div className="mt-3 border-t border-white-02 pt-3">
+            {link.siblings.length > 0 && (
+              <p className="text-xs text-gray-05">
+                Also guardian of{" "}
+                {/* Each sibling is a link. A registrar reading "also guardian
+                    of Tobi (JSS1 A)" is one click from Tobi, and making them
+                    search for a name they can already see is the kind of
+                    friction that ends in the wrong Tobi. */}
+                {link.siblings.map((sib, i) => (
+                  <span key={sib.id}>
+                    {i > 0 && ", "}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          routesPath.PROTECTED.STUDENTS.PROFILE_ID(sib.id),
+                        )
+                      }
+                      className="text-primary underline-offset-2 hover:underline"
+                    >
+                      {sib.name}
+                    </button>
+                    {sib.class ? ` (${sib.class})` : ""}
+                  </span>
+                ))}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() =>
+                navigate(
+                  routesPath.PROTECTED.STUDENTS.GUARDIAN_DETAILS_ID(
+                    link.guardian.id,
+                  ),
+                )
+              }
+              className="mt-2 text-xs text-primary underline-offset-2 hover:underline"
+            >
+              Open {link.guardian.full_name}
+            </button>
+          </div>
         </Panel>
       ))}
     </div>
