@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import PermissionGate from "@/components/custom/permission-gate";
 import { P } from "@/permissions";
 import { PageShell } from "@/components/layout/page-shell";
+import { ExportButton } from "@/components/custom/export-button";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -257,6 +258,22 @@ export default function StudentDirectory() {
             Enrol a student
           </Button>
         </PermissionGate>
+
+        {/* The branch goes by NAME, not id: the export filters on the branch's
+            name and a translator has no tenant to resolve one into the other.
+            Sending it means the file narrows exactly as the table does - which
+            a student export can do and a catalogue export cannot, because a
+            student belongs to one branch and is never school-wide. */}
+        <ExportButton
+          screen="students.directory"
+          params={{
+            search: search.trim() || undefined,
+            status: status === "all" ? undefined : status,
+            class: classId === "all" ? undefined : classId,
+            level: level === "all" ? undefined : level,
+            branch_name: branch !== undefined ? branchLens.label : undefined,
+          }}
+        />
 
         <div className="inline-flex rounded-full border border-white-02 bg-white p-0.5">
           <ViewButton

@@ -46,7 +46,7 @@ import {
   type LessonValues,
 } from "../components/lesson-drawer";
 import { DuplicateDrawer } from "../components/duplicate-drawer";
-import { ExportButton } from "@/pages/protected/academics/components/export-button";
+import { ExportButton } from "@/components/custom/export-button";
 import { ClassPicker } from "./class-picker";
 import { PageShell } from "@/components/layout/page-shell";
 

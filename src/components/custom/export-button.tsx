@@ -15,7 +15,12 @@ import {
 import type { FromScreen } from "@/redux/services/exports/exports-types";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// "Export what this table is showing", on any academics list screen.
+// "Export what this table is showing", on any list screen that has a binding.
+//
+// Shared rather than academics-only: calendar and classes already imported it
+// from that folder, and the student directory makes seven callers across four
+// modules. Nothing in it is module-specific - it takes a binding key and the
+// screen's own params.
 //
 // Two calls, and the gap between them is the whole feature. `from-screen`
 // translates the filters currently on the screen and names the ones it could
@@ -32,10 +37,11 @@ import type { FromScreen } from "@/redux/services/exports/exports-types";
 // **Absent while the school is still being set up.** Academic structure is open
 // to a PENDING tenant because building it is a required onboarding task; the
 // Export Centre is not, and declares no `pending_tenant_surface`, so it refuses
-// every call. Rendering the button anyway would put a control on five screens
+// every call. Rendering the button anyway would put a control on the screen
 // that answers "this school is still being set up" - a door drawn on a wall,
 // which is the same rule the sidebar follows for surfaces a pending school
-// cannot reach.
+// cannot reach. (Student Management is closed to a pending school outright, so
+// there the question never arises.)
 //
 // **And absent until a school actually holds the export keys.** The Export
 // Centre is granted to PLATFORM roles only today - seed_exports_permissions

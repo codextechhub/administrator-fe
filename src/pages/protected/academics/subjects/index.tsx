@@ -45,7 +45,7 @@ import type {
 } from "@/redux/services/academics/academics-types";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { EntityDrawer } from "../components/entity-drawer";
-import { ExportButton } from "../components/export-button";
+import { ExportButton } from "@/components/custom/export-button";
 import { blankDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 import { OfferedAt } from "./offered-at";

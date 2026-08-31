@@ -40,7 +40,7 @@ import type {
   Level,
   SchoolClass,
 } from "@/redux/services/academics/academics-types";
-import { ExportButton } from "@/pages/protected/academics/components/export-button";
+import { ExportButton } from "@/components/custom/export-button";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { ClassDrawer } from "./class-drawer";
 import { GenerateArmsDrawer } from "./generate-arms-drawer";

@@ -40,7 +40,7 @@ import type {
   AcademicSession,
   SessionStatus,
 } from "@/redux/services/academics/academics-types";
-import { ExportButton } from "../components/export-button";
+import { ExportButton } from "@/components/custom/export-button";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { SessionDrawer } from "./session-drawer";
 import { RollForwardDialog } from "./roll-forward-dialog";

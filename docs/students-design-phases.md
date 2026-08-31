@@ -636,11 +636,13 @@ Making the rail route-aware is phase 1 work, per 2.0.
 
 Two were dropped rather than built, and the reasons are worth keeping:
 
-- **`register_screen` for the directory's Export button.** Not built, so the
-  Export control was not shipped either - a button that 404s is worse than an
-  absent one. The dataset is registered with the Export Centre; only the
-  screen-to-dataset binding is missing, and `vs_academics` shows the shape in
-  about twenty lines.
+- ~~`register_screen` for the directory's Export button.~~ **Built afterwards**
+  (backend `a0de88d`, frontend below). The binding carries `search`, `status`
+  and the branch lens, and reports `class` and `level` - a class is a placement
+  in a year rather than a column on the student, so the file would cover every
+  class. The branch IS carried here where the academics screens report it, and
+  the difference is real: a student belongs to exactly one branch and is never
+  school-wide.
 - **Relaxing `fullest_classes`.** Not needed in the end. The panel's copy was
   written to what the endpoint can actually support ("No class is close to
   full") rather than the design's wording, which would have been a lie at a
@@ -700,23 +702,25 @@ again next time a module is built alongside its backend.
 Nothing in the eight phases. These are the loose ends the build created or
 uncovered, in the order they are worth doing.
 
-1. **The directory's Export button.** The only design element that was scoped
-   and not shipped. It needs `register_screen` in `vs_students/export_datasets.py`
-   - about twenty lines, with `vs_academics` as the worked example. The dataset
-   and the permission code both already exist.
-2. **The onboarding import page is out of date.** It still says the students
+1. **The onboarding import page is out of date.** It still says the students
    dataset has "no template and no model behind them yet", and carries a
    placeholder row for Students. `students_v1` is seeded and phase 7 uses it, so
    both should go.
-3. **`school.students.import` / `.export` may be missing in other environments.**
+2. **`school.students.import` / `.export` may be missing in other environments.**
    They exist in code and in the "Student Bulk Data" group but had no `Permission`
    rows in the local database until `seed_all_permissions` was re-run. Staging is
    worth checking.
-4. **The nav badges the design draws** on Applicants and "No class" were never
+3. **The nav badges the design draws** on Applicants and "No class" were never
    built - `NavMain` has no badge support, and the counts belong on the items
    they describe rather than parked on the directory.
-5. **`?session=` on the class roster**, if anyone asks to read a past year's
+4. **`?session=` on the class roster**, if anyone asks to read a past year's
    register. Deliberately the only session parameter this module should grow.
+
+One thing found while building it, unrelated and pre-existing: writing an
+export notification fails on this dev database with `column
+"origin_tenant_id" of relation "vs_notifications_notification" does not
+exist` - an unapplied notifications migration. It does not block the export,
+which still returns its file.
 
 ### Dev-data notes
 

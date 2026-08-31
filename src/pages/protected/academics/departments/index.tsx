@@ -39,7 +39,7 @@ import {
 import type { Department } from "@/redux/services/academics/academics-types";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { EntityDrawer } from "../components/entity-drawer";
-import { ExportButton } from "../components/export-button";
+import { ExportButton } from "@/components/custom/export-button";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 import { PageShell } from "@/components/layout/page-shell";

@@ -47,7 +47,7 @@ import type {
 import { Panel } from "@/components/custom/surface";
 import { BulkLevelsDrawer } from "./bulk-levels-drawer";
 import { EntityDrawer } from "../components/entity-drawer";
-import { ExportButton } from "../components/export-button";
+import { ExportButton } from "@/components/custom/export-button";
 import { EmptyYear } from "@/pages/protected/academics/components/empty-year";
 import {
   PromotionPicker,

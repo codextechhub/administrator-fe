@@ -50,7 +50,7 @@ import {
   paperValuesFrom,
   type PaperValues,
 } from "../components/paper-values";
-import { ExportButton } from "@/pages/protected/academics/components/export-button";
+import { ExportButton } from "@/components/custom/export-button";
 import { RowActions } from "../components/row-actions";
 import { RowPicker } from "../components/row-picker";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
