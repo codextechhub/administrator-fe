@@ -7,13 +7,18 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { PageShell } from "@/components/layout/page-shell";
 import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
-import { apiDetailMessage, parseApiError } from "@/utils/api-error";
+import { cn } from "@/lib/utils";
+import { apiDetailMessage, fieldErrors, parseApiError } from "@/utils/api-error";
 import { useGetClassesQuery } from "@/redux/services/academics/academics-api";
 import {
   useEnrolStudentMutation,
   useGetAdmissionPolicyQuery,
 } from "@/redux/services/students/students-api";
-import type { EnrolWrite, Gender } from "@/redux/services/students/students-types";
+import {
+  RELATIONSHIPS,
+  type EnrolWrite,
+  type Gender,
+} from "@/redux/services/students/students-types";
 
 import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { Field, errorInputClass, inputClass } from "../drawers/drawer-shell";
@@ -33,6 +38,54 @@ function dobProblem(value: string): string {
   if (years > 25) return "That would make the student over 25. Check the year.";
   return "";
 }
+
+/**
+ * The steps, and which fields each one owns.
+ *
+ * The map is what makes a server-side refusal land in the right place: a 400 on
+ * `student_number` while the registrar is standing on Review has to take them
+ * back to Placement with the field marked, not leave them staring at a summary
+ * with a red toast above it.
+ */
+type StepKey = "student" | "placement" | "guardians" | "details" | "review";
+
+interface Step {
+  key: StepKey;
+  label: string;
+  hint: string;
+  /** The fields this step owns, so a refusal can be routed back to it. */
+  fields: readonly string[];
+  optional?: boolean;
+}
+
+const STEPS: readonly Step[] = [
+  {
+    key: "student",
+    label: "Student",
+    hint: "Who they are.",
+    fields: ["first_name", "last_name", "date_of_birth", "gender"],
+  },
+  {
+    key: "placement",
+    label: "Placement",
+    hint: "Where they sit, and the number they carry.",
+    fields: ["branch", "school_class", "applied_for", "student_number"],
+  },
+  {
+    key: "guardians",
+    label: "Guardians",
+    hint: "Who the school calls.",
+    fields: ["guardians"],
+  },
+  {
+    key: "details",
+    label: "Details",
+    hint: "Contact and medical. All optional.",
+    fields: [] as string[],
+    optional: true,
+  },
+  { key: "review", label: "Review", hint: "Check, then save.", fields: [] },
+];
 
 /**
  * Enrol one student by hand, or save them as an applicant.
@@ -55,6 +108,18 @@ function dobProblem(value: string): string {
  * sent false; the server refuses, and only then does the form put the question
  * to the registrar. "Is this a different child with the same name and birthday?"
  * is not ours to answer on their behalf.
+ *
+ * **Stepped, and the steps are not a cage.** Twenty-one fields on one page is a
+ * wall, and the registrar cannot tell which of them are actually required. So
+ * the form asks for one thing at a time, and:
+ *
+ *   - Next validates ONLY the step you are on, so errors appear where you are
+ *     rather than all twenty-one at once the first time you press Save.
+ *   - Every step you have already reached stays clickable. A stepper that traps
+ *     someone on step 2 because step 3 is incomplete is worse than the wall.
+ *   - The rail carries a per-step count of what is still missing, so nothing is
+ *     hiding two steps back when you arrive at Review.
+ *   - A server refusal jumps to the step that owns the field it names.
  */
 export default function EnrolStudent() {
   const navigate = useNavigate();
@@ -103,6 +168,10 @@ export default function EnrolStudent() {
       : "";
   const branchValue = form.branch || lensBranch;
 
+  const [step, setStep] = useState<StepKey>("student");
+  // How far they have got. Every step up to here stays clickable, so the rail
+  // is a map rather than a gate.
+  const [reached, setReached] = useState<StepKey[]>(["student"]);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [confirmDuplicate, setConfirmDuplicate] = useState<string | null>(null);
   const [allowOverCapacity, setAllowOverCapacity] = useState(false);
@@ -182,6 +251,52 @@ export default function EnrolStudent() {
   const valid = Object.keys(problems).length === 0;
   const err = (key: string) => (touched[key] ? problems[key] : undefined);
 
+  // Which fields a step owns, narrowed to the ones that apply right now: a
+  // school with one branch never owns `branch`, and an applicant owns
+  // `applied_for` where an enrolment owns `school_class`.
+  const ownedBy = (key: StepKey) => {
+    const fields = STEPS.find((x) => x.key === key)?.fields ?? [];
+    return fields.filter((f) => {
+      if (f === "branch") return branchLens.applies;
+      if (f === "school_class") return !asApplicant;
+      if (f === "applied_for") return asApplicant;
+      return true;
+    });
+  };
+  const missingIn = (key: StepKey) =>
+    ownedBy(key).filter((f) => problems[f]).length;
+
+  const index = STEPS.findIndex((x) => x.key === step);
+  const isLast = step === "review";
+
+  function goTo(next: StepKey) {
+    setStep(next);
+    setReached((r) => (r.includes(next) ? r : [...r, next]));
+    // A step change is a page change to the reader; leaving them scrolled
+    // halfway down the previous step's fields is disorienting.
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /** Advance, but only after marking THIS step's problems visible. */
+  function next() {
+    const owned = ownedBy(step);
+    if (owned.some((f) => problems[f])) {
+      setTouched((t) => ({
+        ...t,
+        ...Object.fromEntries(owned.map((f) => [f, true])),
+      }));
+      return;
+    }
+    goTo(STEPS[Math.min(STEPS.length - 1, index + 1)].key);
+  }
+
+  /** Send the reader to the step that owns *field*, with it marked. */
+  function revealField(field: string) {
+    const owner = STEPS.find((x) => (x.fields as readonly string[]).includes(field));
+    setTouched((t) => ({ ...t, [field]: true }));
+    if (owner) goTo(owner.key);
+  }
+
   const chosenClass = classes.find((c) => String(c.id) === form.school_class);
 
   function body(extra: Partial<EnrolWrite>): EnrolWrite {
@@ -242,6 +357,10 @@ export default function EnrolStudent() {
       setTouched(
         Object.fromEntries(Object.keys(problems).map((k) => [k, true])),
       );
+      // Land on the FIRST step that is short of something rather than saying
+      // "some details are missing" over a summary that shows none of them.
+      const short = STEPS.find((x) => missingIn(x.key) > 0);
+      if (short) goTo(short.key);
       toast.error("Some required details are missing. They are marked below.");
       return;
     }
@@ -265,6 +384,15 @@ export default function EnrolStudent() {
       if (/capacit/i.test(message) && !allowOverCapacity) {
         setAllowOverCapacity(true);
         toast.warning(`${message} Save again to go ahead anyway.`);
+        return;
+      }
+      // A field-keyed refusal belongs beside its field. Without this the
+      // registrar reads "that number is already taken" on the Review step,
+      // three steps away from the box that holds it.
+      const named = Object.entries(fieldErrors(error))[0];
+      if (named) {
+        revealField(named[0]);
+        toast.error(named[1]);
         return;
       }
       toast.error(message);
@@ -295,6 +423,68 @@ export default function EnrolStudent() {
         ))}
       </div>
 
+      {/* Phones get a counter, not the rail. Five labels do not fit at 390px:
+          the strip scrolls, so what you actually see is "Studer / Placeme /
+          Guardia" - clipped words that read as broken rather than as something
+          to swipe. The counter says the same thing and fits. Back-navigation is
+          still there: the footer's Back button, and Edit on the review. */}
+      <p className="text-sm font-semibold text-black-01 sm:hidden">
+        Step {index + 1} of {STEPS.length} · {STEPS[index].label}
+      </p>
+
+      <ol className="hidden max-w-full gap-1 overflow-x-auto pb-1 sm:flex">
+        {STEPS.map((x, i) => {
+          const visited = reached.includes(x.key);
+          const current = x.key === step;
+          const short = visited && !current ? missingIn(x.key) : 0;
+          return (
+            <li key={x.key} className="min-w-0">
+              <button
+                type="button"
+                // Unvisited steps stay shut, so the rail cannot be used to skip
+                // past the guardians and reach Review with nothing linked.
+                disabled={!visited}
+                onClick={() => goTo(x.key)}
+                aria-current={current ? "step" : undefined}
+                className={cn(
+                  "flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1.5 text-sm",
+                  current && "bg-white-03 font-semibold text-primary",
+                  !current && visited && "text-gray-05 hover:text-black-01",
+                  // Readable, not invisible. An upcoming step you cannot read
+                  // is not a rail, it is four grey dots - the whole point is
+                  // seeing what the form is going to ask for.
+                  !visited && "cursor-not-allowed text-gray-05/70",
+                )}
+              >
+                <span
+                  className={cn(
+                    "grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-semibold",
+                    current && "bg-primary text-white",
+                    !current && visited && short === 0 && "bg-green-700 text-white",
+                    !current && visited && short > 0 && "bg-amber-500 text-white",
+                    !visited && "bg-gray-04 text-gray-05",
+                  )}
+                >
+                  {i + 1}
+                </span>
+                {x.label}
+                {short > 0 && (
+                  <span className="text-xs font-normal text-amber-700">
+                    {short} missing
+                  </span>
+                )}
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+
+      <p className="-mt-3 text-xs text-gray-05">
+        {STEPS[index].hint}
+        {STEPS[index].optional ? " You can skip this." : ""}
+      </p>
+
+      {step === "student" && (
       <Section title="The student">
         <div className="grid gap-3.5 sm:grid-cols-2">
           <Field label="First name" error={err("first_name")}>
@@ -374,7 +564,9 @@ export default function EnrolStudent() {
           </Field>
         </div>
       </Section>
+      )}
 
+      {step === "placement" && (
       <Section title={asApplicant ? "The application" : "Admission"}>
         <div className="grid gap-3.5 sm:grid-cols-2">
           {/* Absent at a single-branch school: the dimension recedes there and
@@ -481,7 +673,9 @@ export default function EnrolStudent() {
           </p>
         )}
       </Section>
+      )}
 
+      {step === "details" && (<>
       <Section title="Contact">
         <div className="grid gap-3.5 sm:grid-cols-2">
           <Field label="Home address">
@@ -509,11 +703,8 @@ export default function EnrolStudent() {
         </div>
       </Section>
 
-      <GuardianRows
-        rows={guardians}
-        onChange={setGuardians}
-        error={touched.guardians ? problems.guardians : undefined}
-      />
+      {/* Contact and medical sit together: both are optional, and splitting
+          them would be two steps a registrar presses Next through. */}
 
       <Section
         title="Medical"
@@ -557,8 +748,33 @@ export default function EnrolStudent() {
           </Field>
         </div>
       </Section>
+      </>)}
+
+      {step === "guardians" && (
+        <GuardianRows
+          rows={guardians}
+          onChange={setGuardians}
+          error={touched.guardians ? problems.guardians : undefined}
+        />
+      )}
+
+      {step === "review" && (
+        <Review
+          form={form}
+          guardians={guardians}
+          asApplicant={asApplicant}
+          className={chosenClass?.name}
+          levelName={levels.find((l) => String(l.id) === form.applied_for)?.name}
+          branchName={
+            branchLens.branches.find((b) => String(b.id) === branchValue)?.name
+          }
+          onJump={goTo}
+        />
+      )}
 
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white-02 pt-4">
+        {/* The count is for the WHOLE form, not this step, so nothing can be
+            hiding two steps back when Review is reached. */}
         <span className="mr-auto text-xs text-gray-05" aria-live="polite">
           {valid
             ? "Ready to save."
@@ -566,20 +782,30 @@ export default function EnrolStudent() {
         </span>
         <Button
           variant="outline"
-          onClick={() => navigate(routesPath.PROTECTED.STUDENTS.INDEX)}
+          onClick={() =>
+            index === 0
+              ? navigate(routesPath.PROTECTED.STUDENTS.INDEX)
+              : goTo(STEPS[index - 1].key)
+          }
           disabled={isLoading}
         >
-          Cancel
+          {index === 0 ? "Cancel" : "Back"}
         </Button>
-        <Button onClick={() => submit()} disabled={isLoading}>
-          {isLoading
-            ? "Saving…"
-            : asApplicant
-              ? "Save applicant"
-              : allowOverCapacity
-                ? "Enrol anyway"
-                : "Enrol student"}
-        </Button>
+        {isLast ? (
+          <Button onClick={() => submit()} disabled={isLoading}>
+            {isLoading
+              ? "Saving…"
+              : asApplicant
+                ? "Save applicant"
+                : allowOverCapacity
+                  ? "Enrol anyway"
+                  : "Enrol student"}
+          </Button>
+        ) : (
+          <Button onClick={next} disabled={isLoading}>
+            {STEPS[index].optional ? "Skip" : "Next"}
+          </Button>
+        )}
       </div>
 
       <ConfirmDialog
@@ -613,5 +839,171 @@ function Section({
       {note && <p className="mt-0.5 text-xs text-gray-05">{note}</p>}
       <div className="mt-3">{children}</div>
     </section>
+  );
+}
+
+/**
+ * What is about to be saved, in the order it will be read back.
+ *
+ * A review that only repeats the required fields is a formality. This one names
+ * the things a registrar gets wrong and cannot see from the form: which branch
+ * the child is being recorded at, whether an admission number was issued at
+ * all, and - the one that matters - which guardian the school will actually
+ * ring. Each block jumps back to the step that owns it, because spotting a
+ * mistake here and having to hunt for the field is how it gets left in.
+ */
+function Review({
+  form,
+  guardians,
+  asApplicant,
+  className,
+  levelName,
+  branchName,
+  onJump,
+}: {
+  form: Record<string, string>;
+  guardians: GuardianDraft[];
+  asApplicant: boolean;
+  className?: string;
+  levelName?: string;
+  branchName?: string;
+  onJump: (step: StepKey) => void;
+}) {
+  const named = guardians.filter((g) =>
+    g.kind === "existing" ? Boolean(g.guardianId) : g.full_name.trim(),
+  );
+  const primary = named.find((g) => g.is_primary);
+  const fullName = [form.first_name, form.middle_name, form.last_name]
+    .filter(Boolean)
+    .join(" ");
+
+  const medical = [
+    form.blood_group,
+    form.allergies,
+    form.conditions,
+    form.emergency_contact_name,
+  ].some(Boolean);
+
+  return (
+    <div className="grid gap-4">
+      <Block title="Student" onEdit={() => onJump("student")}>
+        <Line label="Name" value={fullName || "Not given"} />
+        <Line label="Date of birth" value={form.date_of_birth || "Not given"} />
+        <Line
+          label="Gender"
+          value={form.gender === "FEMALE" ? "Female" : form.gender === "MALE" ? "Male" : "Not given"}
+        />
+        {form.previous_school && (
+          <Line label="Previous school" value={form.previous_school} />
+        )}
+      </Block>
+
+      <Block
+        title={asApplicant ? "Application" : "Placement"}
+        onEdit={() => onJump("placement")}
+      >
+        {branchName && <Line label="Branch" value={branchName} />}
+        {asApplicant ? (
+          <Line label="Level applied for" value={levelName ?? "Not picked"} />
+        ) : (
+          <>
+            <Line label="Entry class" value={className ?? "Not picked"} />
+            <Line label="Admission date" value={form.enrolment_date} />
+          </>
+        )}
+        <Line
+          label="Admission number"
+          value={
+            form.student_number.trim() ||
+            "Not issued - it can be added later from the record"
+          }
+        />
+        <p className="mt-2 text-xs text-gray-05">
+          {asApplicant
+            ? "Saved as an applicant. They take no seat until they are confirmed."
+            : "Enrolled and seated. The class seat is taken on save."}
+        </p>
+      </Block>
+
+      <Block title="Guardians" onEdit={() => onJump("guardians")}>
+        {named.length === 0 ? (
+          <p className="text-sm text-amber-700">
+            Nobody linked. At least one guardian is required.
+          </p>
+        ) : (
+          <ul className="grid gap-1.5">
+            {named.map((g, i) => (
+              <li key={i} className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                <span className="text-black-01">
+                  {g.kind === "existing" ? g.guardianName : g.full_name}
+                </span>
+                <span className="text-xs text-gray-05">
+                  {RELATIONSHIPS.find((r) => r.value === g.relationship)?.label ??
+                    "No relationship set"}
+                </span>
+                {g.is_primary && (
+                  <span className="rounded-full bg-white-03 px-2 py-0.5 text-xs text-primary">
+                    Primary contact
+                  </span>
+                )}
+                {g.kind === "new" && (
+                  <span className="text-xs text-gray-05">new record</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        {primary && (
+          <p className="mt-2 text-xs text-gray-05">
+            The school will call{" "}
+            {primary.kind === "existing" ? primary.guardianName : primary.full_name}{" "}
+            first.
+          </p>
+        )}
+      </Block>
+
+      <Block title="Details" onEdit={() => onJump("details")}>
+        <Line label="Home address" value={form.address || "Not recorded"} />
+        <Line
+          label="Medical"
+          value={medical ? "Recorded" : "Nothing recorded"}
+        />
+      </Block>
+    </div>
+  );
+}
+
+function Block({
+  title,
+  onEdit,
+  children,
+}: {
+  title: string;
+  onEdit: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="min-w-0 rounded-xl border border-white-02 bg-white p-4">
+      <div className="mb-2.5 flex items-center justify-between gap-2">
+        <h3 className="text-xs font-medium text-gray-05">{title}</h3>
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-xs text-primary underline-offset-2 hover:underline"
+        >
+          Edit
+        </button>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Line({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid gap-0.5 py-0.5 sm:grid-cols-[minmax(0,9rem)_minmax(0,1fr)] sm:gap-3">
+      <span className="text-xs text-gray-05 sm:pt-0.5">{label}</span>
+      <span className="min-w-0 break-words text-sm text-black-01">{value}</span>
+    </div>
   );
 }
