@@ -12,9 +12,9 @@ import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined
 import { routesPath } from "@/routes/routesPath";
 import { cn } from "@/lib/utils";
 import { apiDetailMessage } from "@/utils/api-error";
-import { useGetClassesQuery } from "@/redux/services/academics/academics-api";
 import {
   useBulkAssignClassMutation,
+  useGetClassSeatsQuery,
   useGetClassRosterQuery,
   useGetUnplacedStudentsQuery,
 } from "@/redux/services/students/students-api";
@@ -53,7 +53,7 @@ export default function ClassesAndTransfers() {
   const [refusals, setRefusals] = useState<BulkResultRow[]>([]);
   const [moving, setMoving] = useState<StudentRow | null>(null);
 
-  const { data: classesData } = useGetClassesQuery();
+  const { data: classesData } = useGetClassSeatsQuery();
   const classes = useMemo(() => classesData?.data ?? [], [classesData]);
 
   const {
@@ -293,7 +293,9 @@ export default function ClassesAndTransfers() {
                       return (
                         <option key={c.id} value={c.id} disabled={!fits}>
                           {c.name}
-                          {c.capacity ? ` · ${c.capacity} seats` : ""}
+                          {c.capacity == null
+                            ? ` · ${c.used} enrolled`
+                            : ` · ${c.used}/${c.capacity}`}
                           {!fits && c.branch_name
                             ? ` · ${c.branch_name} only`
                             : ""}
@@ -322,9 +324,25 @@ export default function ClassesAndTransfers() {
                   >
                     Clear
                   </Button>
+                  {/* What this selection does to the class, before it runs.
+                      The server checks capacity once for the whole selection,
+                      so the arithmetic that matters is used + picked - not
+                      used + 1, and getting it wrong here means the warning
+                      fires on the wrong side of the limit. */}
                   {targetClass && (
-                    <span className="text-xs text-gray-05">
-                      Into {targetClass.name}
+                    <span
+                      className={
+                        targetClass.capacity != null &&
+                        targetClass.used + picked.length > targetClass.capacity
+                          ? "text-xs text-amber-700"
+                          : "text-xs text-gray-05"
+                      }
+                    >
+                      {targetClass.capacity == null
+                        ? `Into ${targetClass.name} · no capacity set`
+                        : targetClass.used + picked.length > targetClass.capacity
+                          ? `${targetClass.name} holds ${targetClass.used} of ${targetClass.capacity}. These ${picked.length} would put it ${targetClass.used + picked.length - targetClass.capacity} over.`
+                          : `Into ${targetClass.name} · ${targetClass.used} of ${targetClass.capacity} used, ${targetClass.capacity - targetClass.used} free`}
                     </span>
                   )}
                 </div>

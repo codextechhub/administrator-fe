@@ -9,10 +9,10 @@ import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { cn } from "@/lib/utils";
 import { apiDetailMessage, fieldErrors, parseApiError } from "@/utils/api-error";
-import { useGetClassesQuery } from "@/redux/services/academics/academics-api";
 import {
   useEnrolStudentMutation,
   useGetAdmissionPolicyQuery,
+  useGetClassSeatsQuery,
 } from "@/redux/services/students/students-api";
 import {
   RELATIONSHIPS,
@@ -173,15 +173,28 @@ export default function EnrolStudent() {
   // is a map rather than a gate.
   const [reached, setReached] = useState<StepKey[]>(["student"]);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  // Whether the registrar has taken charge of the admission number.
+  const [numberOwned, setNumberOwned] = useState(false);
   const [confirmDuplicate, setConfirmDuplicate] = useState<string | null>(null);
   const [allowOverCapacity, setAllowOverCapacity] = useState(false);
 
-  const { data: classesData } = useGetClassesQuery();
+  const { data: classesData } = useGetClassSeatsQuery();
   const { data: policyData } = useGetAdmissionPolicyQuery();
   const [enrol, { isLoading }] = useEnrolStudentMutation();
 
   const classes = useMemo(() => classesData?.data ?? [], [classesData]);
   const policy = policyData?.data;
+
+  // The suggestion is DERIVED, not copied into state by an effect.
+  //
+  // It arrives a render after the form mounts, so writing it into state would
+  // mean an effect that fires on someone else's schedule and has to be stopped
+  // from firing twice. Deriving it needs neither: until the registrar types,
+  // the box shows the server's suggestion; the moment they do, it shows theirs
+  // and never goes back. Clearing the box therefore stays cleared, because a
+  // registrar who empties it has answered the question and a value that
+  // reappeared would be arguing with them.
+  const admissionNumber = numberOwned ? form.student_number : (policy?.suggestion ?? "");
 
   // Levels come from the classes the school runs, so an applicant can never be
   // recorded against a level the school does not teach.
@@ -216,7 +229,7 @@ export default function EnrolStudent() {
       out.branch = "Say which branch this student attends.";
     }
 
-    const number = form.student_number.trim();
+    const number = admissionNumber.trim();
     if (policy?.required && !number) {
       out.student_number =
         policy.hint || "This school requires an admission number.";
@@ -246,7 +259,15 @@ export default function EnrolStudent() {
       out.guardians = "Set the relationship for every guardian.";
     }
     return out;
-  }, [form, guardians, asApplicant, policy, branchLens.applies, branchValue]);
+  }, [
+    form,
+    admissionNumber,
+    guardians,
+    asApplicant,
+    policy,
+    branchLens.applies,
+    branchValue,
+  ]);
 
   const valid = Object.keys(problems).length === 0;
   const err = (key: string) => (touched[key] ? problems[key] : undefined);
@@ -318,7 +339,7 @@ export default function EnrolStudent() {
       conditions: clean(form.conditions),
       emergency_contact_name: clean(form.emergency_contact_name),
       emergency_contact_phone: clean(form.emergency_contact_phone),
-      student_number: clean(form.student_number),
+      student_number: clean(admissionNumber),
       as_applicant: asApplicant,
       ...(branchLens.applies && branchValue ? { branch: branchValue } : {}),
       ...(asApplicant
@@ -630,6 +651,9 @@ export default function EnrolStudent() {
                   {classes.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
+                      {c.capacity == null
+                        ? ` · ${c.used} enrolled`
+                        : ` · ${c.used}/${c.capacity}`}
                     </option>
                   ))}
                 </NativeSelect>
@@ -651,25 +675,42 @@ export default function EnrolStudent() {
             }
             error={err("student_number")}
             hint={
-              policy?.hint ||
-              (policy?.required
-                ? undefined
-                : "This school has not set a format. Leave it blank to issue one later.")
+              !numberOwned && policy?.suggestion
+                ? `Suggested: the next number after ${policy.suggestion.replace(
+                    /(\d+)$/,
+                    (d) => String(Number(d) - 1).padStart(d.length, "0"),
+                  )}. Change it if your school numbers differently.`
+                : policy?.hint ||
+                  (policy?.required
+                    ? undefined
+                    : "This school has not set a format. Leave it blank to issue one later.")
             }
           >
             <input
-              value={form.student_number}
-              onChange={(e) => set("student_number", e.target.value)}
-              onBlur={() => touch("student_number")}
+              value={admissionNumber}
+              onChange={(e) => {
+                setNumberOwned(true);
+                set("student_number", e.target.value);
+                touch("student_number");
+              }}
               className={err("student_number") ? errorInputClass : inputClass}
             />
           </Field>
         </div>
 
         {chosenClass && !asApplicant && (
-          <p className="mt-3 text-xs text-gray-05">
-            Joining {chosenClass.name}
-            {chosenClass.capacity ? ` · capacity ${chosenClass.capacity}` : ""}.
+          <p
+            className={
+              chosenClass.remaining != null && chosenClass.remaining <= 0
+                ? "mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+                : "mt-3 text-xs text-gray-05"
+            }
+          >
+            {chosenClass.capacity == null
+              ? `${chosenClass.name} has no capacity set. ${chosenClass.used} enrolled.`
+              : chosenClass.remaining != null && chosenClass.remaining <= 0
+                ? `${chosenClass.name} is full at ${chosenClass.used} of ${chosenClass.capacity}. You can still enrol; the class will show as over capacity.`
+                : `Joining ${chosenClass.name} · ${chosenClass.used} of ${chosenClass.capacity} seats used, ${chosenClass.remaining} free.`}
           </p>
         )}
       </Section>

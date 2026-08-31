@@ -253,6 +253,28 @@ export interface GuardianDetail extends GuardianSummary {
 }
 
 /**
+ * One class with its live seat count.
+ *
+ * Scoped to the active year by the server. A school has one JSS1 A per session
+ * and they are all called JSS1 A, so a picker showing two would be offering an
+ * option the server refuses on save.
+ */
+export interface ClassSeats {
+  id: number;
+  name: string;
+  /** Null means school-wide; absent at a single-branch school. */
+  branch: number | null;
+  branch_name: string | null;
+  level: number | null;
+  level_name: string;
+  /** Null means no limit recorded, which is not the same as full. */
+  capacity: number | null;
+  used: number;
+  /** Null whenever `capacity` is. */
+  remaining: number | null;
+}
+
+/**
  * The school's own admission-number rule.
  *
  * Note what is NOT here: a suggested next number. The design pre-fills the
@@ -264,6 +286,15 @@ export interface AdmissionPolicy {
   /** An anchored regular expression, or "" when the school has set no rule. */
   pattern: string;
   hint: string;
+  /**
+   * The next number in this school's own series, or "" for no suggestion.
+   *
+   * Derived from the numbers already issued, not from `pattern` - a regular
+   * expression cannot be inverted. It is a suggestion and NOT a reservation:
+   * two registrars enrolling at once can be handed the same one, and the
+   * server's unique constraint is what prevents the collision.
+   */
+  suggestion: string;
 }
 
 /**

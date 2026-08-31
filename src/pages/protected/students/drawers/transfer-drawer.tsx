@@ -3,10 +3,9 @@ import { toast } from "sonner";
 
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiDetailMessage } from "@/utils/api-error";
-import { useGetClassesQuery } from "@/redux/services/academics/academics-api";
 import {
   useAssignClassMutation,
-  useGetClassRosterQuery,
+  useGetClassSeatsQuery,
 } from "@/redux/services/students/students-api";
 import {
   TRANSFER_REASONS,
@@ -61,7 +60,7 @@ export function TransferDrawer({
   const [effective, setEffective] = useState(today());
   const [override, setOverride] = useState(false);
 
-  const { data: classesData } = useGetClassesQuery();
+  const { data: classesData } = useGetClassSeatsQuery();
   // The student's own branch, or school-wide, and nothing else: the server
   // refuses a placement that crosses branches, so offering one here would walk
   // the registrar into a refusal. A class with no branch is school-wide, and at
@@ -73,12 +72,11 @@ export function TransferDrawer({
   );
 
   const destinationId = Number(destination) || 0;
-  const { data: rosterData, isFetching: seatsLoading } = useGetClassRosterQuery(
-    destinationId,
-    { skip: !destinationId },
-  );
-  const used = rosterData?.seats_used;
-  const capacity = rosterData?.capacity ?? null;
+  // The seats come from the list that drew the options, so there is no second
+  // request and no way for the label and the warning to disagree.
+  const chosen = classes.find((c) => c.id === destinationId);
+  const used = chosen?.used;
+  const capacity = chosen?.capacity ?? null;
   const wouldOverfill =
     used != null && capacity != null && used + 1 > capacity;
 
@@ -103,7 +101,7 @@ export function TransferDrawer({
         allow_over_capacity: override,
       }).unwrap();
       toast.success(
-        `${student.full_name} moved to ${rosterData?.class_name ?? "the new class"}.`,
+        `${student.full_name} moved to ${chosen?.name ?? "the new class"}.`,
       );
       reset();
       onClose();
@@ -150,6 +148,9 @@ export function TransferDrawer({
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
+                {c.capacity == null
+                  ? ` · ${c.used} enrolled`
+                  : ` · ${c.used}/${c.capacity}`}
               </option>
             ))}
           </NativeSelect>
@@ -157,11 +158,9 @@ export function TransferDrawer({
 
         {destinationId > 0 && (
           <p className="rounded-lg bg-gray-04 px-3 py-2 text-xs text-gray-05">
-            {seatsLoading
-              ? "Checking seats…"
-              : capacity == null
-                ? `${used ?? 0} students. This class has no capacity set.`
-                : `${used} of ${capacity} seats used.`}
+            {capacity == null
+              ? `${used ?? 0} students. This class has no capacity set.`
+              : `${used} of ${capacity} seats used.`}
           </p>
         )}
 

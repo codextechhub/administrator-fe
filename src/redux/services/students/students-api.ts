@@ -3,6 +3,7 @@ import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types
 import type {
   AdmissionPolicy,
   BulkResultRow,
+  ClassSeats,
   EnrolWrite,
   StudentStatus,
   StudentWrite,
@@ -413,6 +414,23 @@ export const studentsApi = baseApi.injectEndpoints({
       invalidatesTags: ["Students"],
     }),
 
+    /**
+     * Every class with its live seat count, in one request.
+     *
+     * The pickers that place a child all render "JSS1 A - 26/30" for every
+     * class at once. Fetching a roster per class would cost a request per
+     * option and grow with the school, so this is the one call they share -
+     * which also means they cannot disagree about a load.
+     */
+    getClassSeats: builder.query<Envelope<ClassSeats[]>, { branch?: number } | void>({
+      query: (args) => ({
+        url: `/students/classes/seats/`,
+        method: "GET",
+        params: listParams(args as StudentListArgs | void),
+      }),
+      providesTags: ["Students", "Classes"],
+    }),
+
     /** Read with `view`, so the enrolment form can render the rule's hint. */
     getAdmissionPolicy: builder.query<Envelope<AdmissionPolicy>, void>({
       query: () => ({ url: `/students/admission-number-policy/`, method: "GET" }),
@@ -435,6 +453,7 @@ export const {
   useSearchStudentsQuery,
   useGetGuardianQuery,
   useGetAdmissionPolicyQuery,
+  useGetClassSeatsQuery,
   useGetClassRosterQuery,
   useBulkAssignClassMutation,
   useUpdateStudentMutation,
