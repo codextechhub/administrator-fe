@@ -5,6 +5,16 @@ Unescaped markup: 334,788 chars, **188 `sc-if` blocks, all 188 accounted for**.
 Backend read against `apps/apps/urls.py` and `apps/schools/vs_students/` in the
 `backend` repo, at commit state of 2026-08-30.
 
+> **Status, 2026-08-31: all eight phases shipped.** This document was written as
+> a plan and is kept as a record. Section 3 carries what each phase actually
+> built, what it found, and the commit it landed in - the original scoping text
+> is left under each heading so the two can be compared. Every backend ask in
+> section 2 is now closed.
+>
+> The module was driven end to end against `lagoon-view` (live, two branches)
+> and `sunrise-academy` (live, one branch, the recede case). 346 frontend tests
+> and 185 `vs_students` tests pass; no route overflows at 390px or 820px.
+
 ---
 
 ## 1. What the design contains
@@ -151,6 +161,28 @@ nothing regresses. Small, and it is a house-convention fix rather than a
 students one, so it belongs in the shared layout with the comment updated to
 match.
 
+### 2.1 Decisions taken while building
+
+Recorded because each cost a false start, and re-litigating them would cost
+another.
+
+1. **A class belongs to a YEAR** (backend `dc85d16`, landed mid-build). Every
+   session has its own JSS1 A, all named JSS1 A. Every picker must scope to the
+   active year or it offers two identical options, one of which the server
+   refuses on save. This is why `class_seats` filters on session.
+2. **`next_level` has three states, not two.** Set, terminal, and *nobody has
+   wired it*. Merging the last two graduated whole year groups; see the phase 6
+   findings.
+3. **Seat counts live in `vs_students`, not `vs_academics`.** The enrolment row
+   is this module's, so putting the aggregate on the academics class list would
+   make an M13 view import a school app it must not know about.
+4. **The admission number is read from the school's own numbers**, never from
+   the pattern. A regular expression cannot be inverted, and `CSS-24-0117` is as
+   valid a format as `BFS/2025/0142`.
+5. **The design's step counts are not binding.** The import wizard is four steps
+   rather than seven: three of the design's describe work the engine does in one
+   call. A step a reader presses Next through is a page, not a step.
+
 ### Bucket 1: served and wired
 
 **Nothing.** There is no student code in this frontend at all: no page, no route,
@@ -213,9 +245,10 @@ A surface flag or a few lines apart, not a module apart.
    session, so answering for a past year costs a parameter, not a schema.
    **Backend, small.** Nothing else in the module gets one.
 
-### Bucket 4: absent
+### Bucket 4: absent - **both built, `09c2054`**
 
-No endpoint at all. These are the ones that cost.
+No endpoint at all, at the time of the audit. Both were built rather than
+dropped; what they became is noted under each.
 
 1. **A class list with live seat counts.** Three separate controls render
    `JSS1 A - 33/35` for *every* class: the enrol form's entry-class select, the
@@ -226,12 +259,24 @@ No endpoint at all. These are the ones that cost.
    serves this. **Ours to build (backend), small: one annotated queryset, either
    `?with_seats=true` on the academics class list or a new
    `GET /v1/students/classes/seats/`.**
+   → Built as `GET /v1/students/classes/seats/`, in `vs_students` for the reason
+   in 2.1. `fullest_classes` reads through the same aggregate, so the directory's
+   capacity panel and the pickers cannot disagree about a load. Scoped to the
+   active year, which is not incidental: see 2.1 decision 1.
 2. **A next-admission-number suggestion.**
    `GET /v1/students/admission-number-policy/` returns `{required, pattern, hint}`
    only. The design pre-fills the admission field with the next free number in
    the session's year and offers a control to reset it back to that suggestion.
    There is no generator anywhere in `vs_students`. **Ours to build, or to drop:
    see the ruling below.**
+   → Built, but not the way the design draws it. The suggestion is read from the
+   numbers the school already issues and its trailing digits incremented, so
+   `CSS-24-0117` works as well as `BFS/2025/0142`; zero padding survives and the
+   width grows only on a real overflow. It returns "" rather than guessing when
+   there is no series, no trailing number, or the successor fails the school's
+   own pattern. On the form the value is *derived* rather than written into
+   state, so clearing the box stays cleared. There is no "reset to suggestion"
+   control - the field simply shows the suggestion until somebody types.
 
 ### Endpoints with no screen
 
@@ -240,7 +285,7 @@ dead API.
 
 | Endpoint | Reading |
 |----------|---------|
-| `POST /v1/students/bulk/status/` | The design **refuses** it on purpose: selecting several students and choosing "Change status" shows "Bulk status changes are applied one student at a time so each keeps its own reason." Design and API disagree; needs a ruling. |
+| `POST /v1/students/bulk/status/` | The design **refuses** it on purpose: "Bulk status changes are applied one student at a time so each keeps its own reason." **Ruled on: the design wins.** The status drawer takes a reason per student and writes it to that student's history, and a bulk route cannot carry one reason honestly across twenty children. The endpoint stays unused. |
 | `PUT /v1/students/admission-number-policy/` | No screen writes the school's admission rule. Probably belongs in school settings, not this module. |
 | `POST .../confirm/`, `/reject/`, `/withdraw/`, `/suspend/`, `/reactivate/`, `/transfer-out/` | Six dedicated verbs. The design routes everything through one status drawer, which maps to `POST /<id>/status/`. `confirm` and `reject` are still reachable from the Applicants board; the other four would go unused. |
 | `GET /v1/students/<id>/status-history/` | The profile's History tab uses the merged `/history/` instead. Dead for this design. |
@@ -248,26 +293,26 @@ dead API.
 | `POST /v1/import/batches/<id>/jobs/<id>/rollback/` | The import hub lists past batches and their outcomes but offers no undo. Gap in the design. |
 | `GET /v1/guardians/?unlinked=true` | The guardian list never shows a guardian with no wards. |
 
-### Elements nothing can serve
+### Elements nothing can serve - all ruled on
 
-Each needs a one-line ruling before it is built or dropped.
-
-1. **Next admission number, and the "reset to suggestion" control** (bucket 4
-   above). Build the generator, or make the field empty with only the school's
-   pattern hint.
-2. **"Print profile"** (`pPrint`). The design itself only fires a toast. There is
-   no print or PDF endpoint. Drop it, or make it a browser print stylesheet.
+1. ~~Next admission number, and the "reset to suggestion" control~~ **Ruled on:
+   built.** The generator reads the school's own numbers rather than the pattern.
+   The reset control was dropped as unnecessary once the value was derived.
+2. ~~"Print profile"~~ **Ruled on: dropped.** The design itself only fires a
+   toast, and there is no print or PDF endpoint. Not shipped; a browser print
+   stylesheet remains the cheap option if anyone asks.
 3. ~~The session pill as a switch.~~ **Ruled on: see 2.0.** The pill is a label.
    The historical question is served by `?session=` on the class roster and by
    the profile's class trail, both of which read the enrolment row rather than a
    current-state column.
-4. **The import template's column list.** The design hard-codes 12 columns; the
-   seeded `students_v1` template carries 15 (it adds `branch`, `guardian_email`
-   and `previous_school`, and its own comment says the design's 12 would split
-   every family imported in one file). Build the Columns screen from the template
-   the API returns, never from the design's list.
-5. **The `fees` field** on the design's mock students. Never rendered anywhere.
-   Ignore it.
+4. ~~The import template's column list.~~ **Ruled on: the server's template
+   wins**, and phase 7 reads it. Fifteen columns, not the design's twelve, and
+   the extra ones are load-bearing - `guardian_email` is how siblings are joined,
+   so the design's twelve would split every family imported in one file. The
+   headings are the template's display names ("First Name"), which is what the
+   engine matches on.
+5. ~~The `fees` field~~ **Ruled on: ignored.** Never rendered anywhere in the
+   design, and no screen was built for it.
 
 ---
 
@@ -390,7 +435,19 @@ history and promotion preview with real rows.
 Ships: nothing visible. Blocks everything, because a screen cannot be checked
 against an endpoint that returns nothing.
 
-### Phase 1 - Directory and Profile (read-only)
+### Phase 1 - Directory and Profile (read-only) - **DONE**, `475d3e2` + `e648d53`
+
+Shipped as scoped, plus the foundations: routes, the API slice, the two missing
+permission codes, and the route-aware `LensRail`.
+
+**Found while building.** The branch lens narrowed the table and not the tiles -
+87 students printed over 49 rows with nothing marking the difference. Fixed in
+the backend (`15d3a2b`) by moving `?branch=` onto a shared resolver used by the
+list, summary, unplaced, roster and guardian directory; six tests pin it. Also a
+hidden id that stopped a row rendering.
+
+*Original scope follows.*
+
 
 The front door and the record behind it. Both are pure reads, so this phase has
 no write path to get wrong and it ships a genuinely usable module.
@@ -414,7 +471,15 @@ step if it carries the same rail.
 - Profile: header with lifecycle stepper and off-path state, six tabs (Overview,
   Guardians, Academic, Medical, Documents, History) with all four empty states.
 
-### Phase 2 - The drawer bundle, the confirm modal and the toast
+### Phase 2 - The drawer bundle, the confirm modal and the toast - **DONE**, `475d3e2`
+
+All five drawers, the confirm modal and the toast. The status drawer reads
+`allowed_transitions` off the student rather than carrying its own copy of the
+state machine, so it can never offer a move the server refuses - the design's
+hard-coded impact map was not needed.
+
+*Original scope follows.*
+
 
 The largest single artifact in the design, and the point at which the module
 stops being a report and becomes a tool. Five drawers in one shell: Edit record,
@@ -426,7 +491,22 @@ Note: **the transfer drawer's destination select needs seat counts** (bucket 4).
 Ship it naming the classes without `used/capacity` and add the numbers when the
 backend lands, rather than firing one roster request per class.
 
-### Phase 3 - Enrol, and the Applicants board
+### Phase 3 - Enrol, and the Applicants board - **DONE**, `ee3e093` + `1ce4381`
+
+Shipped, then reshaped: the form became a five-step flow (`1ce4381`) after the
+single page proved to be a wall of 21 fields that lit up eight errors at once on
+first save. Next validates only the current step, reached steps stay clickable,
+the rail carries a per-step count of what is missing, and a field-keyed 400
+jumps to the step that owns the field.
+
+**Divergence from the design, deliberate.** Confirming an applicant calls
+`POST /<id>/confirm/`, which moves them to Enrolled *without* a class - it does
+not re-run enrolment. An enrolled student with no class is the "unassigned"
+state the module tracks, and the class is assigned separately with its own
+reason and audit line.
+
+*Original scope follows.*
+
 
 19 states and 8 field errors on the form, and the applicants board is where most
 enrolments start (its "Enrol" button carries the applicant's details into the
@@ -436,19 +516,61 @@ warns without blocking.
 
 Depends on the ruling about the admission number suggestion.
 
-### Phase 4 - Classes & Transfers
+### Phase 4 - Classes & Transfers - **DONE**, `d09a122`
+
+Two tabs, both in the URL so the capacity panel deep-links into a register.
+Bulk assign reports per-student results by name, because the route answers per
+student and "2 could not be placed" says nothing about which two.
+
+**Found while building.** The refusal panel immediately caught a cross-branch
+rule, which exposed the better fix: do not offer the refusal. Both destination
+pickers now filter to the student's own branch plus school-wide classes - the
+transfer drawer had been offering all seven classes where four would have been
+rejected.
+
+*Original scope follows.*
+
 
 Two tabs. Unassigned (multi-select, assign into a class, over-capacity warning)
 and Roster (class picker, seat bar, per-row move). The capacity panel from phase
 1 deep-links into the roster tab.
 
-### Phase 5 - Guardians list and Guardian detail
+### Phase 5 - Guardians list and Guardian detail - **DONE**, `f4cad4b`
+
+The list leads with the children's names rather than a count, because "3
+students" makes a registrar open a row to answer a question the row could have
+answered. The link-another-child drawer uses the same endpoint as its phase 2
+mirror, so the rules cannot drift. Also wired `/students/search/`, which nothing
+had used yet, and made the profile's guardian cards link out to the household.
+
+*Original scope follows.*
+
 
 Windowed paginator, search, sibling markers, ward cards, and the "link another
 child" drawer, which is the sixth drawer and searches students rather than
 guardians.
 
-### Phase 6 - Promotion
+### Phase 6 - Promotion - **DONE**, `1505b27` + `bef48ec`
+
+Four steps. Overrides go to the preview as well as the run, so the counts a
+registrar confirms are the ones the run produces - verified by overriding one
+student to Repeat and seeing the server return 72/1/0/9 on both.
+
+**The worst finding in the whole build, and it was not in the frontend.** A
+level with no promotion target and no terminal flag - "nobody has wired this
+yet" - was read as "pupils leave the school here". A preview against seeded
+Lagoon View reported **82 students graduating**: the entire roll, JSS1 children
+included. Confirming it would have taken them all off the roll, reachable by a
+mis-click at any school that has not finished wiring its ladder. Fixed in
+`39ee671`: a bare null is now its own cause and *holds*. `Level.next_level`'s own
+comment and FRD v2.7 FR-005 both required this guard; it had never been built.
+The seeder created every level in that state, which is why no school could
+demonstrate a promotion at all - it now wires each ladder.
+
+`bef48ec` then made each exception link to the screen that fixes it.
+
+*Original scope follows.*
+
 
 Four steps: target session and the class map, per-class review groups collapsed
 by default with a tally line, exceptions split into class-wide and per-student
@@ -456,14 +578,43 @@ causes, the preview and confirm, and the done panel. Preview and run are the sam
 classification on the backend, so the screen must send the same overrides to
 both.
 
-### Phase 7 - Bulk import
+### Phase 7 - Bulk import - **DONE**, `dc2cdc1`
+
+**Four steps, not the design's seven.** Three of the design's describe work the
+engine does in one call; column matching in particular is something it decides
+and never asks about, so a screen for it would promise a control that does not
+exist. The column list is the server's template - fifteen columns, not the
+design's twelve, and the extra two are load-bearing.
+
+Gated on `school.students.import`, which the backend keeps in its own bundle
+away from the enrol keys. The route refuses it as well as the sidebar hiding it.
+
+**Note for other environments.** `school.students.import` and `.export` existed
+in code but had no `Permission` rows in the dev database; `seed_all_permissions`
+created them.
+
+*Original scope follows.*
+
 
 The hub (required columns, template downloads, past batches with their outcomes)
 and the 7-step wizard. Reuses the patterns already built for onboarding import
 (`src/pages/protected/onboarding/import.tsx` and `import-validation.tsx`). The
 Columns step is built from the API's template, not the design's 12-column list.
 
-### Phase 8 - Command palette
+### Phase 8 - Command palette - **DONE**, `b1409b9`
+
+Mostly the removal of an apology. The palette carried a note saying it could not
+search the school because no endpoint existed; M11 shipped one, so the promise
+is now kept. Students appear above the actions on two characters, gated on the
+same key the directory checks, and join the existing keyboard model rather than
+sitting beside it - every action index is offset past them, including the
+ungrouped branch where two rows would otherwise have claimed index 0.
+
+The header pills needed no work: they already existed, and phase 1 made the rail
+route-aware.
+
+*Original scope follows.*
+
 
 Cmd/Ctrl+E palette with live student hits over `/students/search/`, merged into
 the existing action palette (`src/lib/action-palette`) rather than built beside
@@ -472,25 +623,33 @@ it. Small, and last because nothing else waits on it.
 The header pills are **not** in this phase: both already exist and are wired.
 Making the rail route-aware is phase 1 work, per 2.0.
 
-### Backend asks, and what re-opens when they land
+### Backend asks - all closed
 
-Six, all small. Only the first blocks anything: **the branch pill cannot ship
-correct without it**, so it lands with phase 1 rather than after it.
+| Ask | Landed |
+|-----|--------|
+| A live single-branch school with students | Phase 0, `sunrise-academy` |
+| A live MULTI-branch school with students | Phase 0, `lagoon-view` |
+| `?branch=` on summary, unplaced, roster and guardians | `15d3a2b`. One shared resolver on the mixin rather than five copies; six tests pin that the branches sum to the whole school |
+| Class list with live seat counts | `09c2054`. `class_seats`, one aggregate, read by all three pickers *and* by the directory's capacity panel so they cannot disagree |
+| Next admission number generator | `09c2054`. Read from the school's own numbers, not the pattern |
+| `LensRail` route-aware (frontend) | Phase 1 |
 
-| Ask | Re-opens |
-|-----|----------|
-| `?branch=` on summary, unplaced, roster and guardians | The branch pill telling the truth on every panel, not just the table (phase 1, blocking). Measured in phase 0: the list narrows 84 to 35, the summary stays at 87. |
-| ~~A live single-branch school with students~~ | **Done in phase 0**: `sunrise-academy`. |
-| ~~A live MULTI-branch school with students~~ | **Done in phase 0**: `lagoon-view`. |
-| `register_screen` for the students directory | The directory's Export button (phase 1) |
-| Relax `fullest_classes` (limit 4, drop the `remaining <= 5` filter, return totals) | The capacity panel's fourth row, rest-line and correct empty state (phase 1) |
-| Class list with live seat counts | The `33/35` labels on three selects (phases 2, 3, 4) |
-| Next admission number generator | The enrol form's pre-filled number and reset control (phase 3) |
-| `?session=` on the class roster | Reading a past year's register from the Roster tab (phase 4) |
+Two were dropped rather than built, and the reasons are worth keeping:
 
-One frontend ask sits alongside them: making `LensRail` route-aware, so the
-session pill does not appear over a roster it cannot move (phase 1, blocking for
-the same reason).
+- **`register_screen` for the directory's Export button.** Not built, so the
+  Export control was not shipped either - a button that 404s is worse than an
+  absent one. The dataset is registered with the Export Centre; only the
+  screen-to-dataset binding is missing, and `vs_academics` shows the shape in
+  about twenty lines.
+- **Relaxing `fullest_classes`.** Not needed in the end. The panel's copy was
+  written to what the endpoint can actually support ("No class is close to
+  full") rather than the design's wording, which would have been a lie at a
+  half-full school.
+
+`?session=` on the class roster remains open and unbuilt - nothing in phases 1
+to 8 needed it, and it only matters if somebody asks to read a past year's
+register. See 2.0 for why it is the *only* session parameter this module should
+ever grow.
 
 ---
 
@@ -517,3 +676,51 @@ the same reason).
 Phase 7 is the one that could be dropped without leaving a hole: a school can
 load its roll through the onboarding import surface, which already exists and is
 the only student-shaped surface open to a school that is not yet live.
+
+### What the order was actually worth
+
+Reads-before-writes paid for itself twice. Phase 1 proved the envelope, the
+pagination shape and the branch lens before any mutation existed, and it was
+phase 1 that surfaced the 87-over-49 defect - on a read-only screen, where it
+cost a backend fix and no rework.
+
+Drawers-second also held. Every screen from phase 3 on opened one that already
+worked, and none shipped with a dead menu item.
+
+The one thing the order did not protect against was a dependency landing
+*during* the build: a concurrent change gave classes a year (`dc85d16`), which
+silently invalidated an assumption in work already written. It was caught by
+re-reading the three commits before continuing, not by any test. Worth doing
+again next time a module is built alongside its backend.
+
+---
+
+## 5. What is left
+
+Nothing in the eight phases. These are the loose ends the build created or
+uncovered, in the order they are worth doing.
+
+1. **The directory's Export button.** The only design element that was scoped
+   and not shipped. It needs `register_screen` in `vs_students/export_datasets.py`
+   - about twenty lines, with `vs_academics` as the worked example. The dataset
+   and the permission code both already exist.
+2. **The onboarding import page is out of date.** It still says the students
+   dataset has "no template and no model behind them yet", and carries a
+   placeholder row for Students. `students_v1` is seeded and phase 7 uses it, so
+   both should go.
+3. **`school.students.import` / `.export` may be missing in other environments.**
+   They exist in code and in the "Student Bulk Data" group but had no `Permission`
+   rows in the local database until `seed_all_permissions` was re-run. Staging is
+   worth checking.
+4. **The nav badges the design draws** on Applicants and "No class" were never
+   built - `NavMain` has no badge support, and the counts belong on the items
+   they describe rather than parked on the directory.
+5. **`?session=` on the class roster**, if anyone asks to read a past year's
+   register. Deliberately the only session parameter this module should grow.
+
+### Dev-data notes
+
+The verification runs left residue in the local database: two `Testimport`
+students from phase 7, and a promotion that moved 82 students from 2026/2027
+into 2027/2028. `./reseed-dev.sh` restores a clean world and now seeds students
+as part of it.
