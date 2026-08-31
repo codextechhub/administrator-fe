@@ -39,6 +39,51 @@ export const importApi = baseApi.injectEndpoints({
     }),
 
     /** This school's upload history, newest first. */
+    /**
+     * One template, with its columns.
+     *
+     * The list endpoint carries counts but not the column names, and the
+     * import hub has to show a school exactly what the file must contain -
+     * writing that list here would be a second copy that drifts the first time
+     * the template changes.
+     */
+    getImportTemplate: builder.query<ImportTemplateSummary, number>({
+      query: (id) => ({
+        url: `/import/system-import-templates/${id}/`,
+        method: "GET",
+      }),
+      transformResponse: (r: { data: ImportTemplateSummary }) => r.data,
+      providesTags: ["ImportTemplates"],
+    }),
+
+    /**
+     * The template file itself, as a blob.
+     *
+     * Fetched through RTK Query rather than opened as a link, because the
+     * route is behind JWT auth and a plain anchor sends no Authorization
+     * header - the school would get a 401 where they expected a spreadsheet.
+     * Same reason media-api exists.
+     */
+    downloadImportTemplate: builder.mutation<
+      { url: string; filename: string },
+      { id: number; name: string; format: string }
+    >({
+      queryFn: async ({ id, name, format }, _api, _extra, baseQuery) => {
+        const result = await baseQuery({
+          url: `/import/system-import-templates/${id}/download/`,
+          method: "GET",
+          responseHandler: (r) => r.blob(),
+        });
+        if ("error" in result && result.error) return { error: result.error };
+        return {
+          data: {
+            url: URL.createObjectURL(result.data as Blob),
+            filename: `${name.replace(/\s+/g, "-").toLowerCase()}.${format || "xlsx"}`,
+          },
+        };
+      },
+    }),
+
     getImportBatches: builder.query<ImportBatch[], { templateId?: number } | void>({
       query: (args) => ({
         url: `/import/batches/`,
@@ -127,6 +172,8 @@ export const importApi = baseApi.injectEndpoints({
 
 export const {
   useGetImportTemplatesQuery,
+  useGetImportTemplateQuery,
+  useDownloadImportTemplateMutation,
   useGetImportBatchesQuery,
   useGetImportIssuesQuery,
   useUploadImportFileMutation,
