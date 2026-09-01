@@ -76,6 +76,17 @@ export function NavMain({
     icon?: React.ElementType;
     isActive: boolean;
     childActive: boolean;
+    /**
+     * A live count beside the label - work waiting behind this door.
+     *
+     * Only for a number that means "somebody has to do something": applications
+     * waiting, students with no class. A count of how many rows a screen holds
+     * is not that, and a badge on every item is a badge on none.
+     *
+     * Zero must arrive as undefined rather than 0. A grey "0" is a reader
+     * stopping to work out that there is nothing to do.
+     */
+    badge?: number;
     items?: {
       title: string;
       url: string;
@@ -119,6 +130,16 @@ export function NavMain({
                   >
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
+                    {item.badge != null && item.badge > 0 && (
+                      <span
+                        // Hidden when the rail is collapsed to icons: a floating
+                        // number beside an unlabelled icon says nothing about
+                        // what is waiting.
+                        className="ml-auto rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary group-data-[collapsible=icon]:hidden"
+                      >
+                        {item.badge > 99 ? "99+" : item.badge}
+                      </span>
+                    )}
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>

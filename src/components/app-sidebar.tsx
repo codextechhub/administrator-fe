@@ -13,6 +13,7 @@ import {
 import { HomeIcon, TeamMgtIcon } from "@/assets/navbar-svg";
 import { NavAccordionProvider, NavMain } from "./nav-main";
 import { routesPath } from "@/routes/routesPath";
+import { useGetStudentSummaryQuery } from "@/redux/services/students/students-api";
 import { Link, useLocation } from "react-router";
 import {
   BookOpen,
@@ -48,6 +49,8 @@ interface NavItem {
   childActive: boolean;
   permission?: NavPermission;
   permissionMode?: "any" | "all";
+  /** A live count of work waiting behind this item. Omitted when there is none. */
+  badge?: number;
   items?: { title: string; url: string; isActive: boolean }[];
 }
 
@@ -72,6 +75,26 @@ export function AppSidebar({
 
   const school = useAppSelector(selectSchool);
   const user = useAppSelector(selectUser);
+
+  // The two live counts the design puts on the nav.
+  //
+  // **Skipped for a school that has not gone live**, and that is not an
+  // optimisation. Every student route answers 403 TENANT_NOT_LIVE to a PENDING
+  // tenant, and base-api turns that into a redirect to the not-live screen - so
+  // firing this from the SIDEBAR would bounce an onboarding school off whatever
+  // page they opened, on every page. Skipped equally without the permission the
+  // screens themselves check, so a badge cannot count work behind a door the
+  // reader may not open.
+  //
+  // Shares RTK Query's cache with the directory's own summary call, so this
+  // costs a request per cache period rather than one per navigation.
+  const { data: summary } = useGetStudentSummaryQuery(undefined, {
+    skip: onboarding || !hasPermission(P.BROWSE_STUDENTS),
+  });
+  const waiting = {
+    applicants: summary?.data?.applicants,
+    unassigned: summary?.data?.unassigned,
+  };
 
   const schoolName =
     school?.name ?? user?.school_name ?? "";
@@ -146,9 +169,9 @@ export function AppSidebar({
         // Classes & Transfers and Promotion join this list in the phases that
         // build them. A nav item that 404s is a door drawn on a wall.
         //
-        // The design puts live counts on Applicants and "No class". Those
-        // belong on the items they describe, so they arrive with those screens
-        // rather than being parked on the directory now.
+        // The design's live counts sit on Applicants and Classes & Transfers,
+        // not here: this item is the whole roll, and a count of it is a fact
+        // rather than a job.
         title: "Students",
         url: routesPath.PROTECTED.STUDENTS.INDEX,
         icon: Users,
@@ -169,6 +192,8 @@ export function AppSidebar({
         isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.APPLICANTS),
         childActive: false,
         permission: P.BROWSE_STUDENTS,
+        // Applications waiting on a decision. A job, not a total.
+        badge: waiting.applicants,
       },
       {
         // Placing children, and reading a register. Its own door because the
@@ -180,6 +205,9 @@ export function AppSidebar({
         isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.ASSIGN),
         childActive: false,
         permission: P.ASSIGN_CLASS,
+        // Children on the roll with no class. The worklist this screen exists
+        // to empty, so the number belongs on its door.
+        badge: waiting.unassigned,
       },
       {
         // The households. Its own door because "who do we call about this
