@@ -1,4 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
+import {
+  P as FINANCE_CODES,
+  FINANCE_PERMISSION_REGISTRY as FINANCE_REGISTRY,
+} from "@xvs/finance/permissions";
 // PERMISSION REGISTRY
 //
 // Single source of truth. The backend permission keys ("module.resource.action")
@@ -31,6 +35,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const REGISTRY: Record<string, string> = {
+  // Shipped with the package's codes: a code with no mapping resolves to ""
+  // and the screen then gates on nothing.
+  ...FINANCE_REGISTRY,
 
   // ── school / dashboard  (MM=10, RR=01) ─────────────────────────────────────
   "100101": "school.dashboard.view",
@@ -216,6 +223,10 @@ const REGISTRY: Record<string, string> = {
 // Names describe UI capabilities - not backend keys or permission structure.
 // ─────────────────────────────────────────────────────────────────────────────
 export const P = {
+  // Owned by @xvs/finance, because they gate that package's screens. Spread in
+  // rather than transcribed: this app must not hold a second copy of a code
+  // that decides whether a bursar can raise a bill.
+  ...FINANCE_CODES,
 
   // ── School Dashboard ───────────────────────────────────────────────────────
   VIEW_SCHOOL_DASHBOARD:   "100101",  // view the school admin dashboard metrics

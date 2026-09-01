@@ -28,6 +28,7 @@ import {
   sendsImpersonationHeader,
 } from "./api-endpoints";
 import { isIdentitySwapInProgress, runWithIdentitySwap } from "@/utils/identity-swap";
+import { FINANCE_TAG_TYPES } from "@xvs/finance/redux/tag-types";
 
 const getAccessToken = () => {
   const token = Cookies.get("token");
@@ -378,6 +379,9 @@ export const baseApi = createApi({
   endpoints: () => ({}),
   reducerPath: "baseApi",
   tagTypes: [
+    // Owned by @xvs/finance: they name that package\'s resources, and RTK
+    // refuses a tag the base api has not declared.
+    ...FINANCE_TAG_TYPES,
     // Tags owned by the shared engine services (workflow, exports, imports)
     // that this app consumes for @xvs/finance. RTK Query refuses a tag the
     // base api has not declared, so they are listed here rather than beside

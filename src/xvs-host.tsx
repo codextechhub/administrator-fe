@@ -8,12 +8,12 @@
 // asks its tenant-admin services, this app asks its own.
 //
 
-import { useEffect } from "react";
+import { useEffect, type ComponentType } from "react";
 // The REAL contract types, from the package. Previously copied locally,
 // which meant this app satisfied a copy and the compile-time assertion
 // checked nothing here.
 import type {
-  HostBranch, HostPerson, HostQueryResult, HostExportProps,
+  HostAvatarProps, HostBranch, HostPerson, HostQueryResult, HostExportProps,
 } from "@xvs/finance/host";
 import { ExportButton } from "@/components/custom/export-button";
 import { returnInitial } from "@/utils/helpers";
@@ -58,11 +58,6 @@ export const AppLogo: ComponentType<{ animate?: boolean; className?: string }> =
  *  nothing to reveal. Declared rather than omitted because the contract
  *  requires it, and a no-op is the honest implementation.
  */
-export function revealActiveSidebarItem(
-  _el: HTMLElement, rememberedScroll: number | null | undefined,
-): void {
-  if (rememberedScroll != null) _el.scrollTop = rememberedScroll;
-}
 
 // The school app has its own export affordance already, and it is the right one
 // to use: it reads THIS app's permission codes (BROWSE_EXPORT_CATALOGUE and
@@ -87,9 +82,7 @@ export function QuickExportButton({ screen, params, label }: HostExportProps) {
 // This app has no staff-photo service, so the avatar is initials only. That is
 // a complete answer rather than a stub: the package asks for an avatar, not for
 // a photograph, and a school that later adds photos changes this one function.
-export function UserAvatar({ name, className }: {
-  name?: string; userId?: string | number; className?: string;
-}) {
+export function UserAvatar({ name, className }: HostAvatarProps) {
   return (
     <span
       className={

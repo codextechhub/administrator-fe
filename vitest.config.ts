@@ -11,7 +11,7 @@ export default defineConfig({
     preserveSymlinks: true,
     alias: [
       { find: "@xvs-host", replacement: path.resolve(__dirname, "./src/xvs-host.tsx") },
-      { find: "@/components/finance-ui", replacement: path.resolve(__dirname, "./node_modules/@xvs/finance/src/components/finance-ui/index.ts") },
+      { find: /^@\/components\/finance-ui$/, replacement: path.resolve(__dirname, "./node_modules/@xvs/finance/src/components/finance-ui/index.ts") },
       { find: "@/components/finance-ui", replacement: path.resolve(__dirname, "./node_modules/@xvs/finance/src/components/finance-ui") },
       { find: "@/redux/services/finance", replacement: path.resolve(__dirname, "./node_modules/@xvs/finance/src/redux/services/finance") },
       { find: "@/redux/services/procurement", replacement: path.resolve(__dirname, "./node_modules/@xvs/finance/src/redux/services/procurement") },
