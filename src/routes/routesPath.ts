@@ -12,6 +12,72 @@ export const routesPath = {
   },
   PROTECTED: {
     OVERVIEW: { INDEX: "/overview" },
+
+    // ------------------------------------------------------------------
+    // @xvs/finance route contract.
+    //
+    // The shared finance and procurement package reads these constants to
+    // build its own navigation, so they are part of the host contract rather
+    // than this app's own routing taste. The paths mirror the console's so a
+    // deep link means the same thing in both products.
+    //
+    // Declaring a constant does NOT mount a screen: these become reachable
+    // only once the package's pages are added to the router.
+    // ------------------------------------------------------------------
+    FINANCE: {
+      INDEX: "/finance",
+      SETUP: "/finance/setup",
+      LEDGER: "/finance/ledger",
+      RECEIVABLES: "/finance/receivables",
+      RECEIPTS_ALLOCATION: "/finance/receipts-allocation",
+      RECORD_PAYMENT: "/finance/receipts-allocation?action=new",
+      COLLECTIONS: "/finance/collections",
+      PAYMENTS: "/finance/payments",
+      BANKING: "/finance/banking",
+      BANK_RECON: "/finance/bank-reconciliation",
+      EXPENSES: "/finance/expenses",
+      PAYROLL: "/finance/payroll",
+      BUDGETS: "/finance/budgets",
+      REPORTS: "/finance/reports",
+      AUDIT: "/finance/audit",
+      SETTINGS: "/finance/settings",
+    },
+    PROCUREMENT: {
+      INDEX: "/procurement",
+      VENDORS: "/procurement/vendors",
+      REQUISITIONS: "/procurement/requisitions",
+      PURCHASE_ORDERS: "/procurement/purchase-orders",
+      GOODS_RECEIPTS: "/procurement/goods-receipts",
+      VENDOR_INVOICES: "/procurement/vendor-invoices",
+      VENDOR_PAYMENTS: "/procurement/vendor-payments",
+      APPROVALS: "/procurement/approvals",
+      SOURCING: "/procurement/sourcing",
+      CONTRACTS: "/procurement/contracts",
+      INVENTORY: "/procurement/inventory",
+      ANALYTICS: "/procurement/analytics",
+      SETTINGS: "/procurement/settings",
+    },
+    WORKFLOW: {
+      TEMPLATES: "/workflow/templates",
+      INSTANCE_DETAIL_PATH: "/workflow/instances/:id",
+      INSTANCE_DETAIL: (id: string) => `/workflow/instances/${id}`,
+    },
+    AUDIT: { EVENTS: "/audit/events" },
+    EXPORT: {
+      QUEUES: "/export/queues",
+      FILES: "/export/files",
+      RUN_PATH: "/export/runs/:id",
+      RUN: (id: string | number) => `/export/runs/${id}`,
+      SAVED: "/export/saved",
+      NEW: "/export/new",
+      EDIT_PATH: "/export/:id/edit",
+      EDIT: (id: string | number) => `/export/${id}/edit`,
+    },
+    DATA_IMPORTS: {
+      BATCHES: {
+        VIEW: (id: string) => `/data-imports/batches/${id}/view`,
+      },
+    },
     // The onboarding surface. Reachable before the school goes live, and the
     // only part of the app that is - everything below answers 403 TENANT_NOT_LIVE
     // to a school that is still being set up.

@@ -4,6 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
+      "@/routes/routes-path": path.resolve(__dirname, "./src/routes/routesPath.ts"),
       "@": path.resolve(__dirname, "./src"),
     },
   },

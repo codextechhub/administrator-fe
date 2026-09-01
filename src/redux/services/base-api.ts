@@ -378,6 +378,29 @@ export const baseApi = createApi({
   endpoints: () => ({}),
   reducerPath: "baseApi",
   tagTypes: [
+    // Tags owned by the shared engine services (workflow, exports, imports)
+    // that this app consumes for @xvs/finance. RTK Query refuses a tag the
+    // base api has not declared, so they are listed here rather than beside
+    // the endpoints that use them.
+    "ExportCapabilities",
+    "ExportCatalogue",
+    "ExportDefinitions",
+    "ExportDownloadLog",
+    "ExportRuns",
+    "ImportJobs",
+    "ImportValidationIssues",
+    "ProcRequisitions",
+    "WorkflowApproverGroups",
+    "WorkflowDelegations",
+    "WorkflowInstances",
+    "WorkflowPending",
+    "WorkflowStageOverrides",
+    "WorkflowSubmissions",
+    "WorkflowTeamLoad",
+    "WorkflowTemplates",
+    "ProcPurchaseOrders",
+    "ProcVendorInvoices",
+    "ProcVendorPayments",
     "Users",
     "Branches",
     "Students",

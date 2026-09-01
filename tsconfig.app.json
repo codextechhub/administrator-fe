@@ -9,6 +9,9 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@/routes/routes-path": [
+            "./src/routes/routesPath.ts"
+      ],
       "@/*": [
         "./src/*"
       ]

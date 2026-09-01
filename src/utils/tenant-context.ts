@@ -21,3 +21,13 @@ export const bindTenantStore = (getState: () => AuthState): void => {
 export const getTenantSlug = (): string => {
   return readState?.()?.auth?.tenant?.slug || "";
 };
+
+/** Add the tenant to a URL that is fetched directly rather than through the
+ *  RTK base query, which stamps it already. Used by attachment and import
+ *  downloads, where the browser does the fetch and carries no interceptor. */
+export const appendTenantQuery = (url: string): string => {
+  const tenant = getTenantSlug();
+  if (!tenant) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}tenant=${encodeURIComponent(tenant)}`;
+};
