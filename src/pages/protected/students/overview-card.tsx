@@ -1,5 +1,3 @@
-import { CircleCheck, TriangleAlert, UserPlus } from "lucide-react";
-
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type {
@@ -7,21 +5,27 @@ import type {
   StudentSummary,
 } from "@/redux/services/students/students-types";
 
+import type { QueueRow } from "./work-queue";
+
 // ─────────────────────────────────────────────────────────────────────────────
-// The directory's header, as ONE card.
+// The directory's header: what the school IS on the left, what needs a person
+// on the right.
 //
-// This was four separate tiles plus two sibling cards, and the design is
-// deliberately not that: it is a single surface with a lead figure, and the
-// difference is what the screen says rather than how it looks. Six equal boxes
-// give every number the same weight, so nothing leads and a reader has to pick
-// out which one matters. Here the roll is the headline at 40px, the split of it
-// is the bar directly underneath, and the three numbers that are JOBS rather
-// than facts sit below a rule as small tiles - two of which are doors.
+// The right half used to be Nearest capacity - the four fullest classes, with a
+// bar each. Three of those four rows read "4 free", "9 free", "1 free", which
+// are non-events, and the one row that mattered sat among them at the same
+// weight. The bars added nothing: at 26/30 and 31/40 they all look nearly full,
+// so a reader ends up reading the digits anyway.
 //
-// Two of the three mini-tiles are buttons and one is not, and that is the same
-// rule: Applicants and No-class are worklists somebody is asked to empty, so
-// they lead somewhere. "Active today" is a fact about the school, so it does
-// not pretend to be clickable.
+// It is now a queue of decisions, each one a named record and a verb. The three
+// mini-tiles that sat under a rule here - Active today, Awaiting enrolment,
+// Needs a class - are gone with it: the moment the queue names Emeka Obi, a
+// tile reading "1 Needs a class" is the same fact with the name taken out.
+// Removing them is what pays for the queue in vertical space.
+//
+// Capacity as a whole belongs to Classes & Transfers, which is in the nav with
+// a badge on it. What survives here is the one capacity fact that was doing
+// work: a class over its limit, shown as the thing blocking a placement.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SEGMENT: Partial<Record<StudentStatus, string>> = {
@@ -47,21 +51,26 @@ function ColumnLabel({ children }: { children: React.ReactNode }) {
 export function OverviewCard({
   summary,
   loading,
+  queue,
+  overflow,
+  settledLine,
   onPickStatus,
+  onAct,
   onOpenApplicants,
-  onOpenUnassigned,
-  onOpenClass,
 }: {
   summary?: StudentSummary;
   loading?: boolean;
+  queue: QueueRow[];
+  /** Rows past the cap, offered as "N more waiting". */
+  overflow: number;
+  /** What an empty queue should say instead of nothing. */
+  settledLine?: string;
   onPickStatus: (status: StudentStatus) => void;
+  onAct: (row: QueueRow) => void;
   onOpenApplicants: () => void;
-  onOpenUnassigned: () => void;
-  onOpenClass: (classId: number) => void;
 }) {
   const present = (summary?.by_status ?? []).filter((r) => r.count > 0);
   const total = Math.max(1, summary?.total ?? 0);
-  const capacity = summary?.nearest_capacity ?? [];
 
   return (
     <section className="min-w-0 rounded-xl border border-white-02 bg-white px-6 py-5.5">
@@ -100,6 +109,7 @@ export function OverviewCard({
                   key={row.status}
                   type="button"
                   onClick={() => onPickStatus(row.status)}
+                  aria-label={`Filter to ${row.label}`}
                   className="inline-flex items-center gap-[7px] hover:opacity-70"
                 >
                   <span
@@ -119,168 +129,80 @@ export function OverviewCard({
           </div>
         </div>
 
-        {/* ── Where the next child will be hard to place ──────────────────── */}
-        <div className="min-w-0 flex-[1_1_260px]">
-          <ColumnLabel>Nearest capacity</ColumnLabel>
+        {/* ── What needs a person today ───────────────────────────────────── */}
+        <div className="min-w-0 flex-[1_1_320px]">
+          <ColumnLabel>Needs you today</ColumnLabel>
           {loading ? (
-            <Skeleton className="mt-3.5 h-16 w-full" />
-          ) : capacity.length === 0 ? (
-            <p className="mt-3.5 text-[13px] text-pretty text-gray-05">
-              No class is close to full. There is room to place a new student
-              anywhere.
-            </p>
+            <div className="mt-3.5 grid gap-2.5">
+              <Skeleton className="h-11 w-full" />
+              <Skeleton className="h-11 w-full" />
+            </div>
+          ) : queue.length === 0 ? (
+            // An empty queue is confirmation, not a panel that failed to load,
+            // so it says what was last cleared rather than just "nothing".
+            <div className="mt-3.5">
+              <p className="text-[13px] text-black-01">
+                Nothing needs attention.
+              </p>
+              <p className="mt-1 text-xs text-pretty text-gray-05">
+                {settledLine ??
+                  "Every student on the roll has a class and no application is waiting."}
+              </p>
+            </div>
           ) : (
-            <div className="mt-3.5 flex flex-col gap-[11px]">
-              {capacity.map((c) => {
-                const pct = c.capacity
-                  ? Math.min(100, Math.round((c.used / c.capacity) * 100))
-                  : 0;
-                const over = c.used > c.capacity;
-                const full = c.remaining === 0;
-                return (
+            <ul className="mt-3.5 flex flex-col gap-2">
+              {queue.map((row) => (
+                <li key={row.id}>
                   <button
-                    key={c.id}
                     type="button"
-                    onClick={() => onOpenClass(c.id)}
-                    className="flex items-center gap-[11px] text-left hover:opacity-70"
+                    onClick={() => onAct(row)}
+                    // The verb and the subject, spoken together. The visible row
+                    // reads as three parts side by side, which a screen reader
+                    // would otherwise announce as an unlabelled button followed
+                    // by a bare "Place".
+                    aria-label={`${row.actionLabel}: ${row.title}`}
+                    className="group flex w-full min-w-0 items-center gap-2.5 rounded-lg border border-white-02 bg-white px-3 py-2 text-left hover:border-primary/30 hover:bg-white-05"
                   >
-                    <span className="w-26 shrink-0 truncate text-[12.5px] font-medium text-black-01">
-                      {c.name}
-                    </span>
-                    <span className="block h-[7px] min-w-0 flex-1 overflow-hidden rounded-full bg-gray-04">
-                      <span
-                        className={cn(
-                          "block h-full rounded-full",
-                          over ? "bg-red-500" : full ? "bg-amber-500" : "bg-primary",
-                        )}
-                        style={{ width: `${over ? 100 : pct}%` }}
-                      />
-                    </span>
-                    <span className="w-13 shrink-0 text-right text-xs text-gray-06">
-                      {c.used}/{c.capacity}
-                    </span>
                     <span
+                      aria-hidden
                       className={cn(
-                        "w-[62px] shrink-0 text-right text-[11.5px]",
-                        over
-                          ? "text-red-600"
-                          : full
-                            ? "text-amber-700"
-                            : "text-gray-05",
+                        "grid size-5.5 shrink-0 place-content-center rounded-md text-[11px] font-bold",
+                        row.tone === "alert"
+                          ? "bg-amber-500/15 text-amber-700"
+                          : "bg-primary/10 text-primary",
                       )}
                     >
-                      {over
-                        ? `Over by ${c.used - c.capacity}`
-                        : full
-                          ? "Full"
-                          : `${c.remaining} free`}
+                      {row.marker}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-medium text-black-01">
+                        {row.title}
+                      </span>
+                      <span className="block truncate text-[11.5px] text-gray-05">
+                        {row.detail}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs font-semibold text-primary group-hover:underline">
+                      {row.actionLabel}
                     </span>
                   </button>
-                );
-              })}
-            </div>
+                </li>
+              ))}
+              {overflow > 0 && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={onOpenApplicants}
+                    className="text-xs text-gray-05 underline-offset-2 hover:text-black-01 hover:underline"
+                  >
+                    {overflow} more waiting
+                  </button>
+                </li>
+              )}
+            </ul>
           )}
         </div>
       </div>
-
-      {/* ── The three numbers that are jobs ───────────────────────────────── */}
-      <div className="mt-5.5 grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3 border-t border-white-02 pt-5">
-        <MiniTile
-          icon={<CircleCheck className="size-4.5" />}
-          tone="green"
-          value={summary?.active}
-          label="Active today"
-          loading={loading}
-        />
-        <MiniTile
-          icon={<UserPlus className="size-4.5" />}
-          tone="amber"
-          value={summary?.applicants}
-          label="Awaiting enrolment"
-          loading={loading}
-          onClick={onOpenApplicants}
-        />
-        <MiniTile
-          icon={<TriangleAlert className="size-4.5" />}
-          tone="blue"
-          value={summary?.unassigned}
-          label={summary?.unassigned ? "Needs a class" : "All placed"}
-          loading={loading}
-          // The only figure that changes colour, because it is the only one
-          // that is a problem rather than a count.
-          emphasis={Boolean(summary?.unassigned)}
-          onClick={onOpenUnassigned}
-        />
-      </div>
     </section>
-  );
-}
-
-const TONE = {
-  green: "bg-green-700/10 text-green-800",
-  amber: "bg-amber-500/10 text-amber-700",
-  blue: "bg-primary/10 text-primary",
-} as const;
-
-function MiniTile({
-  icon,
-  tone,
-  value,
-  label,
-  loading,
-  emphasis,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  tone: keyof typeof TONE;
-  value?: number;
-  label: string;
-  loading?: boolean;
-  emphasis?: boolean;
-  onClick?: () => void;
-}) {
-  const body = (
-    <>
-      <span
-        aria-hidden
-        className={cn(
-          "grid size-9.5 shrink-0 place-content-center rounded-[10px]",
-          TONE[tone],
-        )}
-      >
-        {icon}
-      </span>
-      <span className="min-w-0">
-        {loading ? (
-          <Skeleton className="h-5 w-10" />
-        ) : (
-          <span
-            className={cn(
-              "block text-xl font-semibold leading-[1.1]",
-              emphasis ? "text-amber-700" : "text-black-01",
-            )}
-          >
-            {value ?? 0}
-          </span>
-        )}
-        <span className="block truncate text-xs text-gray-05">{label}</span>
-      </span>
-    </>
-  );
-
-  const shell = "flex items-center gap-3 rounded-[10px] border border-white-02 px-4 py-3.5";
-
-  // A fact is a div and a job is a button. Making all three clickable would
-  // promise that "Active today" goes somewhere, and it does not.
-  return onClick ? (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(shell, "bg-white text-left hover:border-primary/30 hover:bg-white-05")}
-    >
-      {body}
-    </button>
-  ) : (
-    <div className={shell}>{body}</div>
   );
 }

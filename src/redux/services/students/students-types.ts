@@ -56,6 +56,14 @@ export interface StudentRow extends StudentScoped {
   primary_guardian: string;
   photo_url: string;
   enrolment_date: string | null;
+  /**
+   * When an applicant applied. Null for anyone already on the roll.
+   *
+   * On the ROW rather than the detail because two screens sort on it - the
+   * applicants board and the directory's work queue - and reaching it per row
+   * would have been a request per applicant.
+   */
+  applied_on: string | null;
 }
 
 /**

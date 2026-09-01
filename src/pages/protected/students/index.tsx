@@ -13,8 +13,10 @@ import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { cn } from "@/lib/utils";
 import {
+  useGetClassSeatsQuery,
   useGetStudentSummaryQuery,
   useGetStudentsQuery,
+  useGetUnplacedStudentsQuery,
 } from "@/redux/services/students/students-api";
 import type {
   StudentRow,
@@ -25,6 +27,7 @@ import { useGetClassesQuery } from "@/redux/services/academics/academics-api";
 import { StudentDrawers, type DrawerRequest } from "./drawers";
 import { FiltersPopover } from "./filters-popover";
 import { OverviewCard } from "./overview-card";
+import { buildWorkQueue, type QueueRow } from "./work-queue";
 import { StudentCards } from "./student-cards";
 import { statusChipClass } from "./status-chip";
 
@@ -86,10 +89,46 @@ export default function StudentDirectory() {
   // The filter dropdowns' options. Classes are Academic Structure's, not ours.
   const { data: classesData } = useGetClassesQuery();
 
+  // The three sources the work queue is composed from. All three are already
+  // cached by other screens - the nav badge fetches unplaced, the applicants
+  // board fetches applicants - so this costs a request only on a cold page.
+  const { data: unplacedData } = useGetUnplacedStudentsQuery();
+  const { data: applicantsData } = useGetStudentsQuery({
+    status: "APPLICANT",
+    branch,
+  });
+  const { data: seatsData } = useGetClassSeatsQuery({ branch });
+
   const rows = useMemo(() => listData?.data ?? [], [listData]);
   const pagination = listData?.pagination;
   const summary = summaryData?.data;
   const classes = useMemo(() => classesData?.data ?? [], [classesData]);
+
+  const { rows: queue, overflow } = useMemo(
+    () =>
+      buildWorkQueue({
+        summary: summaryData?.data,
+        unplaced: unplacedData?.data ?? [],
+        applicants: applicantsData?.data ?? [],
+        seats: seatsData?.data ?? [],
+      }),
+    [summaryData, unplacedData, applicantsData, seatsData],
+  );
+
+  /** Send the reader where the row's verb says. */
+  function actOnQueueRow(row: QueueRow) {
+    if (row.action === "review") {
+      navigate(routesPath.PROTECTED.STUDENTS.APPLICANTS);
+      return;
+    }
+    // Place and Move both end in the same drawer, because both are a class
+    // assignment - the difference is only whether the student had one.
+    if (row.studentId) {
+      setDrawer({ kind: "transfer", studentId: row.studentId });
+      return;
+    }
+    navigate(routesPath.PROTECTED.STUDENTS.ASSIGN);
+  }
 
   // Levels come from the classes the school actually runs, so the filter can
   // never offer a level with no class behind it.
@@ -196,12 +235,13 @@ export default function StudentDirectory() {
       <OverviewCard
         summary={summary}
         loading={summaryLoading}
+        queue={queue}
+        overflow={overflow}
         onPickStatus={(next) => resetTo(() => setStatus(next))}
+        onAct={actOnQueueRow}
         onOpenApplicants={() =>
           navigate(routesPath.PROTECTED.STUDENTS.APPLICANTS)
         }
-        onOpenUnassigned={() => navigate(routesPath.PROTECTED.STUDENTS.ASSIGN)}
-        onOpenClass={() => navigate(routesPath.PROTECTED.STUDENTS.ASSIGN)}
       />
 
       {/* ── Search, filters, export, view ─────────────────────────────────── */}
