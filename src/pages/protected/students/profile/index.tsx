@@ -76,7 +76,7 @@ export default function StudentProfile() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <header className="rounded-xl border border-white-02 bg-white p-4">
+      <header className="rounded-lg bg-white px-6 py-5.5">
         {isLoading || !student ? (
           <div className="grid gap-2">
             <Skeleton className="h-6 w-56" />
@@ -84,40 +84,71 @@ export default function StudentProfile() {
           </div>
         ) : (
           <>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="truncate text-lg font-semibold text-black-01">
-                  {student.full_name}
-                </h2>
-                <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-05">
-                  <span>{student.student_number || "No admission number"}</span>
-                  <span aria-hidden>·</span>
+            <div className="flex flex-wrap items-start gap-4.5">
+              {/* The face of the record. A profile that opens with a line of
+                  text reads like a row that happened to fill the page; the
+                  avatar is what makes it a person's record. */}
+              <span
+                aria-hidden
+                className="grid size-18 shrink-0 place-content-center rounded-full bg-white-03 text-2xl font-semibold text-primary"
+              >
+                {initials(student.full_name)}
+              </span>
+
+              <div className="min-w-55 flex-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h2 className="text-[22px] font-semibold text-black-01">
+                    {student.full_name}
+                  </h2>
+                  <span className={statusChipClass(student.status)}>
+                    {student.status_label}
+                  </span>
+                </div>
+                {/* Dot-separated rather than comma'd: these are four unrelated
+                    facts, not a sentence, and the dots stop them reading as
+                    one run-on line. */}
+                <div className="mt-1.5 flex flex-wrap items-center gap-2.5 text-[13px]">
                   <span
                     className={
-                      student.class_name ? undefined : "text-amber-700"
+                      student.student_number ? "text-gray-01" : "text-gray-02"
+                    }
+                  >
+                    {student.student_number || "No admission number"}
+                  </span>
+                  <Dot />
+                  <span
+                    className={
+                      student.class_name ? "text-gray-01" : "text-amber-700"
                     }
                   >
                     {student.class_name || "Unassigned"}
                   </span>
+                  {student.level_name && (
+                    <>
+                      <Dot />
+                      <span className="text-gray-05">{student.level_name}</span>
+                    </>
+                  )}
                   {student.session_name && (
                     <>
-                      <span aria-hidden>·</span>
-                      <span>{student.session_name}</span>
+                      <Dot />
+                      <span className="text-gray-05">
+                        {student.session_name}
+                      </span>
                     </>
                   )}
                   {/* Absent at a single-branch school, not null - so this
                       renders nothing there rather than an empty slot. */}
                   {student.branch_name && (
                     <>
-                      <span aria-hidden>·</span>
-                      <span>{student.branch_name}</span>
+                      <Dot />
+                      <span className="text-gray-05">
+                        {student.branch_name}
+                      </span>
                     </>
                   )}
-                </p>
+                </div>
               </div>
-              <span className={statusChipClass(student.status)}>
-                {student.status_label}
-              </span>
             </div>
 
             <Lifecycle status={student.status} />
@@ -158,10 +189,15 @@ export default function StudentProfile() {
         )}
       </header>
 
+      {/* A segmented control on its own surface, not pills floating on the
+          page. Six tabs sitting loose read as six links; sitting in a tray
+          they read as one control with one of them chosen. Scrolls sideways
+          below `sm` rather than wrapping to two rows, because a tab strip that
+          reflows moves the tab under the reader's finger. */}
       <div
         role="tablist"
         aria-label="Student record sections"
-        className="flex max-w-full gap-1 overflow-x-auto"
+        className="flex max-w-full gap-1 overflow-x-auto rounded-lg bg-white p-1.5"
       >
         {TABS.map((t) => (
           <button
@@ -171,10 +207,10 @@ export default function StudentProfile() {
             aria-selected={tab === t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              "whitespace-nowrap rounded-full px-3 py-1.5 text-sm",
+              "h-9 shrink-0 whitespace-nowrap rounded-md px-3.5 text-[13.5px]",
               tab === t.key
                 ? "bg-white-03 font-semibold text-primary"
-                : "text-gray-05 hover:text-black-01",
+                : "text-gray-06 hover:bg-gray-03",
             )}
           >
             {t.label}
@@ -256,10 +292,7 @@ function GuardiansTab({ studentId }: { studentId: number }) {
   if (isLoading) return <PanelSkeleton />;
   if (links.length === 0) {
     return (
-      <Empty>
-        Nobody is linked to this student yet. Every student needs one primary
-        contact.
-      </Empty>
+      <EmptyRing>No guardian linked</EmptyRing>
     );
   }
 
@@ -358,7 +391,10 @@ function AcademicTab({
         />
       </Panel>
 
-      <Panel title="Class history">
+      <Panel
+        title="Class history"
+        note="The promotion trail across sessions."
+      >
         {trailLoading ? (
           <Skeleton className="h-16 w-full" />
         ) : trail.length === 0 ? (
@@ -499,7 +535,7 @@ function DocumentsTab({ studentId }: { studentId: number }) {
               <span
                 className={`text-xs ${d.required ? "text-amber-700" : "text-gray-05"}`}
               >
-                Not attached
+                Not on file
               </span>
             )}
           </li>
@@ -555,32 +591,54 @@ function HistoryTab({ studentId }: { studentId: number }) {
 function Panel({
   title,
   badge,
+  note,
   className,
   children,
 }: {
   title: string;
   badge?: string;
+  /** A line under the heading, for a panel whose subject needs explaining. */
+  note?: string;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
     <section
       className={cn(
-        "min-w-0 rounded-xl border border-white-02 bg-white p-4",
+        "min-w-0 rounded-lg bg-white px-5.5 py-5",
         className,
       )}
     >
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <h3 className="text-xs font-medium text-gray-05">{title}</h3>
+      <div className="mb-3.5 flex flex-wrap items-center gap-2">
+        <h3 className="text-sm font-semibold text-black-01">{title}</h3>
         {badge && (
           <span className="rounded-full bg-white-03 px-2 py-0.5 text-xs text-primary">
             {badge}
           </span>
         )}
+        {note && (
+          <span className="w-full text-xs text-gray-05">{note}</span>
+        )}
       </div>
       {children}
     </section>
   );
+}
+
+/** The 3px separator the design puts between the header's facts. */
+function Dot() {
+  return (
+    <span aria-hidden className="size-[3px] shrink-0 rounded-full bg-gray-02" />
+  );
+}
+
+/** Two letters from the name, for the header avatar. */
+function initials(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = parts[0][0] ?? "";
+  const last = parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "";
+  return (first + last).toUpperCase();
 }
 
 function PanelSkeleton() {
@@ -594,9 +652,27 @@ function PanelSkeleton() {
 
 function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <p className="rounded-xl border border-dashed border-white-02 bg-white px-4 py-10 text-center text-sm text-gray-05">
+    <p className="rounded-lg bg-white px-4 py-10 text-center text-sm text-gray-05">
       {children}
     </p>
+  );
+}
+
+/**
+ * The design's empty state: a ring with the fact inside it.
+ *
+ * Used where an absence is the WHOLE answer to a tab - no guardian linked, no
+ * history yet - rather than a list that happens to be short. A dashed box with
+ * a sentence reads like a container that failed to fill; a drawn shape reads as
+ * a deliberate state, which is what "this student has nobody linked" is.
+ */
+function EmptyRing({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="grid place-content-center rounded-lg bg-white p-11">
+      <div className="grid size-40 place-content-center rounded-full border border-primary p-5 text-center">
+        <p className="text-[13px] text-gray-01">{children}</p>
+      </div>
+    </div>
   );
 }
 
