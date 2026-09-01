@@ -7,7 +7,7 @@ import CustomTable from "@/components/custom/custom-table";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { PageShell } from "@/components/layout/page-shell";
-import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyRing } from "../empty-ring";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
 import { cn } from "@/lib/utils";
@@ -104,9 +104,10 @@ export default function ClassesAndTransfers() {
     return pickedBranches.size === 1 && pickedBranches.has(c.branch);
   };
 
-  const seatsUsed = rosterData?.seats_used ?? 0;
-  const capacity = rosterData?.capacity ?? null;
-  const over = capacity != null && seatsUsed > capacity;
+  // The roster's own seats_used is not read here: the class rail above the
+  // register already carries every class's load, from the aggregate the backend
+  // pins to this endpoint (test_it_agrees_with_the_roster_it_is_meant_to
+  // _replace). Reading both would be two sources for one number.
   const targetClass = classes.find((c) => String(c.id) === target);
 
   async function assign(allowOver = false) {
@@ -161,10 +162,19 @@ export default function ClassesAndTransfers() {
 
   return (
     <PageShell className="content-start gap-5" grid>
+      <div className="min-w-0">
+        <h2 className="text-lg font-semibold text-black-01">
+          Classes &amp; transfers
+        </h2>
+        <p className="mt-1 text-sm text-gray-01">
+          Place students who have no class, and read any class register.
+        </p>
+      </div>
+
       <div
         role="tablist"
         aria-label="Classes and transfers"
-        className="flex max-w-full gap-1 overflow-x-auto"
+        className="flex max-w-full gap-1 overflow-x-auto rounded-lg bg-white p-1.5"
       >
         {(
           [
@@ -179,10 +189,10 @@ export default function ClassesAndTransfers() {
             aria-selected={tab === key}
             onClick={() => setTab(key)}
             className={cn(
-              "whitespace-nowrap rounded-full px-3 py-1.5 text-sm",
+              "h-9 shrink-0 whitespace-nowrap rounded-md px-3.5 text-[13.5px]",
               tab === key
                 ? "bg-white-03 font-semibold text-primary"
-                : "text-gray-05 hover:text-black-01",
+                : "text-gray-06 hover:bg-gray-03",
             )}
           >
             {label}
@@ -220,9 +230,7 @@ export default function ClassesAndTransfers() {
       {tab === "unplaced" ? (
         <>
           {unplaced.length === 0 && !unplacedLoading ? (
-            <p className="rounded-xl border border-dashed border-white-02 bg-white px-4 py-10 text-center text-sm text-gray-05">
-              Every student on the roll has a class. Nothing to place.
-            </p>
+            <EmptyRing>Every student has a class</EmptyRing>
           ) : (
             <>
               <CustomTable
@@ -352,56 +360,75 @@ export default function ClassesAndTransfers() {
         </>
       ) : (
         <>
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="min-w-0">
-              <label
-                htmlFor="roster-class"
-                className="text-xs font-medium text-gray-05"
-              >
-                Class
-              </label>
-              <NativeSelect
-                id="roster-class"
-                value={String(rosterClassId ?? "")}
-                onChange={(e) => setRosterClass(e.target.value)}
-                className="mt-1 h-9 w-auto min-w-44"
-              >
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-
-            {/* The seat count is a fact about the CLASS, not about the rows
-                below it: a branch-bound reader sees their own children in a
-                school-wide class, and showing them 12 of 30 would have them
-                fill a class that is already full. */}
-            <div className="min-w-0">
-              {rosterLoading ? (
-                <Skeleton className="h-9 w-40" />
-              ) : (
-                <>
-                  <p
+          {/* The class picker IS the capacity list.
+              These are the four bars the directory used to carry as a summary.
+              Here they are not a summary - they are the thing you came for, so
+              they do the navigating too. A bare <select> naming twelve classes
+              made you pick one to find out how full it was, which is backwards:
+              the load is what tells you which one to open. */}
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {classes.map((c) => {
+              const chosen = c.id === rosterClassId;
+              const isOver = c.capacity != null && c.used > c.capacity;
+              const isFull = c.remaining === 0;
+              const pct = c.capacity
+                ? Math.min(100, Math.round((c.used / c.capacity) * 100))
+                : 0;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  aria-pressed={chosen}
+                  onClick={() => setRosterClass(String(c.id))}
+                  className={cn(
+                    "min-w-0 rounded-lg border px-3.5 py-3 text-left",
+                    chosen
+                      ? "border-primary bg-white-03"
+                      : "border-white-02 bg-white hover:border-primary/30 hover:bg-white-05",
+                  )}
+                >
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-sm font-medium text-black-01">
+                      {c.name}
+                    </span>
+                    <span className="shrink-0 text-xs text-gray-06">
+                      {c.capacity == null ? c.used : `${c.used}/${c.capacity}`}
+                    </span>
+                  </span>
+                  <span className="mt-2 block h-[7px] overflow-hidden rounded-full bg-gray-04">
+                    <span
+                      className={cn(
+                        "block h-full rounded-full",
+                        isOver
+                          ? "bg-red-500"
+                          : isFull
+                            ? "bg-amber-500"
+                            : "bg-primary",
+                      )}
+                      style={{ width: `${isOver ? 100 : pct}%` }}
+                    />
+                  </span>
+                  <span
                     className={cn(
-                      "text-sm font-semibold",
-                      over ? "text-red-600" : "text-black-01",
+                      "mt-1.5 block text-xs",
+                      isOver
+                        ? "text-red-600"
+                        : isFull
+                          ? "text-amber-700"
+                          : "text-gray-05",
                     )}
                   >
-                    {seatsUsed}
-                    {capacity != null ? ` of ${capacity}` : ""} seats used
-                  </p>
-                  <p className="text-xs text-gray-05">
-                    {capacity == null
-                      ? "This class has no capacity set."
-                      : over
-                        ? `Over by ${seatsUsed - capacity}.`
-                        : `${capacity - seatsUsed} free.`}
-                  </p>
-                </>
-              )}
-            </div>
+                    {c.capacity == null
+                      ? "No limit set"
+                      : isOver
+                        ? `Over by ${c.used - c.capacity}`
+                        : isFull
+                          ? "Full"
+                          : `${c.remaining} free`}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <CustomTable

@@ -25,6 +25,7 @@ import { StudentDrawers, type DrawerRequest } from "../drawers";
 import { formatDate, formatDateTime, titleCaseCode } from "../format";
 import { statusChipClass } from "../status-chip";
 import { Lifecycle } from "./lifecycle";
+import { EmptyRing } from "../empty-ring";
 import { Rows, type Row } from "./rows";
 
 const TABS = [
@@ -658,22 +659,5 @@ function Empty({ children }: { children: React.ReactNode }) {
   );
 }
 
-/**
- * The design's empty state: a ring with the fact inside it.
- *
- * Used where an absence is the WHOLE answer to a tab - no guardian linked, no
- * history yet - rather than a list that happens to be short. A dashed box with
- * a sentence reads like a container that failed to fill; a drawn shape reads as
- * a deliberate state, which is what "this student has nobody linked" is.
- */
-function EmptyRing({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="grid place-content-center rounded-lg bg-white p-11">
-      <div className="grid size-40 place-content-center rounded-full border border-primary p-5 text-center">
-        <p className="text-[13px] text-gray-01">{children}</p>
-      </div>
-    </div>
-  );
-}
 
 export type { StudentStatus };
