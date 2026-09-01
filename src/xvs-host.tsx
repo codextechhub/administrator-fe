@@ -7,14 +7,14 @@
 // Each member is a thing both products have but reach differently: the console
 // asks its tenant-admin services, this app asks its own.
 //
-// PLACEHOLDER TYPES. The interfaces below are declared locally because this app
-// does not yet depend on @xvs/finance, so `@xvs/finance/host` cannot resolve.
-// They are copies and can therefore drift, which is exactly what the contract
-// exists to prevent. Delete them and import from the package the moment the
-// dependency is wired; until then the compile-time assertion is NOT running
-// here, only in the console.
 
-import { useEffect, type ComponentType } from "react";
+import { useEffect } from "react";
+// The REAL contract types, from the package. Previously copied locally,
+// which meant this app satisfied a copy and the compile-time assertion
+// checked nothing here.
+import type {
+  HostBranch, HostPerson, HostQueryResult, HostExportProps,
+} from "@xvs/finance/host";
 import { ExportButton } from "@/components/custom/export-button";
 import { returnInitial } from "@/utils/helpers";
 
@@ -22,23 +22,6 @@ import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import { useGetSchoolStaffQuery } from "@/redux/services/staff/staff-api";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
 
-export interface HostBranch { id: string | number; name: string }
-export interface HostPerson {
-  id: string; full_name: string; email: string; role: string; status: string;
-}
-export interface HostQueryResult<T> {
-  data: T[] | undefined; isLoading: boolean; isError: boolean;
-}
-export interface HostExportProps {
-  screen: string;
-  params?: Record<string, string | number | boolean | undefined>;
-  entity?: string;
-  label?: string;
-  defaultName?: string;
-  className?: string;
-  variant?: "white" | "outline" | "default";
-  disabledReason?: string;
-}
 
 /** Every branch this caller may see. The server scopes it by their grants. */
 export function useBranches(): HostQueryResult<HostBranch> {

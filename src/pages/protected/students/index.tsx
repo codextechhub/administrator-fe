@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { LayoutGrid, List, Search, Users, X } from "lucide-react";
+import { LayoutGrid, List, Search, Upload, UserPlus, Users, X } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,6 @@ import { P } from "@/permissions";
 import { PageShell } from "@/components/layout/page-shell";
 import { ExportButton } from "@/components/custom/export-button";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
-import { NativeSelect } from "@/components/ui/native-select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { cn } from "@/lib/utils";
@@ -25,8 +23,8 @@ import type {
 import { useGetClassesQuery } from "@/redux/services/academics/academics-api";
 
 import { StudentDrawers, type DrawerRequest } from "./drawers";
-import { CapacityPanel } from "./capacity-panel";
-import { StatusBar } from "./status-bar";
+import { FiltersPopover } from "./filters-popover";
+import { OverviewCard } from "./overview-card";
 import { StudentCards } from "./student-cards";
 import { statusChipClass } from "./status-chip";
 
@@ -54,6 +52,8 @@ export default function StudentDirectory() {
   const [status, setStatus] = useState<StudentStatus | "all">("all");
   const [page, setPage] = useState(1);
   const [view, setView] = useState<"list" | "cards">("list");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
 
   // "all" is the pill's word for "every branch"; the API wants the key absent.
@@ -64,7 +64,9 @@ export default function StudentDirectory() {
 
   const listArgs = {
     search: search.trim() || undefined,
-    class: classId === "all" ? undefined : classId,
+    // "unassigned" is not a class id: the server reads it as "on the roll with
+    // no class", which is a different query from any particular class.
+    class: unassignedOnly ? "unassigned" : classId === "all" ? undefined : classId,
     level: level === "all" ? undefined : level,
     status: status === "all" ? undefined : status,
     branch,
@@ -102,7 +104,8 @@ export default function StudentDirectory() {
   const facets =
     (classId !== "all" ? 1 : 0) +
     (level !== "all" ? 1 : 0) +
-    (status !== "all" ? 1 : 0);
+    (status !== "all" ? 1 : 0) +
+    (unassignedOnly ? 1 : 0);
   const anyFilter = facets > 0 || search.trim().length > 0;
 
   const chips = [
@@ -119,6 +122,10 @@ export default function StudentDirectory() {
       label: summary?.by_status.find((s) => s.status === status)?.label ?? status,
       clear: () => setStatus("all"),
     },
+    unassignedOnly && {
+      label: "Unassigned class",
+      clear: () => setUnassignedOnly(false),
+    },
   ].filter(Boolean) as { label: string; clear: () => void }[];
 
   function resetTo(next: () => void) {
@@ -131,6 +138,7 @@ export default function StudentDirectory() {
     setClassId("all");
     setLevel("all");
     setStatus("all");
+    setUnassignedOnly(false);
     setPage(1);
   }
 
@@ -150,114 +158,88 @@ export default function StudentDirectory() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      {/* ── The lead figure, then the roll ───────────────────────────────── */}
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Tile
-          loading={summaryLoading}
-          label="Students"
-          value={summary?.total}
-          sub={`${summary?.on_roll ?? 0} currently on the roll`}
-        />
-        <Tile loading={summaryLoading} label="Active" value={summary?.active} />
-        <Tile
-          loading={summaryLoading}
-          label="Applicants"
-          value={summary?.applicants}
-        />
-        <Tile
-          loading={summaryLoading}
-          label="No class"
-          value={summary?.unassigned}
-          sub={summary?.unassigned ? "Needs a class" : "All placed"}
-          emphasis={Boolean(summary?.unassigned)}
-        />
-      </section>
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <StatusBar
-          loading={summaryLoading}
-          rows={summary?.by_status ?? []}
-          total={summary?.total ?? 0}
-          onPick={(next) => resetTo(() => setStatus(next))}
-        />
-        <CapacityPanel
-          loading={summaryLoading}
-          rows={summary?.nearest_capacity ?? []}
-          onOpenClass={(classId) =>
-            navigate(
-              `${routesPath.PROTECTED.STUDENTS.ASSIGN}?tab=roster&class=${classId}`,
-            )
-          }
-        />
+      {/* ── Who this page is about, and the two ways in ──────────────────── */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold text-black-01">
+            Student Directory
+          </h2>
+          <p className="mt-1 text-sm text-gray-01">
+            Every student at {branchLens.applies ? branchLens.label : "this school"}
+            {summary?.session ? ` for ${summary.session}` : ""}.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2.5">
+          <PermissionGate permission={P.IMPORT_STUDENTS}>
+            <button
+              type="button"
+              onClick={() => navigate(routesPath.PROTECTED.STUDENTS.IMPORT)}
+              className="inline-flex h-10.5 items-center gap-2 rounded-lg border border-white-02 bg-white px-4 text-sm font-medium text-gray-01 hover:bg-gray-03 hover:text-primary"
+            >
+              <Upload className="size-4" />
+              Bulk import
+            </button>
+          </PermissionGate>
+          <PermissionGate permission={P.ENROLL_STUDENT}>
+            <button
+              type="button"
+              onClick={() => navigate(routesPath.PROTECTED.STUDENTS.ENROL)}
+              className="inline-flex h-10.5 items-center gap-2 rounded-lg bg-primary px-4.5 text-sm font-medium text-white hover:bg-primary/90"
+            >
+              <UserPlus className="size-4" />
+              Enrol student
+            </button>
+          </PermissionGate>
+        </div>
       </div>
 
-      {/* ── Filters ──────────────────────────────────────────────────────── */}
+      <OverviewCard
+        summary={summary}
+        loading={summaryLoading}
+        onPickStatus={(next) => resetTo(() => setStatus(next))}
+        onOpenApplicants={() =>
+          navigate(routesPath.PROTECTED.STUDENTS.APPLICANTS)
+        }
+        onOpenUnassigned={() => navigate(routesPath.PROTECTED.STUDENTS.ASSIGN)}
+        onOpenClass={() => navigate(routesPath.PROTECTED.STUDENTS.ASSIGN)}
+      />
+
+      {/* ── Search, filters, export, view ─────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2.5">
-        <div className="relative min-w-0 flex-1 basis-52">
+        <div className="relative min-w-55 max-w-85 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
           <input
             value={search}
             onChange={(e) => resetTo(() => setSearch(e.target.value))}
-            placeholder="Search by name or admission number"
+            placeholder="Search name or admission no."
             aria-label="Search students"
-            className="h-9 w-full rounded-full border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
+            className="h-10.5 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
           />
         </div>
 
-        <NativeSelect
-          aria-label="Filter by class"
-          value={classId}
-          onChange={(e) => resetTo(() => setClassId(e.target.value))}
-          className="h-9 w-auto min-w-36"
-        >
-          <option value="all">All classes</option>
-          {/* Not a class id: the server reads it as "on the roll, no class". */}
-          <option value="unassigned">No class yet</option>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          aria-label="Filter by level"
-          value={level}
-          onChange={(e) => resetTo(() => setLevel(e.target.value))}
-          className="h-9 w-auto min-w-32"
-        >
-          <option value="all">All levels</option>
-          {levels.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          aria-label="Filter by status"
-          value={status}
-          onChange={(e) =>
-            resetTo(() => setStatus(e.target.value as StudentStatus | "all"))
+        <FiltersPopover
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          value={{ classId, level, status, unassignedOnly }}
+          onChange={(next) =>
+            resetTo(() => {
+              if (next.classId !== undefined) setClassId(next.classId);
+              if (next.level !== undefined) setLevel(next.level);
+              if (next.status !== undefined) setStatus(next.status);
+              if (next.unassignedOnly !== undefined) {
+                setUnassignedOnly(next.unassignedOnly);
+                // The two ask different questions of the same column, so one
+                // has to give: a class filter and "no class at all" cannot
+                // both be true, and leaving the old class on returns nothing.
+                if (next.unassignedOnly) setClassId("all");
+              }
+            })
           }
-          className="h-9 w-auto min-w-32"
-        >
-          <option value="all">All statuses</option>
-          {(summary?.by_status ?? []).map((s) => (
-            <option key={s.status} value={s.status}>
-              {s.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <PermissionGate permission={P.ENROLL_STUDENT}>
-          <Button
-            size="sm"
-            onClick={() => navigate(routesPath.PROTECTED.STUDENTS.ENROL)}
-          >
-            Enrol a student
-          </Button>
-        </PermissionGate>
+          onClear={clearAll}
+          classes={classes}
+          levels={levels}
+          statuses={summary?.by_status ?? []}
+        />
 
         {/* The branch goes by NAME, not id: the export filters on the branch's
             name and a translator has no tenant to resolve one into the other.
@@ -275,7 +257,7 @@ export default function StudentDirectory() {
           }}
         />
 
-        <div className="inline-flex rounded-full border border-white-02 bg-white p-0.5">
+        <div className="ml-auto inline-flex rounded-lg border border-white-02 bg-white p-0.5">
           <ViewButton
             active={view === "list"}
             onClick={() => setView("list")}
@@ -332,7 +314,6 @@ export default function StudentDirectory() {
             "Student",
             "Admission no.",
             "Class",
-            "Level",
             "Status",
             "Primary guardian",
           ]}
@@ -372,12 +353,43 @@ export default function StudentDirectory() {
             // Carried so the row menu can find the student back; CustomTable
             // hands the DISPLAY row to onActionClick, not the source record.
             _id: s.id,
-            Student: s.full_name,
+            // Avatar, name, and the level UNDER the name rather than in a
+            // column of its own. A level is a property of the class, so a
+            // separate column repeated a fact already on the row and pushed
+            // the guardian off the fold on a laptop.
+            Student: (
+              <span className="flex min-w-0 items-center gap-2.5">
+                <span
+                  aria-hidden
+                  className="grid size-8.5 shrink-0 place-content-center rounded-full bg-white-03 text-xs font-semibold text-primary"
+                >
+                  {initials(s.full_name)}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm text-black-01">
+                    {s.full_name}
+                  </span>
+                  <span className="block truncate text-xs text-gray-05">
+                    {s.level_name || "No level"}
+                  </span>
+                </span>
+              </span>
+            ),
             // "Not issued" rather than a dash: an applicant legitimately has no
             // number yet, which is a different thing from a missing value.
             "Admission no.": s.student_number || "Not issued",
-            Class: s.class_name || "No class yet",
-            Level: s.level_name || "-",
+            // A chip, and amber when there is none: a student with no class is
+            // the one row on this table somebody has to act on, so it should
+            // not read like ordinary text.
+            Class: s.class_name ? (
+              <span className="inline-flex rounded-full bg-white-03 px-2 py-0.5 text-xs font-medium text-primary">
+                {s.class_name}
+              </span>
+            ) : (
+              <span className="inline-flex rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700">
+                Unassigned
+              </span>
+            ),
             Status: (
               <span className={statusChipClass(s.status)}>{s.status_label}</span>
             ),
@@ -416,37 +428,13 @@ export default function StudentDirectory() {
   );
 }
 
-function Tile({
-  label,
-  value,
-  sub,
-  loading,
-  emphasis,
-}: {
-  label: string;
-  value?: number;
-  sub?: string;
-  loading?: boolean;
-  emphasis?: boolean;
-}) {
-  return (
-    <div className="min-w-0 rounded-xl border border-white-02 bg-white p-4">
-      <p className="text-xs font-medium text-gray-05">{label}</p>
-      {loading ? (
-        <Skeleton className="mt-2 h-7 w-14" />
-      ) : (
-        <p
-          className={cn(
-            "mt-1 text-2xl font-semibold",
-            emphasis ? "text-amber-700" : "text-black-01",
-          )}
-        >
-          {value ?? 0}
-        </p>
-      )}
-      {sub && <p className="mt-0.5 truncate text-xs text-gray-05">{sub}</p>}
-    </div>
-  );
+/** Two letters from the name, for the row avatar. */
+function initials(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = parts[0][0] ?? "";
+  const last = parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "";
+  return (first + last).toUpperCase();
 }
 
 function ViewButton({
