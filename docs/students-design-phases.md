@@ -5,7 +5,7 @@ Unescaped markup: 334,788 chars, **188 `sc-if` blocks, all 188 accounted for**.
 Backend read against `apps/apps/urls.py` and `apps/schools/vs_students/` in the
 `backend` repo, at commit state of 2026-08-30.
 
-> **Status, 2026-08-31: all eight phases shipped.** This document was written as
+> **Status, 2026-09-01: all eight phases shipped, and section 5 is empty.** This document was written as
 > a plan and is kept as a record. Section 3 carries what each phase actually
 > built, what it found, and the commit it landed in - the original scoping text
 > is left under each heading so the two can be compared. Every backend ask in
@@ -13,7 +13,7 @@ Backend read against `apps/apps/urls.py` and `apps/schools/vs_students/` in the
 >
 > The module was driven end to end against `lagoon-view` (live, two branches)
 > and `sunrise-academy` (live, one branch, the recede case). 346 frontend tests
-> and 185 `vs_students` tests pass; no route overflows at 390px or 820px.
+> and 201 `vs_students` tests pass; no route overflows at 390px or 820px.
 
 ---
 
@@ -699,29 +699,46 @@ again next time a module is built alongside its backend.
 
 ## 5. What is left
 
-Nothing in the eight phases. These are the loose ends the build created or
-uncovered, in the order they are worth doing.
+Nothing. All eight phases shipped and every loose end below is now closed;
+the list is kept as a record of what the build uncovered.
 
 1. ~~The onboarding import page is out of date.~~ **Fixed.** Its prose claimed
    the students dataset had no template and no model; the merge logic was
    already correct, so only the comments and the redundant placeholder needed
    to go. Required templates now sort first, because a live template arrives
    through the server's list and was landing under the optional placeholders.
-2. **`school.students.import` / `.export` may be missing in other environments.**
-   They exist in code and in the "Student Bulk Data" group but had no `Permission`
-   rows in the local database until `seed_all_permissions` was re-run. Staging is
-   worth checking.
-3. **The nav badges the design draws** on Applicants and "No class" were never
-   built - `NavMain` has no badge support, and the counts belong on the items
-   they describe rather than parked on the directory.
-4. **`?session=` on the class roster**, if anyone asks to read a past year's
-   register. Deliberately the only session parameter this module should grow.
+2. ~~`school.students.import` / `.export` may be missing.~~ **Checked, fine.**
+   All eight student keys resolve true for a seeded school administrator on the
+   local database, so the gates are live rather than dead. Still worth a glance
+   on staging, where the seeder may not have been re-run.
+3. ~~The nav badges the design draws.~~ **Built**, `9e2bb49`. Applicants and
+   Classes & Transfers carry their counts; the directory gets none, because a
+   count of the roll is a fact rather than a job. The query is skipped for a
+   PENDING school - firing it from the sidebar would have redirected an
+   onboarding school to the not-live screen on every page.
+4. ~~`?session=` on the class roster.~~ **Not needed, and the route was
+   broken.** M13 gave classes a year, so the roster's session comes from the
+   class - a parameter could only ever disagree with it. `ce27dd8`.
 
-One thing found while building it, unrelated and pre-existing: writing an
-export notification fails on this dev database with `column
-"origin_tenant_id" of relation "vs_notifications_notification" does not
-exist` - an unapplied notifications migration. It does not block the export,
-which still returns its file.
+**Nothing is outstanding.**
+
+### Two defects found while finishing, both fixed
+
+Neither was in this module's scope, and both were breaking something in front
+of a user.
+
+- **The class register answered for the wrong year** (`ce27dd8`). `SSS2 B` in
+  2027/2028 holds twenty-five children and its register read `0 of 30`, because
+  the view used the school's ACTIVE year rather than the class's own. Silent:
+  an empty class is an ordinary thing for a register to say, and nothing named
+  the year it had looked in.
+- **Every `/v1/notify/` request 500d** (`acee29d`, backend). Notifications
+  migration `0010` could not be applied to any database holding a row: Django
+  defers a new column's index to the end of the migration, so the order became
+  ADD COLUMN, UPDATE every row, CREATE INDEX - and Postgres will not index a
+  table whose rows the same transaction just touched. Empty database, no rows,
+  no failure, which is why it shipped. Split into `0010` schema and `0011`
+  data. This affected every page with the notification bell, not this module.
 
 ### Dev-data notes
 
