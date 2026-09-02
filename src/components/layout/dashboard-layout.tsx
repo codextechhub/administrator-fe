@@ -4,6 +4,7 @@ import { WorkspaceToaster } from "@/components/ui/sonner";
 import { AppSidebar } from "../app-sidebar";
 import { ConsoleSidebar } from "@/components/finance-ui/console-sidebar";
 import { financeNav } from "@/pages/protected/finance/finance-nav";
+import { procurementNav } from "@/pages/protected/procurement/procurement-nav";
 import { ChevronLeft, Headset, Loader2, LogOut, Undo2, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLogout } from "@/hooks/use-logout";
@@ -208,7 +209,9 @@ export default function DashboardLayout() {
         <DashboardToaster />
         {sidebar === "finance"
           ? <ConsoleSidebar title="Finance" nav={financeNav} />
-          : <AppSidebar onboarding={onboarding} />}
+          : sidebar === "procurement"
+            ? <ConsoleSidebar title="Procurement" nav={procurementNav} />
+            : <AppSidebar onboarding={onboarding} />}
         <SidebarInset className="bg-white-05 min-w-0 w-auto">
           {/* Banner + header pin together: two independently sticky bars at
               top-0 would overlap as soon as the page scrolls. */}

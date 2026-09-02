@@ -18,6 +18,7 @@ import { Link, useLocation } from "react-router";
 import {
   BookOpen,
   CalendarClock,
+  ShoppingCart,
   Wallet,
   CalendarRange,
   ArrowLeftRight,
@@ -426,6 +427,16 @@ export function AppSidebar({
             icon: Wallet,
             isActive: location.startsWith(routesPath.PROTECTED.FINANCE.INDEX),
             childActive: location.startsWith(routesPath.PROTECTED.FINANCE.INDEX),
+          }]
+        : []),
+      // Procurement, gated the same way and for the same reason.
+      ...(hasModuleAccess("procurement.")
+        ? [{
+            title: "Procurement",
+            url: routesPath.PROTECTED.PROCUREMENT.INDEX,
+            icon: ShoppingCart,
+            isActive: location.startsWith(routesPath.PROTECTED.PROCUREMENT.INDEX),
+            childActive: location.startsWith(routesPath.PROTECTED.PROCUREMENT.INDEX),
           }]
         : []),
     ],
