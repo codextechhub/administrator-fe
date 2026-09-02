@@ -4,12 +4,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 const slug = vi.fn();
 vi.mock("@/utils/school-host", () => ({ currentSchoolSlug: () => slug() }));
 
-const { default: SchoolMark } = await import("./school-mark");
+const { default: SignInMark } = await import("./sign-in-mark");
 const { schoolLogoUrl } = await import("@/utils/school-brand");
 
 function render(forSlug: string) {
   slug.mockReturnValue(forSlug);
-  return renderToStaticMarkup(<SchoolMark className="h-8" />);
+  return renderToStaticMarkup(<SignInMark className="h-8" />);
 }
 
 describe("schoolLogoUrl", () => {
@@ -31,7 +31,7 @@ describe("schoolLogoUrl", () => {
   });
 });
 
-describe("SchoolMark", () => {
+describe("SignInMark", () => {
   it("asks for the school's crest when the address names a school", () => {
     const html = render("holy-cross");
 

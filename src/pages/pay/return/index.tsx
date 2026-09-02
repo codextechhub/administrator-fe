@@ -1,5 +1,11 @@
+import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { CheckCircle2 } from "lucide-react";
+
+import SignInMark from "@/components/auth/sign-in-mark";
+import { useBrandFavicon } from "@/hooks/use-brand-favicon";
+import { currentSchoolSlug } from "@/utils/school-host";
+import { schoolLogoUrl } from "@/utils/school-brand";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Where the payment provider returns a payer once they are done.
@@ -17,12 +23,18 @@ import { CheckCircle2 } from "lucide-react";
 // ─────────────────────────────────────────────────────────────────────────────
 export default function PaymentReturn() {
   const [params] = useSearchParams();
+  // The gateway returns the payer to the host they paid from, so the school is
+  // in the address. It cannot come from the invoice here: all that survives the
+  // round trip is a reference.
+  const [slug] = useState(() => currentSchoolSlug());
+  useBrandFavicon(schoolLogoUrl(slug));
   // Paystack sends both; other providers send one or the other.
   const reference = params.get("reference") || params.get("trxref") || "";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
       <div className="w-full max-w-md rounded-xl border bg-background p-6 text-center shadow-sm sm:p-8">
+        <SignInMark className="mx-auto mb-4 h-9 w-auto" />
         <CheckCircle2 className="mx-auto size-10 text-muted-foreground" />
         <h1 className="mt-4 text-lg font-semibold">Thank you</h1>
         <p className="mt-2 text-sm text-muted-foreground">

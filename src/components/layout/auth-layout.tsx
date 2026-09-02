@@ -1,14 +1,22 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet } from "react-router";
 import ArrangingShapes from "@/components/auth/arranging-shapes";
-import SchoolMark from "@/components/auth/school-mark";
+import SignInMark from "@/components/auth/sign-in-mark";
 import { AuthToaster } from "@/components/ui/sonner";
-import { resetFavicon } from "@/utils/favicon";
+import { useBrandFavicon } from "@/hooks/use-brand-favicon";
+import { currentSchoolSlug } from "@/utils/school-host";
+import { schoolLogoUrl } from "@/utils/school-brand";
 
 export default function AuthLayout() {
+  // Read once per mount: the address cannot change without a page load.
+  const [slug] = useState(() => currentSchoolSlug());
+  // The tab matched the page until the page grew a crest. A school signing in
+  // at its own address should not find the product's mark in the tab strip
+  // while its own badge sits on the form.
+  useBrandFavicon(schoolLogoUrl(slug));
+
   useEffect(() => {
     document.title = "Accounts - XVS";
-    resetFavicon();
   }, []);
 
   return (
@@ -36,9 +44,9 @@ export default function AuthLayout() {
               otherwise. See components/auth/school-mark. */}
           {/* Mobile-only - part of the centered block below lg. The blue
               panel carries the mark on desktop, so this is hidden there. */}
-          <SchoolMark className="lg:hidden h-8 w-auto mx-auto mb-6" />
+          <SignInMark className="lg:hidden h-8 w-auto mx-auto mb-6" />
           {/* Desktop-only (blue panel is shown alongside). */}
-          <SchoolMark className="hidden lg:block h-12 w-auto mx-auto mb-6" />
+          <SignInMark className="hidden lg:block h-12 w-auto mx-auto mb-6" />
           <Outlet />
         </div>
       </div>

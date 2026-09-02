@@ -7,6 +7,7 @@ import {
   useInvoicePaySummaryQuery,
   useStartInvoiceCheckoutMutation,
 } from "@/redux/services/pay/pay-api";
+import { useBrandFavicon } from "@/hooks/use-brand-favicon";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Paying an invoice from the link in its email.
@@ -52,6 +53,10 @@ export default function PayInvoice() {
     isError,
   } = useInvoicePaySummaryQuery(token!, { skip: !token });
   const [startCheckout, { isLoading: starting }] = useStartInvoiceCheckoutMutation();
+  // The issuer's own crest, taken from the invoice rather than the address: a
+  // platform invoice is opened on pay.<host>, which names no school, so the
+  // host cannot answer this one and the invoice can.
+  useBrandFavicon(data?.data?.logo_url);
   const [error, setError] = useState("");
 
   // Held separately from `starting` so the button stays disabled through the
