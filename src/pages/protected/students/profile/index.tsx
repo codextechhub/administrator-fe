@@ -24,6 +24,8 @@ import type {
 import { StudentDrawers, type DrawerRequest } from "../drawers";
 import { formatDate, formatDateTime, titleCaseCode } from "../format";
 import { statusChipClass } from "../status-chip";
+import { Dot } from "../guardians/person-card";
+import { personInitials } from "../person-name";
 import { Lifecycle } from "./lifecycle";
 import { EmptyRing } from "../empty-ring";
 import { Rows, type Row } from "./rows";
@@ -93,7 +95,7 @@ export default function StudentProfile() {
                 aria-hidden
                 className="grid size-18 shrink-0 place-content-center rounded-full bg-white-03 text-2xl font-semibold text-primary"
               >
-                {initials(student.full_name)}
+                {personInitials(student.full_name)}
               </span>
 
               <div className="min-w-55 flex-1">
@@ -624,22 +626,6 @@ function Panel({
       {children}
     </section>
   );
-}
-
-/** The 3px separator the design puts between the header's facts. */
-function Dot() {
-  return (
-    <span aria-hidden className="size-[3px] shrink-0 rounded-full bg-gray-02" />
-  );
-}
-
-/** Two letters from the name, for the header avatar. */
-function initials(fullName: string) {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  const first = parts[0][0] ?? "";
-  const last = parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "";
-  return (first + last).toUpperCase();
 }
 
 function PanelSkeleton() {

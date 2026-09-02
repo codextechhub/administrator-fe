@@ -11,7 +11,10 @@ import { useGetGuardianQuery } from "@/redux/services/students/students-api";
 import { RELATIONSHIPS } from "@/redux/services/students/students-types";
 
 import { statusChipClass } from "../status-chip";
+import { EmptyRing } from "../empty-ring";
 import { LinkChildDrawer } from "../drawers/link-child-drawer";
+import { Dot, FooterLead, PersonCard, SiblingsPill } from "./person-card";
+import { personInitials } from "../person-name";
 
 function relationshipLabel(code: string) {
   return RELATIONSHIPS.find((r) => r.value === code)?.label ?? code;
@@ -58,115 +61,115 @@ export default function GuardianDetail() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <header className="rounded-xl border border-white-02 bg-white p-4">
+      <header className="rounded-lg bg-white px-6 py-5.5">
         {isLoading || !guardian ? (
           <div className="grid gap-2">
             <Skeleton className="h-6 w-56" />
             <Skeleton className="h-4 w-72" />
           </div>
         ) : (
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="truncate text-lg font-semibold text-black-01">
-                {guardian.full_name}
-              </h2>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-05">
+          <div className="flex flex-wrap items-start gap-4.5">
+            {/* Same avatar the profile uses, one size down. A guardian is a
+                person's record too, and giving one a face while the other
+                opens with a line of text makes them read as different kinds
+                of thing. */}
+            <span
+              aria-hidden
+              className="grid size-16 shrink-0 place-content-center rounded-full bg-white-03 text-[21px] font-semibold text-primary"
+            >
+              {personInitials(guardian.full_name)}
+            </span>
+
+            <div className="min-w-55 flex-1">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h2 className="text-[21px] font-semibold text-black-01">
+                  {guardian.full_name}
+                </h2>
+                {wards.length > 1 && <SiblingsPill />}
+              </div>
+              <p className="mt-1.5 text-[13px] text-gray-05">
+                {wards.length === 1
+                  ? "One student at this school"
+                  : `${wards.length} students at this school`}
+              </p>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2.5 text-[13px] text-gray-01">
                 <span>{guardian.phone || "No phone recorded"}</span>
                 {guardian.email && (
                   <>
-                    <span aria-hidden>·</span>
+                    <Dot />
                     <span className="break-all">{guardian.email}</span>
                   </>
                 )}
                 {guardian.occupation && (
                   <>
-                    <span aria-hidden>·</span>
+                    <Dot />
                     <span>{guardian.occupation}</span>
                   </>
                 )}
-              </p>
+              </div>
               {guardian.address && (
-                <p className="mt-1 text-xs text-gray-05">{guardian.address}</p>
+                <p className="mt-1.5 text-[13px] text-gray-05">
+                  {guardian.address}
+                </p>
               )}
             </div>
-            <Button size="sm" onClick={() => setLinking(true)}>
+
+            <Button className="shrink-0" onClick={() => setLinking(true)}>
               Link another child
             </Button>
           </div>
         )}
       </header>
 
-      <section className="min-w-0 rounded-xl border border-white-02 bg-white p-4">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <h3 className="text-xs font-medium text-gray-05">
-            {wards.length === 1
-              ? "One student at this school"
-              : `${wards.length} students at this school`}
-          </h3>
-          {wards.length > 1 && (
-            <span className="rounded-full bg-white-03 px-2 py-0.5 text-xs text-primary">
-              Siblings
-            </span>
-          )}
-        </div>
+      {/* The ward count is in the header now, so this says only what the
+          header cannot: WHY the school treats these children as one household. */}
+      {wards.length > 1 && (
+        <p className="text-sm text-gray-01">
+          These students are siblings as far as the school is concerned: one
+          guardian, one household, one point of contact.
+        </p>
+      )}
 
-        {isLoading ? (
-          <Skeleton className="h-24 w-full" />
-        ) : wards.length === 0 ? (
-          <p className="py-6 text-center text-sm text-gray-05">
-            Nobody is linked to this guardian yet.
-          </p>
-        ) : (
-          <>
-            {wards.length > 1 && (
-              <p className="mb-3 text-xs text-gray-05">
-                These students are siblings as far as the school is concerned:
-                one guardian, one household, one point of contact.
-              </p>
-            )}
-            <ul className="grid gap-2.5">
-              {wards.map((w) => (
-                <li key={w.id}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(w.id))
-                    }
-                    className="flex w-full min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border border-white-02 bg-white p-3 text-left hover:border-primary/40"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-black-01">
-                        {w.name}
-                      </p>
-                      <p className="truncate text-xs text-gray-05">
-                        {w.student_number || "No admission number"} ·{" "}
-                        <span
-                          className={w.class_name ? undefined : "text-amber-700"}
-                        >
-                          {w.class_name || "Unassigned"}
-                        </span>
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                      <span className="text-xs text-gray-05">
-                        {relationshipLabel(w.relationship)}
-                      </span>
-                      {w.is_primary && (
-                        <span className="rounded-full bg-white-03 px-2 py-0.5 text-xs text-primary">
-                          Primary contact
-                        </span>
-                      )}
-                      <span className={statusChipClass(w.status)}>
-                        {w.status_label}
-                      </span>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </section>
+      {isLoading ? (
+        <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Skeleton key={i} className="h-[122px] rounded-[10px]" />
+          ))}
+        </div>
+      ) : wards.length === 0 ? (
+        <EmptyRing>No students linked yet</EmptyRing>
+      ) : (
+        <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+          {wards.map((w) => (
+            <PersonCard
+              key={w.id}
+              name={w.name}
+              sub={w.student_number || "No admission number"}
+              chip={
+                <span className={statusChipClass(w.status)}>
+                  {w.status_label}
+                </span>
+              }
+              footerLead={
+                <FooterLead tone={w.class_name ? "primary" : "warn"}>
+                  {w.class_name || "Unassigned"}
+                </FooterLead>
+              }
+              footerRest={
+                <>
+                  {relationshipLabel(w.relationship)}
+                  {w.is_primary && (
+                    <span className="ml-2 text-primary">Primary contact</span>
+                  )}
+                </>
+              }
+              onOpen={() =>
+                navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(w.id))
+              }
+            />
+          ))}
+        </div>
+      )}
 
       {guardian && (
         <LinkChildDrawer

@@ -2,25 +2,33 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Search, Users } from "lucide-react";
 
-import CustomTable from "@/components/custom/custom-table";
 import { PageShell } from "@/components/layout/page-shell";
+import { Skeleton } from "@/components/ui/skeleton";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
 import { useGetGuardiansQuery } from "@/redux/services/students/students-api";
-import type { GuardianRow } from "@/redux/services/students/students-types";
+
+import { EmptyRing } from "../empty-ring";
+import { Pager } from "../pager";
+import { FooterLead, PersonCard, SiblingsPill } from "./person-card";
 
 /**
  * The people the school calls.
  *
- * **A household, not a contact list.** The row that matters is the one standing
- * for more than one child: those students are siblings as far as the school is
- * concerned, and that fact lives nowhere else in the product. So the ward count
- * and the children's names are the row, not a detail behind it - a registrar
+ * **A household, not a contact list.** The card that matters is the one
+ * standing for more than one child: those students are siblings as far as the
+ * school is concerned, and that fact lives nowhere else in the product. So the
+ * ward count and the children's names are on the card, not behind it - somebody
  * scanning for "who else does this reach" should not have to open anything.
  *
+ * **Cards rather than a table**, which is the design's shape and the right one:
+ * the useful part of a row is a sentence of names, and a table either gives
+ * that column enough width to starve the rest or truncates it after the first
+ * name, which removes the only thing the row was for.
+ *
  * Search is the only filter, deliberately. A guardian has no status, no class
- * and no branch of their own; the one question asked of this screen is "is
- * this person already here", and that is a search box.
+ * and no branch of their own; the one question asked of this screen is "is this
+ * person already here", and that is a search box.
  */
 export default function Guardians() {
   const navigate = useNavigate();
@@ -34,6 +42,7 @@ export default function Guardians() {
 
   const rows = useMemo(() => data?.data ?? [], [data]);
   const pagination = data?.pagination;
+  const busy = isLoading || isFetching;
 
   if (isError) {
     return (
@@ -51,6 +60,14 @@ export default function Guardians() {
 
   return (
     <PageShell className="content-start gap-5" grid>
+      <div className="min-w-0">
+        <h2 className="text-lg font-semibold text-black-01">Guardians</h2>
+        <p className="mt-1 text-sm text-gray-01">
+          One guardian can stand for several students, which is how the school
+          knows they are siblings.
+        </p>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2.5">
         <div className="relative min-w-0 flex-1 basis-52">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
@@ -73,47 +90,49 @@ export default function Guardians() {
         )}
       </div>
 
-      <CustomTable
-        tableHeaderList={["Guardian", "Phone", "Email", "Students"]}
-        loading={isLoading || isFetching}
-        defaultBodyList={rows}
-        tableBodyList={rows.map((g) => ({
-          Guardian: g.full_name,
-          Phone: g.phone || "Not recorded",
-          Email: g.email || "Not recorded",
-          // The names, not just the count. "3 students" makes a registrar open
-          // the row to answer a question the row could have answered.
-          Students: (
-            <span className="block min-w-0">
-              <span className="block truncate">
-                {g.ward_names.length > 0
-                  ? g.ward_names.join(", ")
-                  : "No students linked"}
-              </span>
-              {g.is_sibling_household && (
-                <span className="mt-0.5 block text-xs text-primary">
-                  Siblings · {g.ward_count} students
-                </span>
-              )}
-            </span>
-          ),
-        }))}
-        onRowClick={(guardian: GuardianRow) => {
-          if (guardian?.id) {
-            navigate(
-              routesPath.PROTECTED.STUDENTS.GUARDIAN_DETAILS_ID(guardian.id),
-            );
-          }
-        }}
-        currentPage={pagination?.currentPage ?? 1}
-        totalPage={pagination?.totalPages ?? 1}
-        onPageChange={(next) => setPage(Number(next) || 1)}
-        emptyText={
-          search.trim()
-            ? `Nobody matches "${search.trim()}"`
-            : "No guardians yet. They are created as students are enrolled."
-        }
-      />
+      {busy ? (
+        <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-[122px] rounded-[10px]" />
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
+        <EmptyRing>
+          {search.trim() ? "No guardian matches that" : "No guardians yet"}
+        </EmptyRing>
+      ) : (
+        <>
+          <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+            {rows.map((g) => (
+              <PersonCard
+                key={g.id}
+                name={g.full_name}
+                sub={g.phone || g.email || "No contact recorded"}
+                chip={g.is_sibling_household ? <SiblingsPill /> : undefined}
+                footerLead={
+                  <FooterLead>
+                    {g.ward_count} {g.ward_count === 1 ? "student" : "students"}
+                  </FooterLead>
+                }
+                // The names, not just the count. "3 students" makes a reader
+                // open the card to answer what the card could have answered.
+                footerRest={g.ward_names.join(", ")}
+                onOpen={() =>
+                  navigate(
+                    routesPath.PROTECTED.STUDENTS.GUARDIAN_DETAILS_ID(g.id),
+                  )
+                }
+              />
+            ))}
+          </div>
+
+          <Pager
+            page={pagination?.currentPage ?? 1}
+            totalPages={pagination?.totalPages ?? 1}
+            onGo={setPage}
+          />
+        </>
+      )}
     </PageShell>
   );
 }
