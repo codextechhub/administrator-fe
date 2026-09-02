@@ -5,15 +5,22 @@ Unescaped markup: 334,788 chars, **188 `sc-if` blocks, all 188 accounted for**.
 Backend read against `apps/apps/urls.py` and `apps/schools/vs_students/` in the
 `backend` repo, at commit state of 2026-08-30.
 
-> **Status, 2026-09-01: all eight phases shipped, and section 5 is empty.** This document was written as
-> a plan and is kept as a record. Section 3 carries what each phase actually
-> built, what it found, and the commit it landed in - the original scoping text
-> is left under each heading so the two can be compared. Every backend ask in
-> section 2 is now closed.
+> **Status, 2026-09-02: shipped, refitted to the design, and scoped by year.**
+> Written as a plan and kept as a record. Section 3 carries what each phase
+> built and the commit it landed in, with the original scoping text left under
+> each heading so the two can be compared. Section 3b carries the refit that
+> followed, which is where the design fidelity actually came from.
 >
-> The module was driven end to end against `lagoon-view` (live, two branches)
-> and `sunrise-academy` (live, one branch, the recede case). 346 frontend tests
-> and 201 `vs_students` tests pass; no route overflows at 390px or 820px.
+> Every backend ask in section 2 is closed. Section 5 is empty.
+>
+> Driven end to end against `lagoon-view` (live, two branches) and
+> `sunrise-academy` (live, one branch, the recede case). 593 frontend tests and
+> 217 `vs_students` tests pass; no route overflows at 390px or 820px.
+>
+> **Two rulings in here were reversed after being made and justified.** Both are
+> kept with their reasoning rather than edited away, because in each case the
+> original argument was reasonable and still wrong, and the shape of the mistake
+> is the useful part: see 2.0 (the session lens) and 3b (borderless surfaces).
 
 ---
 
@@ -106,60 +113,48 @@ seed - every student endpoint is closed to a school that has not gone live.
 
 ## 2. What the backend can serve
 
-### 2.0 Decisions already taken
+### 2.0 The session ruling, and its reversal
 
-**Branch is wired. Session is not.** Settled 2026-08-30, do not re-open without
-a new reason.
+**Both lenses are wired.** Settled 2026-09-02, reversing the 2026-08-30 ruling
+below. Do not re-open without a new reason.
 
-The two header pills look alike and are not alike. `Student.branch` is a single,
-currently-true fact, so filtering on it reports honestly. There is **no
-per-session status, branch, guardian link or document** anywhere in the model:
-`Student.status` is one current column and `StudentGuardian` and
-`StudentDocument` carry no session. The one thing recorded per year is the class
-placement, on `ClassEnrolment.session`.
+The original ruling said branch was wired and session was not, because
+`Student.status` is a single current column and `StudentGuardian` and
+`StudentDocument` carry no session at all - so a year filter would return a
+register part historical and part current with nothing separating the two.
 
-A global session filter would therefore return a register that is one fifth
-historical and four fifths current, with nothing on screen to separate the two:
-last year's SSS3 Science listing Ahmed Lawal correctly from his enrolment row,
-with today's **Graduated** chip beside his name, and two children filed under the
-branch they moved to rather than the one they spent the year at.
+**That reasoning was wrong, and the way it was wrong is worth keeping.** It
+threw away the two things a year CAN answer in order to avoid mis-stating the
+one it cannot, when the fix was to label the one:
 
-So:
+- **The roll is per-year.** Lagoon View had 85 students in 2026/2027 and has 73
+  in 2027/2028. Those are different rolls, not one roll differently filtered.
+- **The class is per-year.** Amaka Adeleke reads SSS1 A in the first and SSS2 A
+  in the second, which is the entire point of a promotion.
 
-1. `?branch=` goes on summary, unplaced, roster and guardians, matching the list
-   view that already has it. Every students query reads `useBranchLens()`.
-2. `?session=` goes on the **class roster only**, where the enrolment row answers
-   the question completely and no current-state column is involved.
-3. **No other students query reads the session lens.**
+Neither question has an answer without a year. Status still has none, so the
+summary returns `status_is_current` and every screen under a past year says so
+in words:
 
-If a school later needs a genuinely historical directory, that is a per-session
-status snapshot, which is a data-model change. Decide it against a real need.
+> Showing the 2027/2028 roll and the classes held that year. Statuses are
+> current: the school records one status per student, not one per year.
 
-**Both pills already exist**, and this is where the ruling costs something.
-`BranchPill` and `SessionPill` are built (`src/components/layout/lens-pills.tsx`),
-backed by `useBranchLens` / `useSessionLens`, and already carry the recede rules
-(one branch, no pill; one session, no pill; a branch-tied admin gets a label
-rather than a menu). Academics, classes and calendar consume them.
+Without that line a **Graduated** chip beside a 2026 register reads as a claim
+about 2026.
 
-But `LensRail` is rendered **globally in the sidebar**
-(`src/components/app-sidebar.tsx:384`), not per route. The `lens` route handle
-gates only the header's read-only notice. So the session pill is on the student
-directory whether or not this module reads it, and turning it will do nothing.
+**Three reads deliberately ignore the year**, and each says why in its own
+docstring: the unplaced worklist, the enrol form's class picker and the transfer
+drawer's. All three feed a placement, placements are made in the running year,
+and the module refuses writes against a closed one - so offering last year's
+classes would offer a seat that cannot be taken.
 
-That is precisely the hazard the house already wrote down, and it names this
-screen while doing it (`src/components/layout/dashboard-layout.tsx:66`):
-
-> "A session pill over the student roster would be a control that changes
-> nothing, and a branch pill on a screen that does not filter by branch is
-> worse: it looks like it narrowed the page."
-
-The comment describes an opt-in that the rail does not actually implement.
-**Phase 1 therefore has to make the rail route-aware**: a handle declaring which
-lenses a screen reads, with `LensRail` rendering only those. Students declares
-branch. Academics and calendar declare both, which is what they do today, so
-nothing regresses. Small, and it is a house-convention fix rather than a
-students one, so it belongs in the shared layout with the comment updated to
-match.
+**Two counts were wrong and were found by writing the tests for this**, not by
+reading the code. `class_seats` had the same `is_active` trap the class register
+had: a promotion turns every row of the year it leaves to `False`, so a class
+that held thirty children reported nought under a past-year lens. It now counts
+each student's LAST row in the year asked about. And `guardian_directory` was
+paginated with no `ORDER BY`, so Postgres could return page 2 carrying a
+guardian already seen on page 1 and drop another entirely.
 
 ### 2.1 Decisions taken while building
 
@@ -655,6 +650,52 @@ ever grow.
 
 ---
 
+## 3b. The refit, 2026-09-01/02
+
+All eight phases shipped, and then the screens were read against the
+prototype's **markup** rather than its state list. That found a class of gap the
+phases could not: every screen was functionally right and several were built
+from the data model rather than from the design.
+
+### What the markup had that the build did not
+
+| Screen | What was missing | Commit |
+|--------|------------------|--------|
+| Directory | The page header, the single overview card (six surfaces where the design draws one), filters behind a panel with a facet count, the row's avatar and amber no-class chip | `8202211` |
+| Profile | The 72px avatar, dot-separated header facts, the tab tray, borderless panels, the ring empty state, "Not on file" | `81f0276` |
+| Classes | The header, and the class picker rebuilt AS the capacity list rather than a bare select | `98e1e4a` |
+| Applicants | Board columns rather than a list | `762a946` |
+| Guardians | A card grid rather than a table - the useful part of a row is a sentence of names, which a table truncates after the first | `f4cad4b`+ |
+| Enrol | Gender as buttons, required asterisks, the guardian matches floating rather than reflowing the form | `46b60b6` |
+
+**The recurring mistake was building from the endpoint.** Given a shape and a
+list of states, the result is a correct screen that looks like a table of the
+data. The design's own comments say what each screen is FOR, and that is the
+part that does not survive being inferred.
+
+### The shared-component sweep, `d4a32f1`
+
+The students screens used four of the twenty-three components in
+`components/custom` and reimplemented several of the rest. Two of those
+components say in their own comments that this keeps happening:
+`segmented-toggle.tsx` records five hand-rolled copies and that "a sixth was
+about to be written" - this module wrote the seventh; `surface.tsx` records four
+copies of the clickable card of which only two animated - this module wrote a
+fifth, with the same dead hover.
+
+Adopted: `SegmentedToggle`, `ClickableCard`, `Panel` (nine surfaces), `KpiCard`
+(eight tiles), and `Tabs` on the profile and Classes & Transfers - which also
+puts the active tab in the URL, so `?tab=guardians` is a link somebody can send.
+
+**This reversed a call made three commits earlier.** Borders had been removed
+from these surfaces to match the prototype. That was fidelity to one module's
+mockup at the cost of the app: sixteen files already import the shared surface,
+and a registrar moving from Academic Structure to Students would have seen two
+treatments of the same white box. House consistency wins; the prototype was
+drawn without knowledge of the screens already shipped.
+
+---
+
 ## 4. Order, and why
 
 1. **Seed first.** A phase that builds screens you cannot put into their states is
@@ -721,6 +762,23 @@ the list is kept as a record of what the build uncovered.
    class - a parameter could only ever disagree with it. `ce27dd8`.
 
 **Nothing is outstanding.**
+
+### Defects found after the phases, all fixed
+
+Four, none of them in the phase plan, all found by reading the design or by
+writing a test rather than by using the app:
+
+- **`class_seats` reported nought for a past year** (`913eff9`). Same
+  `is_active` trap as the class register: a promotion turns every row of the
+  year it leaves to `False`. Now counts each student's last row in the year
+  asked about, which also settles a mid-year transfer.
+- **The guardian directory was paginated with no `ORDER BY`** (`913eff9`).
+  Postgres could return page 2 carrying a guardian already seen on page 1 and
+  drop another entirely, with nothing to tell the reader.
+- **A near miss, caught while writing it** (`9e2bb49`). Wiring the nav counts
+  meant the SIDEBAR calling a student endpoint, which a pending school is
+  refused - and the refusal redirects. Unguarded, every onboarding school would
+  have been thrown off whatever page they opened, on every page.
 
 ### Two defects found while finishing, both fixed
 
