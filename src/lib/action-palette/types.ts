@@ -23,11 +23,17 @@ import type { PermissionCode } from "@/permissions";
 // - "Account"    - the header account menu (proxy, logout), which is not
 //                  navigation at all.
 // Add a name here (and to SECTION_ORDER) when the app grows a new area.
+//
+// Finance and Procurement are two sections rather than one because they are two
+// consoles: opening either replaces the school sidebar with that area's own, and
+// a bursar looking for a supplier payment is not in the same place as one
+// looking for a fee invoice.
 export type ActionSection =
   | "Overview"
   | "People"
   | "Academics"
   | "Finance"
+  | "Procurement"
   | "Settings"
   | "Onboarding"
   | "Account";

@@ -58,11 +58,17 @@ export const COLLAPSED_COUNT = 5;
 // stays reachable in both states.
 const ALWAYS_AVAILABLE_ACTION_IDS: readonly string[] = ["get-help"];
 
+// Sets, not the arrays themselves. This runs once per action per render of the
+// dropdown, and LIVE_ONLY went from five entries to one per closed screen when
+// Finance and Procurement joined the registry - a linear scan of that, eighty
+// times, on every keystroke.
+const ALWAYS_AVAILABLE = new Set(ALWAYS_AVAILABLE_ACTION_IDS);
+const LIVE_ONLY = new Set(LIVE_ONLY_ACTION_IDS);
+const PENDING_ONLY = new Set(PENDING_ONLY_ACTION_IDS);
+
 export function isAvailableAtReadiness(actionId: string, tenantIsPending: boolean): boolean {
-  if (ALWAYS_AVAILABLE_ACTION_IDS.includes(actionId)) return true;
-  return tenantIsPending
-    ? !LIVE_ONLY_ACTION_IDS.includes(actionId)
-    : !PENDING_ONLY_ACTION_IDS.includes(actionId);
+  if (ALWAYS_AVAILABLE.has(actionId)) return true;
+  return tenantIsPending ? !LIVE_ONLY.has(actionId) : !PENDING_ONLY.has(actionId);
 }
 
 // ── Identity ─────────────────────────────────────────────────────────────────

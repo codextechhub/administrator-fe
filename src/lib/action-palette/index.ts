@@ -3,6 +3,8 @@
 //
 // The registry of actions lives in ./registry.
 export { ACTIONS, LIVE_ONLY_ACTION_IDS, PENDING_ONLY_ACTION_IDS } from "./registry";
+export { consoleActions, consoleActionId } from "./console-actions";
+export type { ConsoleSource } from "./console-actions";
 
 export { scoreAction, TIER } from "./match";
 export type { MatchResult } from "./match";
@@ -21,6 +23,7 @@ export const SECTION_ORDER: ActionSection[] = [
   "People",
   "Academics",
   "Finance",
+  "Procurement",
   "Settings",
   "Onboarding",
   "Account",

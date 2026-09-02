@@ -19,7 +19,18 @@ import { branchesRoutes } from "@/routes/protected/branches-routes";
 import { classesRoutes } from "@/routes/protected/classes-routes";
 import { onboardingRoutes, onboardingWelcomeRoute } from "@/routes/protected/onboarding-routes";
 import { overviewRoutes } from "@/routes/protected/overview-routes";
-import { ACTIONS, LIVE_ONLY_ACTION_IDS, PENDING_ONLY_ACTION_IDS } from "./registry";
+import { studentsRoutes } from "@/routes/protected/students-routes";
+import { financeRoutes, FINANCE_MOUNTED_PATHS } from "@/routes/protected/finance-routes";
+import {
+  procurementRoutes,
+  PROCUREMENT_MOUNTED_PATHS,
+} from "@/routes/protected/procurement-routes";
+import {
+  ACTIONS,
+  LIVE_ONLY_ACTION_IDS,
+  PENDING_ONLY_ACTION_IDS,
+  pathOpensBeforeGoLive,
+} from "./registry";
 import type { ActionDef } from "./types";
 
 // The paths the router genuinely mounts. Taken from the route modules rather
@@ -31,18 +42,85 @@ import type { ActionDef } from "./types";
 //
 // The protected route barrel is deliberately NOT imported: it pulls in
 // DashboardLayout eagerly, and with it the whole shell.
-const SERVED_PATHS = new Set(
-  [
+const SERVED_PATHS = new Set([
+  ...[
     onboardingWelcomeRoute,
     ...onboardingRoutes,
     ...overviewRoutes,
     ...branchesRoutes,
     ...academicRoutes,
     ...classesRoutes,
+    ...studentsRoutes,
   ]
     .map((route) => route.path)
     .filter((path): path is string => typeof path === "string"),
-);
+  // The two consoles mount one path per real section under a single parent, so
+  // their paths live in the sets the route tables build for the sidebar rather
+  // than at the top level of the array.
+  ...FINANCE_MOUNTED_PATHS,
+  ...PROCUREMENT_MOUNTED_PATHS,
+]);
+
+// Which screens a school may open before go-live, straight off the route
+// handles. DashboardLayout closes a page when
+// `tenantIsPending && !onboardingRoute && !pendingSurface`, so those two flags
+// ARE the rule; the palette keeps its own prefix list and these tests are what
+// stop the two from drifting.
+//
+// Handles are inherited: the finance and procurement children sit under one
+// parent that carries the handle for all of them, exactly as DashboardLayout
+// merges `useMatches()` from the root down.
+interface RouteLike {
+  path?: string;
+  handle?: { pendingSurface?: boolean; onboarding?: boolean };
+  children?: RouteLike[];
+}
+
+function collectHandles(
+  routes: RouteLike[],
+  inherited: RouteLike["handle"] = {},
+  into: Map<string, NonNullable<RouteLike["handle"]>> = new Map(),
+): Map<string, NonNullable<RouteLike["handle"]>> {
+  for (const route of routes) {
+    const merged = { ...inherited, ...(route.handle ?? {}) };
+    if (typeof route.path === "string") into.set(route.path, merged);
+    if (route.children) collectHandles(route.children, merged, into);
+  }
+  return into;
+}
+
+// `onboardingWelcomeRoute` is deliberately absent. It is mounted as a SIBLING
+// of the layout route rather than a child, so it has no shell and the closed
+// wall cannot be drawn over it - the handle flags say nothing about it because
+// there is nothing for them to say. It is still a served path; it is just not
+// somewhere the go-live rule applies.
+const ROUTE_HANDLES = collectHandles([
+  ...onboardingRoutes,
+  ...overviewRoutes,
+  ...branchesRoutes,
+  ...academicRoutes,
+  ...classesRoutes,
+  ...studentsRoutes,
+  ...financeRoutes,
+  ...procurementRoutes,
+] as RouteLike[]);
+
+const routeOpensBeforeGoLive = (path: string): boolean => {
+  const handle = ROUTE_HANDLES.get(path);
+  return !!(handle?.pendingSurface || handle?.onboarding);
+};
+
+// The old addresses `redirects()` still answers. `pendingSurface` on a redirect
+// is not a statement about a screen - it is what stops the layout answering
+// before the redirect runs - so they are nobody's destination and sit outside
+// this agreement. A new redirect appearing should fail here and be added
+// deliberately, not slip through.
+const LEGACY_REDIRECTS = new Set([
+  "/academic",
+  "/academic/session",
+  "/academic/calender",
+  "/classes",
+]);
 
 // Every literal path routesPath declares, so an action's `to` can be traced
 // back to the path table as well as to the router. Path *builders* (functions)
@@ -78,6 +156,9 @@ function gateCodes(action: ActionDef): PermissionCode[] {
 const navActions = ACTIONS.filter(
   (action): action is ActionDef & { run: { to: string } } => "to" in action.run,
 );
+
+const isConsolePath = (to: string): boolean =>
+  to.startsWith("/finance") || to.startsWith("/procurement");
 
 describe("action registry shape", () => {
   it("is a non-empty list", () => {
@@ -127,6 +208,13 @@ describe("action registry destinations", () => {
 
   it("navigates only to paths routesPath declares", () => {
     for (const action of navActions) {
+      // Finance and Procurement are excluded on purpose. routesPath names each
+      // console's top-level screens, but a section path
+      // ("/finance/receivables/invoices") is built by the route table from the
+      // package's own section lists and never written down here. Their
+      // guarantee is the stronger one anyway: those actions are derived FROM
+      // the mounted paths, so the test above is the whole check.
+      if (isConsolePath(action.run.to)) continue;
       expect(DECLARED_PATHS.has(action.run.to), action.id).toBe(true);
     }
   });
@@ -190,6 +278,33 @@ describe("readiness lists", () => {
     const live = new Set(LIVE_ONLY_ACTION_IDS);
     for (const id of PENDING_ONLY_ACTION_IDS) {
       expect(live.has(id), id).toBe(false);
+    }
+  });
+
+  it("closes exactly what the router closes", () => {
+    // The failure this catches, in the direction that hurt: Sessions & Terms
+    // carries `pendingSurface: true` because a school cannot go live without
+    // building its academic structure, and the hand-written list called it
+    // live-only. Corona Secondary, still onboarding, typed "sessions" into the
+    // search box and got nothing back, while the sidebar three inches to the
+    // left was offering the same screen.
+    const live = new Set(LIVE_ONLY_ACTION_IDS);
+    for (const action of navActions) {
+      const path = pathOf(action.run.to);
+      expect(!live.has(action.id), `${action.id} -> ${path}`).toBe(
+        routeOpensBeforeGoLive(path),
+      );
+    }
+  });
+
+  it("agrees with every route handle, not just the ones an action points at", () => {
+    // The reverse direction, so a screen mounted as a pending surface is caught
+    // before anybody gives it a palette row.
+    for (const [path, handle] of ROUTE_HANDLES) {
+      if (path.includes(":") || LEGACY_REDIRECTS.has(path)) continue;
+      expect(pathOpensBeforeGoLive(path), path).toBe(
+        !!(handle.pendingSurface || handle.onboarding),
+      );
     }
   });
 });

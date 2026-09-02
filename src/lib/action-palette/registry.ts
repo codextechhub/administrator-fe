@@ -8,14 +8,20 @@
 //      door that answers 403 on arrival.
 //   3. src/components/layout/app-search.tsx - the destination list this replaces.
 //
+// Finance and Procurement are NOT typed out here. They are fifty-odd screens
+// that ship inside @xvs/finance and move on a version bump, so they are derived
+// from the two console sidebars instead - see console-actions.ts for why, and
+// for what the derivation adds on the way through. Everything below is this
+// app's own, where the sidebar is built here too and there is no second list to
+// drift from.
+//
 // Deliberately absent:
-// - Finance and Settings. The sidebar draws both, but their `url` is "#" and
-//   there is no route behind either, so an action would navigate nowhere.
 // - /onboarding/welcome and /onboarding/not-live. One is the screen before you
 //   enter, the other is where a refusal lands. Neither is somewhere a person
 //   asks to go.
-// - /onboarding/import/:batchId/validation. It needs a batch id, and there is
-//   no batch to name from a search box.
+// - /onboarding/import/:batchId/validation, /students/:id and
+//   /students/guardians/:id. Each needs an id, and there is no id to name from
+//   a search box. The student search above the actions covers the profile.
 //
 // ── Labels ───────────────────────────────────────────────────────────────────
 // Labels lead with a verb because the matcher expands the leading verb through
@@ -27,11 +33,16 @@
 
 import { P } from "@/permissions";
 import { routesPath } from "@/routes/routesPath";
-import type { ActionDef } from "./types";
+import {
+  schoolFinanceNav,
+  schoolProcurementNav,
+} from "@/components/layout/console-nav-for-school";
+import { consoleActions } from "./console-actions";
+import type { ActionDef, ActionRun } from "./types";
 
 const R = routesPath.PROTECTED;
 
-export const ACTIONS: ActionDef[] = [
+const SCHOOL_ACTIONS: ActionDef[] = [
   // ── Overview ───────────────────────────────────────────────────────────────
   {
     id: "view-dashboard",
@@ -69,6 +80,76 @@ export const ACTIONS: ActionDef[] = [
     kind: "view",
     gate: null,
     run: { to: R.NOTIFICATIONS },
+  },
+
+  // ── People ─────────────────────────────────────────────────────────────────
+  //
+  // Gates match app-sidebar.tsx item for item. Three of these five screens are
+  // reachable by a reader who holds only `BROWSE_STUDENTS`; placing a child and
+  // running a promotion are separate keys because they are separate jobs.
+  {
+    id: "view-students",
+    label: "View students",
+    aliases: ["roster", "roll", "pupils", "children", "student directory"],
+    section: "People",
+    group: "Students",
+    kind: "view",
+    gate: { perm: P.BROWSE_STUDENTS },
+    run: { to: R.STUDENTS.INDEX },
+  },
+  {
+    id: "view-applicants",
+    label: "View applicants",
+    aliases: ["applications", "admissions", "waiting list"],
+    section: "People",
+    group: "Students",
+    kind: "view",
+    gate: { perm: P.BROWSE_STUDENTS },
+    run: { to: R.STUDENTS.APPLICANTS },
+  },
+  {
+    // A page, not a drawer, so it is a destination like any other - but it is
+    // an act rather than a view, and the row carries the "Action" chip to say
+    // so. `enrol` is in the matcher's create group, so "add a student" and
+    // "register a child" both land here.
+    id: "enrol-student",
+    label: "Enrol a student",
+    aliases: ["admit a child", "new student", "intake"],
+    section: "People",
+    group: "Students",
+    kind: "do",
+    gate: { perm: P.ENROLL_STUDENT },
+    run: { to: R.STUDENTS.ENROL },
+  },
+  {
+    id: "view-class-transfers",
+    label: "View classes and transfers",
+    aliases: ["assign a class", "place a student", "unassigned", "move a child"],
+    section: "People",
+    group: "Students",
+    kind: "view",
+    gate: { perm: P.ASSIGN_CLASS },
+    run: { to: R.STUDENTS.ASSIGN },
+  },
+  {
+    id: "view-guardians",
+    label: "View guardians",
+    aliases: ["parents", "households", "families", "next of kin"],
+    section: "People",
+    group: "Students",
+    kind: "view",
+    gate: { perm: P.BROWSE_STUDENTS },
+    run: { to: R.STUDENTS.GUARDIANS },
+  },
+  {
+    id: "view-promotion",
+    label: "View promotion",
+    aliases: ["promote students", "end of session", "move up a year"],
+    section: "People",
+    group: "Students",
+    kind: "view",
+    gate: { perm: P.MANAGE_STUDENTS },
+    run: { to: R.STUDENTS.PROMOTION },
   },
 
   // ── Academics ──────────────────────────────────────────────────────────────
@@ -145,6 +226,93 @@ export const ACTIONS: ActionDef[] = [
     kind: "view",
     gate: { perm: P.BROWSE_CLASSES },
     run: { to: R.ACADEMIC_STRUCTURE.CLASSES },
+  },
+
+  {
+    id: "view-assignments",
+    label: "View assignments",
+    aliases: ["who teaches what", "class teacher", "subject teacher", "teaching load"],
+    section: "Academics",
+    group: "Academic structure",
+    kind: "view",
+    // Gated on classes rather than structure, matching the sidebar child: this
+    // screen is about who teaches a class and who sits in it.
+    gate: { perm: P.BROWSE_CLASSES },
+    run: { to: R.ACADEMIC_STRUCTURE.ASSIGNMENTS },
+  },
+  {
+    id: "view-calendar-events",
+    label: "View events",
+    aliases: ["calendar events", "add an event", "term dates", "midterm"],
+    section: "Academics",
+    group: "Academic calendar",
+    kind: "view",
+    gate: { perm: P.BROWSE_CALENDAR },
+    run: { to: R.ACADEMIC_CALENDAR.EVENTS },
+  },
+  {
+    id: "view-term-calendar",
+    label: "View term calendar",
+    aliases: ["term view", "this term", "by term"],
+    section: "Academics",
+    group: "Academic calendar",
+    kind: "view",
+    gate: { perm: P.BROWSE_CALENDAR },
+    run: { to: R.ACADEMIC_CALENDAR.TERM_VIEW },
+  },
+
+  // The timetable half. Its own backend key: a reader may hold
+  // `academics.calendar.view` and not `academics.timetable.view`, so these five
+  // are gated apart from the three above rather than with them.
+  {
+    id: "view-rooms",
+    label: "View rooms",
+    aliases: ["classrooms", "venues", "labs", "halls"],
+    section: "Academics",
+    group: "Timetables",
+    kind: "view",
+    gate: { perm: P.BROWSE_TIMETABLES },
+    run: { to: R.TIMETABLES.ROOMS },
+  },
+  {
+    id: "view-bell-schedule",
+    label: "View bell schedule",
+    aliases: ["periods", "bells", "lesson times", "school day"],
+    section: "Academics",
+    group: "Timetables",
+    kind: "view",
+    gate: { perm: P.BROWSE_TIMETABLES },
+    run: { to: R.TIMETABLES.BELL_SCHEDULE },
+  },
+  {
+    id: "view-class-timetables",
+    label: "View class timetables",
+    aliases: ["timetable", "class schedule", "lesson plan"],
+    section: "Academics",
+    group: "Timetables",
+    kind: "view",
+    gate: { perm: P.BROWSE_TIMETABLES },
+    run: { to: R.TIMETABLES.CLASSES },
+  },
+  {
+    id: "view-teacher-timetables",
+    label: "View teacher timetables",
+    aliases: ["staff timetable", "who is free", "teacher schedule"],
+    section: "Academics",
+    group: "Timetables",
+    kind: "view",
+    gate: { perm: P.BROWSE_TIMETABLES },
+    run: { to: R.TIMETABLES.TEACHERS },
+  },
+  {
+    id: "view-exam-scheduling",
+    label: "View exam scheduling",
+    aliases: ["exams", "exam timetable", "sittings"],
+    section: "Academics",
+    group: "Timetables",
+    kind: "view",
+    gate: { perm: P.BROWSE_TIMETABLES },
+    run: { to: R.TIMETABLES.EXAMS },
   },
 
   // ── Onboarding ─────────────────────────────────────────────────────────────
@@ -265,6 +433,30 @@ export const ACTIONS: ActionDef[] = [
   },
 ];
 
+// ── The two consoles ─────────────────────────────────────────────────────────
+//
+// `modulePrefix` mirrors the sidebar's own door test: app-sidebar.tsx draws the
+// Finance item on `hasModuleAccess("finance.")` rather than on a named code,
+// because the package's 145 codes gate individual ACTIONS and there is no "may
+// use finance" key to point at. The handful of nav items with no prefixes of
+// their own (both dashboards, and Approvals) inherit that same test.
+export const CONSOLE_ACTIONS: ActionDef[] = consoleActions([
+  {
+    nav: schoolFinanceNav,
+    section: "Finance",
+    name: "Finance",
+    modulePrefix: "finance.",
+  },
+  {
+    nav: schoolProcurementNav,
+    section: "Procurement",
+    name: "Procurement",
+    modulePrefix: "procurement.",
+  },
+]);
+
+export const ACTIONS: ActionDef[] = [...SCHOOL_ACTIONS, ...CONSOLE_ACTIONS];
+
 // ── Readiness, which is not a permission ─────────────────────────────────────
 //
 // ActionDef has no field for "only before go-live" / "only after", and that is
@@ -273,17 +465,51 @@ export const ACTIONS: ActionDef[] = [
 // exists in the app, so it is recorded here for the palette UI to apply.
 //
 // LIVE_ONLY_ACTION_IDS is the load-bearing half. A pending school reaches
-// onboarding and nothing else: DashboardLayout draws the closed wall over every
-// other page, and the server answers 403 TENANT_NOT_LIVE behind it. Offering
-// "View students" to a school still being set up sends the reader to that wall.
-// The palette UI MUST drop these while the tenant is pending.
-export const LIVE_ONLY_ACTION_IDS: readonly string[] = [
-  "view-dashboard",
-  "view-branches",
-  "view-academic-session",
-  "view-academic-calendar",
-  "view-classes",
+// onboarding and a short list of setup screens; DashboardLayout draws the
+// closed wall over everything else and the server answers 403 TENANT_NOT_LIVE
+// behind it. Offering "View students" to a school still being set up sends the
+// reader to that wall, so the palette UI MUST drop these while pending.
+//
+// It is DERIVED from the destination rather than typed out, because the router
+// already answers this per screen and the typed copy was already wrong. The
+// wall is `tenantIsPending && !onboardingRoute && !pendingSurface` (see
+// dashboard-layout.tsx), and `pendingSurface: true` sits on the handle of every
+// screen a school may use before go-live. The old list named Sessions & Terms,
+// Classes & Arms and the academic calendar as live-only. All three are pending
+// surfaces - building the academic structure is a REQUIRED go-live task - so
+// the palette hid three setup screens from precisely the schools that had to
+// finish them, while the sidebar went on offering all three.
+//
+// The prefixes below are those pending surfaces. registry.test.ts checks them
+// against the route tables, so mounting a new pre-live screen and forgetting
+// this list fails a test rather than quietly removing a door.
+const PENDING_SURFACE_PREFIXES: readonly string[] = [
+  "/onboarding",
+  "/notifications",
+  "/academic-structure",
+  "/academic-calendar",
+  "/timetables",
 ];
+
+/**
+ * Is this destination one a school may open before go-live?
+ *
+ * Exported because it is the claim that has to be true, not an implementation
+ * detail: registry.test.ts holds it against every path the router mounts, so
+ * this answer and `pendingSurface` on the route handle cannot drift apart.
+ */
+export const pathOpensBeforeGoLive = (to: string): boolean =>
+  PENDING_SURFACE_PREFIXES.some(
+    (prefix) => to === prefix || to.startsWith(`${prefix}/`),
+  );
+
+/** A command has no destination to close, and none of the three are closed. */
+const opensBeforeGoLive = (run: ActionRun): boolean =>
+  !("to" in run) || pathOpensBeforeGoLive(run.to);
+
+export const LIVE_ONLY_ACTION_IDS: readonly string[] = ACTIONS.filter(
+  (action) => !opensBeforeGoLive(action.run),
+).map((action) => action.id);
 
 // PENDING_ONLY_ACTION_IDS is the softer half, and only tidiness. These screens
 // keep working after go-live (the control room becomes a read-only record of

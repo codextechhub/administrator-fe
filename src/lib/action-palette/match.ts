@@ -10,7 +10,11 @@ import type { ActionDef } from "./types";
 // interchangeable without listing every spelling per action.
 const VERB_GROUPS: readonly string[][] = [
   ["view", "open", "show", "see", "list", "browse", "go"], // "go to" → first token "go"
-  ["create", "new", "add", "raise", "register", "make", "record", "post", "upload", "invite", "issue", "generate"],
+  // "enrol"/"enroll" are in the create group because enrolling a child IS
+  // creating a student here, and it is the word this product uses on the button.
+  // Without them "add a student" reaches nothing, which is the phrase most
+  // people try first.
+  ["create", "new", "add", "raise", "register", "make", "record", "post", "upload", "invite", "issue", "generate", "enrol", "enroll"],
 ];
 
 const norm = (s: string): string => s.toLowerCase().replace(/\s+/g, " ").trim();

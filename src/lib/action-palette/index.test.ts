@@ -17,6 +17,7 @@ describe("SECTION_ORDER", () => {
       "People",
       "Academics",
       "Finance",
+      "Procurement",
       "Settings",
       "Onboarding",
       "Account",
