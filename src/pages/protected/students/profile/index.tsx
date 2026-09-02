@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import type {
 
 import { StudentDrawers, type DrawerRequest } from "../drawers";
 import { formatDate, formatDateTime, titleCaseCode } from "../format";
+import Tabs from "@/components/custom/tab";
 import { Panel as Surface } from "@/components/custom/surface";
 
 import { statusChipClass } from "../status-chip";
@@ -57,7 +58,11 @@ type TabKey = (typeof TABS)[number]["key"];
 export default function StudentProfile() {
   const { id } = useParams();
   const studentId = Number(id);
-  const [tab, setTab] = useState<TabKey>("overview");
+  // The tab lives in the URL, so a registrar can send a colleague the link to
+  // a child's Guardians tab rather than "open him and click the third one".
+  // Tabs owns the writing; this only reads.
+  const [params] = useSearchParams();
+  const tab = (params.get("tab") as TabKey) ?? "overview";
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetStudentQuery(studentId, {
@@ -194,34 +199,10 @@ export default function StudentProfile() {
         )}
       </Surface>
 
-      {/* A segmented control on its own surface, not pills floating on the
-          page. Six tabs sitting loose read as six links; sitting in a tray
-          they read as one control with one of them chosen. Scrolls sideways
-          below `sm` rather than wrapping to two rows, because a tab strip that
-          reflows moves the tab under the reader's finger. */}
-      <div
-        role="tablist"
-        aria-label="Student record sections"
-        className="flex max-w-full gap-1 overflow-x-auto rounded-lg bg-white p-1.5"
-      >
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            role="tab"
-            type="button"
-            aria-selected={tab === t.key}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              "h-9 shrink-0 whitespace-nowrap rounded-md px-3.5 text-[13.5px]",
-              tab === t.key
-                ? "bg-white-03 font-semibold text-primary"
-                : "text-gray-06 hover:bg-gray-03",
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabKey="tab"
+        tabs={TABS.map((t) => ({ value: t.key, label: t.label }))}
+      />
 
       {tab === "overview" && <Overview loading={isLoading} student={student} />}
       {tab === "guardians" && <GuardiansTab studentId={studentId} />}

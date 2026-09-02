@@ -6,6 +6,7 @@ import { Users } from "lucide-react";
 import CustomTable from "@/components/custom/custom-table";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
+import Tabs from "@/components/custom/tab";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyRing } from "../empty-ring";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
@@ -74,12 +75,6 @@ export default function ClassesAndTransfers() {
   const roster = useMemo(() => rosterData?.data ?? [], [rosterData]);
 
   const [bulkAssign, { isLoading: assigning }] = useBulkAssignClassMutation();
-
-  function setTab(next: Tab) {
-    const p = new URLSearchParams(params);
-    p.set("tab", next);
-    setParams(p, { replace: true });
-  }
 
   function setRosterClass(id: string) {
     const p = new URLSearchParams(params);
@@ -171,34 +166,20 @@ export default function ClassesAndTransfers() {
         </p>
       </div>
 
-      <div
-        role="tablist"
-        aria-label="Classes and transfers"
-        className="flex max-w-full gap-1 overflow-x-auto rounded-lg bg-white p-1.5"
-      >
-        {(
-          [
-            ["unplaced", `Waiting for a class${unplaced.length ? ` (${unplaced.length})` : ""}`],
-            ["roster", "Class register"],
-          ] as [Tab, string][]
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            role="tab"
-            type="button"
-            aria-selected={tab === key}
-            onClick={() => setTab(key)}
-            className={cn(
-              "h-9 shrink-0 whitespace-nowrap rounded-md px-3.5 text-[13.5px]",
-              tab === key
-                ? "bg-white-03 font-semibold text-primary"
-                : "text-gray-06 hover:bg-gray-03",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* The app's tab strip. It reads and writes `?tab=` itself, which is
+          the same URL this screen already used - so the capacity panel's deep
+          link into a register keeps working, and the sliding marker now
+          matches every other tabbed screen. */}
+      <Tabs
+        tabKey="tab"
+        tabs={[
+          {
+            value: "unplaced",
+            label: `Waiting for a class${unplaced.length ? ` (${unplaced.length})` : ""}`,
+          },
+          { value: "roster", label: "Class register" },
+        ]}
+      />
 
       {/* ── Refusals from the last run ──────────────────────────────────── */}
       {refusals.length > 0 && (
