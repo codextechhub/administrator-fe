@@ -13,9 +13,14 @@ import { parseApiError } from "@/utils/api-error";
  *
  * `closedToYou` covers the 403 a user without `onboarding.progress.view` gets,
  * and the 403 a school gets on a surface that opens at go-live.
+ *
+ * `skip` is for callers that only want this state in the pre-live case - the
+ * support form is the one that does. Once a school is live the call answers
+ * nothing they use, and for a user without `onboarding.progress.view` it is a
+ * 403 for the trouble.
  */
-export function useOnboardingState() {
-  const query = useGetOnboardingStateQuery();
+export function useOnboardingState({ skip = false }: { skip?: boolean } = {}) {
+  const query = useGetOnboardingStateQuery(undefined, { skip });
   const { code, status } = parseApiError(query.error);
 
   const state = query.data?.data ?? null;

@@ -7,12 +7,16 @@ import { CustomNativeSelect } from "@/components/custom/custom-native-select";
 import { CustomTextArea } from "@/components/custom/custom-textarea";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/redux/store";
-import { selectUser } from "@/redux/features/auth/auth-slice";
+import {
+  selectTenantIsPending,
+  selectUser,
+} from "@/redux/features/auth/auth-slice";
 import {
   useAddTicketAttachmentMutation,
   useCreateTicketMutation,
 } from "@/redux/services/support/support-api";
 import type {
+  OnboardingTicketContext,
   TicketCategory,
   TicketPriority,
 } from "@/redux/services/support/support-types";
@@ -30,10 +34,19 @@ import { useOnboardingState } from "@/pages/protected/onboarding/use-onboarding-
  * different validation rules.
  *
  * Filing is all it does. The rest of the support desk - the ticket list, the
- * thread, attachments - opens at go-live, so the confirmation has to be
- * self-sufficient: the reference, what happens next, and that replies come by
- * email. No "track your ticket" link, because there is nothing to track
+ * thread, attachments - is not on this app's API at all, so the confirmation
+ * has to be self-sufficient: the reference, what happens next, and that replies
+ * come by email. No "track your ticket" link, because there is nothing to track
  * against yet.
+ *
+ * Everything onboarding-shaped in here is gated on the school still being
+ * pre-live, and nothing new may assume it. This form was written when the only
+ * door to it was the control room, so "not live yet" was a constant: the
+ * confirmation said so out loud and every ticket was filed as an Onboarding
+ * one. The header's headset then put the same form on every page of a live
+ * school. `selectTenantIsPending` is the answer to ask - it comes with the
+ * session, costs no request, is not gated on an onboarding permission, and
+ * reads an unknown status as live.
  */
 
 const CATEGORY_OPTIONS: { value: TicketCategory; label: string }[] = [
@@ -64,6 +77,30 @@ const PRIORITY_OPTIONS: { value: TicketPriority; label: string }[] = [
   { value: "URGENT", label: "Urgent" },
 ];
 
+/**
+ * The onboarding context a ticket carries, or nothing at all once live.
+ *
+ * A function rather than an inline spread so the rule can be asserted without
+ * driving the form: "an Onboarding ticket is one filed by a school that is not
+ * live yet" is the whole of it, and it was previously true by assumption.
+ */
+export function onboardingTicketContext({
+  tenantIsPending,
+  taskKey,
+  readinessState,
+}: {
+  tenantIsPending: boolean;
+  taskKey?: string;
+  readinessState?: string;
+}): OnboardingTicketContext | undefined {
+  if (!tenantIsPending) return undefined;
+  return {
+    product_area: "Onboarding",
+    ...(taskKey ? { onboarding_task_key: taskKey } : {}),
+    ...(readinessState ? { onboarding_readiness_state: readinessState } : {}),
+  };
+}
+
 /** What another screen can hand the form to prefill it. */
 export interface EscalationPrefill {
   title?: string;
@@ -78,7 +115,7 @@ export function SupportTicketForm({
   onCancel,
   cancelLabel = "Cancel",
   onDone,
-  doneLabel = "Back to control room",
+  doneLabel = "Done",
   submitLabel = "Create ticket",
   compact = false,
   className,
@@ -99,7 +136,12 @@ export function SupportTicketForm({
   className?: string;
 }) {
   const user = useAppSelector(selectUser);
-  const { state } = useOnboardingState();
+  const tenantIsPending = useAppSelector(selectTenantIsPending);
+  // Skipped once the school is live. The only thing read off this state is
+  // onboarding routing, and a live school's bursar need not hold
+  // `onboarding.progress.view` - asking would be a 403 every time the header
+  // panel opens, for an answer nothing goes on to use.
+  const { state } = useOnboardingState({ skip: !tenantIsPending });
   const [createTicket, { isLoading }] = useCreateTicketMutation();
   const [addAttachment] = useAddTicketAttachmentMutation();
   const [reference, setReference] = useState("");
@@ -155,6 +197,16 @@ export function SupportTicketForm({
     outstanding.find((task) => task.is_required)?.key ??
     outstanding[0]?.key;
 
+  // Onboarding context only while the school is pre-live. Once it is live the
+  // same form opens from the header on any page, and stamping those tickets
+  // `product_area: Onboarding` routed a fees bug to the onboarding queue.
+  // Context is optional on the server; sending none beats sending the wrong one.
+  const context = onboardingTicketContext({
+    tenantIsPending,
+    taskKey: contextTaskKey,
+    readinessState: state?.readiness_state,
+  });
+
   const formik = useFormik({
     initialValues: {
       title: prefill.title ?? "",
@@ -171,13 +223,7 @@ export function SupportTicketForm({
           description: values.description.trim(),
           category: values.category,
           priority: values.priority,
-          context: {
-            product_area: "Onboarding",
-            ...(contextTaskKey ? { onboarding_task_key: contextTaskKey } : {}),
-            ...(state
-              ? { onboarding_readiness_state: state.readiness_state }
-              : {}),
-          },
+          ...(context ? { context } : {}),
         }).unwrap();
 
         // Uploaded one at a time, after the ticket exists, because that is what
@@ -212,65 +258,28 @@ export function SupportTicketForm({
 
   if (reference) {
     return (
-      <div
-        className={cn(
-          "flex flex-col items-center text-center gap-3 min-w-0",
-          className,
-        )}
-      >
-        <span className="size-16 rounded-full bg-green-01/10 text-green-01 grid place-content-center">
-          <CircleCheckBig className="size-8" strokeWidth={1.5} />
-        </span>
-        <h2 className="text-lg font-semibold font-mont text-black-01">
-          Ticket filed
-        </h2>
-        <div className="mt-1">
-          <p className="text-xs text-gray-05">Reference</p>
-          <code className="mt-1 inline-block rounded-md bg-gray-03 px-3 py-1.5 font-mono text-sm text-black-01">
-            {reference}
-          </code>
-        </div>
-        <p className="text-[13px] text-gray-06 max-w-[52ch] text-pretty">
-          Keep this reference. CodeX support will reply
-          {user?.email ? ` to ${user.email}` : " by email"}, and you can answer
-          them straight from that email.
-        </p>
-        {failedFiles.length > 0 ? (
-          // Said plainly and separately from the reference. The ticket IS
-          // filed; only the files did not make it, and somebody who reads
-          // "something went wrong" here will raise the whole thing again.
-          <p className="text-[13px] text-error-text max-w-[52ch] text-pretty">
-            Your ticket is filed, but {failedFiles.join(", ")} did not upload.
-            Reply to the confirmation email to send{" "}
-            {failedFiles.length === 1 ? "it" : "them"}.
-          </p>
-        ) : (
-          <p className="text-[13px] text-gray-05 max-w-[52ch] text-pretty">
-            The full support desk opens when your school goes live.
-          </p>
-        )}
-        <div className="mt-2 flex flex-wrap justify-center gap-2">
-          {onDone && <Button onClick={onDone}>{doneLabel}</Button>}
-          <Button
-            variant="outline"
-            onClick={() => {
-              setReference("");
-              setFiles([]);
-              setFailedFiles([]);
-              formik.resetForm({
-                values: {
-                  title: "",
-                  description: "",
-                  category: "SUPPORT",
-                  priority: "MEDIUM",
-                },
-              });
-            }}
-          >
-            File another ticket
-          </Button>
-        </div>
-      </div>
+      <TicketFiledConfirmation
+        reference={reference}
+        email={user?.email}
+        failedFiles={failedFiles}
+        tenantIsPending={tenantIsPending}
+        onDone={onDone}
+        doneLabel={doneLabel}
+        onFileAnother={() => {
+          setReference("");
+          setFiles([]);
+          setFailedFiles([]);
+          formik.resetForm({
+            values: {
+              title: "",
+              description: "",
+              category: "SUPPORT",
+              priority: "MEDIUM",
+            },
+          });
+        }}
+        className={className}
+      />
     );
   }
 
@@ -413,5 +422,85 @@ export function SupportTicketForm({
         )}
       </div>
     </form>
+  );
+}
+
+
+/**
+ * What a school sees once the ticket is filed.
+ *
+ * Its own component because it is the half of this form that talks about the
+ * school's situation rather than the ticket, and that is where the reachability
+ * of the form leaked in: it promised a support desk "when your school goes
+ * live" to schools that went live months ago. Rendered from props so the
+ * promise can be tested without filing a ticket.
+ */
+export function TicketFiledConfirmation({
+  reference,
+  email,
+  failedFiles,
+  tenantIsPending,
+  onDone,
+  doneLabel = "Done",
+  onFileAnother,
+  className,
+}: {
+  reference: string;
+  email?: string;
+  failedFiles: string[];
+  /** Pre-live schools, and only they, are told what opens at go-live. */
+  tenantIsPending: boolean;
+  onDone?: () => void;
+  doneLabel?: string;
+  onFileAnother: () => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col items-center text-center gap-3 min-w-0",
+        className,
+      )}
+    >
+      <span className="size-16 rounded-full bg-green-01/10 text-green-01 grid place-content-center">
+        <CircleCheckBig className="size-8" strokeWidth={1.5} />
+      </span>
+      <h2 className="text-lg font-semibold font-mont text-black-01">
+        Ticket filed
+      </h2>
+      <div className="mt-1">
+        <p className="text-xs text-gray-05">Reference</p>
+        <code className="mt-1 inline-block rounded-md bg-gray-03 px-3 py-1.5 font-mono text-sm text-black-01">
+          {reference}
+        </code>
+      </div>
+      <p className="text-[13px] text-gray-06 max-w-[52ch] text-pretty">
+        Keep this reference. CodeX support will reply
+        {email ? ` to ${email}` : " by email"}, and you can answer them straight
+        from that email.
+      </p>
+      {failedFiles.length > 0 ? (
+        // Said plainly and separately from the reference. The ticket IS filed;
+        // only the files did not make it, and somebody who reads "something
+        // went wrong" here will raise the whole thing again.
+        <p className="text-[13px] text-error-text max-w-[52ch] text-pretty">
+          Your ticket is filed, but {failedFiles.join(", ")} did not upload.
+          Reply to the confirmation email to send{" "}
+          {failedFiles.length === 1 ? "it" : "them"}.
+        </p>
+      ) : (
+        tenantIsPending && (
+          <p className="text-[13px] text-gray-05 max-w-[52ch] text-pretty">
+            The full support desk opens when your school goes live.
+          </p>
+        )
+      )}
+      <div className="mt-2 flex flex-wrap justify-center gap-2">
+        {onDone && <Button onClick={onDone}>{doneLabel}</Button>}
+        <Button variant="outline" onClick={onFileAnother}>
+          File another ticket
+        </Button>
+      </div>
+    </div>
   );
 }
