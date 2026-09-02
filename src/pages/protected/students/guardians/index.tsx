@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
 import { useGetGuardiansQuery } from "@/redux/services/students/students-api";
+import { useStudentsLens } from "@/hooks/use-students-lens";
 
 import { EmptyRing } from "../empty-ring";
 import { Pager } from "../pager";
@@ -35,7 +36,9 @@ export default function Guardians() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
+  const { lens, narrowed, label } = useStudentsLens();
   const { data, isLoading, isFetching, isError, refetch } = useGetGuardiansQuery({
+    ...lens,
     search: search.trim() || undefined,
     page,
   });
@@ -65,6 +68,10 @@ export default function Guardians() {
         <p className="mt-1 text-sm text-gray-01">
           One guardian can stand for several students, which is how the school
           knows they are siblings.
+          {/* A guardian carries no branch of their own, so say what the
+              narrowing actually means rather than letting a shorter list look
+              like a smaller school. */}
+          {narrowed ? ` Showing the guardians of ${label}'s students.` : ""}
         </p>
       </div>
 

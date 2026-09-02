@@ -10,7 +10,7 @@ import { EmptyRing } from "../empty-ring";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
-import { useBranchLens } from "@/hooks/use-branch-lens";
+import { useStudentsLens } from "@/hooks/use-students-lens";
 import { apiDetailMessage } from "@/utils/api-error";
 import {
   useConfirmApplicantMutation,
@@ -36,11 +36,7 @@ import { statusChipClass } from "../status-chip";
  */
 export default function Applicants() {
   const navigate = useNavigate();
-  const branchLens = useBranchLens();
-  const branch =
-    branchLens.applies && branchLens.branch !== "all"
-      ? (branchLens.branch as number)
-      : undefined;
+  const { branch } = useStudentsLens();
 
   const [enrolling, setEnrolling] = useState<StudentRow | null>(null);
   const [rejecting, setRejecting] = useState<StudentRow | null>(null);

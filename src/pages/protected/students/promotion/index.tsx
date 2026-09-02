@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Check, GraduationCap } from "lucide-react";
 
 import KpiCard from "@/components/custom/kpi-card";
+import { useStudentsLens } from "@/hooks/use-students-lens";
 import { Panel } from "@/components/custom/surface";
 
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ const STEPS = ["Target year", "Review students", "Confirm", "Done"];
  * held students with no explanation.
  */
 export default function Promotion() {
+  const { lens, narrowed, label } = useStudentsLens();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [target, setTarget] = useState("");
@@ -76,6 +78,7 @@ export default function Promotion() {
     if (!target) return null;
     try {
       const result = await preview({
+        ...lens,
         to_session: Number(target),
         overrides: next,
       }).unwrap();
@@ -115,7 +118,11 @@ export default function Promotion() {
   async function execute() {
     setConfirming(false);
     try {
+      // The SAME lens the preview used. A run scoped differently from the
+      // preview it was confirmed against would move a set of children nobody
+      // reviewed.
       const result = await run({
+        ...lens,
         to_session: Number(target),
         overrides,
       }).unwrap();
@@ -160,6 +167,15 @@ export default function Promotion() {
           The end-of-session move. Every student on the roll goes up, repeats,
           graduates or is held, and you decide which before anything is written.
         </p>
+        {/* Said out loud, and on this screen more than any other: a promotion
+            cannot be undone from here, so "every student on the roll" has to
+            name WHICH roll. The preview and the run carry the same lens, so
+            what this line describes is exactly what will move. */}
+        {narrowed && (
+          <p className="mt-2 inline-flex rounded-md bg-white-03 px-2.5 py-1 text-xs font-medium text-primary">
+            {label} only
+          </p>
+        )}
       </div>
 
       {/* In a tray, like the profile's tabs and the classes screen: four steps

@@ -11,7 +11,7 @@ import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { ExportButton } from "@/components/custom/export-button";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
-import { useBranchLens } from "@/hooks/use-branch-lens";
+import { useStudentsLens } from "@/hooks/use-students-lens";
 import {
   useGetClassSeatsQuery,
   useGetStudentSummaryQuery,
@@ -47,7 +47,7 @@ import { statusChipClass } from "./status-chip";
  */
 export default function StudentDirectory() {
   const navigate = useNavigate();
-  const branchLens = useBranchLens();
+  const { branch, multiBranch, label: branchLabel } = useStudentsLens();
 
   const [search, setSearch] = useState("");
   const [classId, setClassId] = useState("all");
@@ -60,11 +60,6 @@ export default function StudentDirectory() {
   const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
 
-  // "all" is the pill's word for "every branch"; the API wants the key absent.
-  const branch =
-    branchLens.applies && branchLens.branch !== "all"
-      ? (branchLens.branch as number)
-      : undefined;
 
   const listArgs = {
     search: search.trim() || undefined,
@@ -205,7 +200,7 @@ export default function StudentDirectory() {
             Student Directory
           </h2>
           <p className="mt-1 text-sm text-gray-01">
-            Every student at {branchLens.applies ? branchLens.label : "this school"}
+            Every student at {multiBranch ? branchLabel : "this school"}
             {summary?.session ? ` for ${summary.session}` : ""}.
           </p>
         </div>
@@ -294,7 +289,7 @@ export default function StudentDirectory() {
             status: status === "all" ? undefined : status,
             class: classId === "all" ? undefined : classId,
             level: level === "all" ? undefined : level,
-            branch_name: branch !== undefined ? branchLens.label : undefined,
+            branch_name: branch !== undefined ? branchLabel : undefined,
           }}
         />
 

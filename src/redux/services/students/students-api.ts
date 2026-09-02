@@ -444,11 +444,21 @@ export const studentsApi = baseApi.injectEndpoints({
      */
     previewPromotion: builder.mutation<
       Envelope<PromotionPlan>,
-      { to_session: number; overrides?: Record<string, PromotionOutcome> }
+      {
+        to_session: number;
+        overrides?: Record<string, PromotionOutcome>;
+        /** The branch lens. Preview and run must carry the SAME one. */
+        branch?: number;
+      }
     >({
-      query: (body) => ({
+      // The branch is a QUERY param, not part of the body: branch_filter reads
+      // request.query_params, which is the one place the whole module resolves
+      // the lens. Splitting it into a body field here would be a second answer
+      // to the same question.
+      query: ({ branch, ...body }) => ({
         url: `/students/promotions/preview/`,
         method: "POST",
+        params: branch !== undefined ? { branch } : undefined,
         body,
       }),
       extraOptions: { silent: true },
@@ -457,9 +467,19 @@ export const studentsApi = baseApi.injectEndpoints({
     /** Run it. Writes placements, and cannot be undone from the screen. */
     runPromotion: builder.mutation<
       Envelope<PromotionBatch>,
-      { to_session: number; overrides?: Record<string, PromotionOutcome> }
+      {
+        to_session: number;
+        overrides?: Record<string, PromotionOutcome>;
+        /** The branch lens. Preview and run must carry the SAME one. */
+        branch?: number;
+      }
     >({
-      query: (body) => ({ url: `/students/promotions/`, method: "POST", body }),
+      query: ({ branch, ...body }) => ({
+        url: `/students/promotions/`,
+        method: "POST",
+        params: branch !== undefined ? { branch } : undefined,
+        body,
+      }),
       extraOptions: { silent: true },
       invalidatesTags: ["Students", "Classes"],
     }),

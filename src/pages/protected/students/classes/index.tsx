@@ -7,6 +7,7 @@ import CustomTable from "@/components/custom/custom-table";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import Tabs from "@/components/custom/tab";
+import { useStudentsLens } from "@/hooks/use-students-lens";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyRing } from "../empty-ring";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
@@ -54,7 +55,8 @@ export default function ClassesAndTransfers() {
   const [refusals, setRefusals] = useState<BulkResultRow[]>([]);
   const [moving, setMoving] = useState<StudentRow | null>(null);
 
-  const { data: classesData } = useGetClassSeatsQuery();
+  const { lens } = useStudentsLens();
+  const { data: classesData } = useGetClassSeatsQuery(lens);
   const classes = useMemo(() => classesData?.data ?? [], [classesData]);
 
   const {
@@ -62,7 +64,7 @@ export default function ClassesAndTransfers() {
     isLoading: unplacedLoading,
     isError: unplacedError,
     refetch: refetchUnplaced,
-  } = useGetUnplacedStudentsQuery();
+  } = useGetUnplacedStudentsQuery(lens);
   const unplaced = useMemo(() => unplacedData?.data ?? [], [unplacedData]);
 
   // Default to the first class only once the list has arrived, so the roster
