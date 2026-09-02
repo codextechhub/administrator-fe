@@ -143,11 +143,22 @@ export function AppSearch({
   // Students, when the caller may read them and has typed enough to mean it.
   // One character is a keystroke rather than a search, which is also the rule
   // the endpoint itself applies.
+  //
+  // `tenantIsPending` belongs in this skip for the same reason it decides which
+  // actions are offered: the student module is closed until go-live, and asking
+  // it anyway does not merely fail. The endpoint answers 403 TENANT_NOT_LIVE,
+  // which base-api treats as "this school opened a door that is shut" and
+  // redirects the whole app to /onboarding/not-live. That redirect stands down
+  // while the reader is already under /onboarding - and a pending school is not
+  // always there. Standing on Academic Structure, which it IS allowed to use
+  // and must finish before it can go live, typing "adeyemi" into the header
+  // threw it off the page at the second character.
   const canSeeStudents = permissions.includes(
     resolvePermissionKey(P.BROWSE_STUDENTS),
   );
   const { data: studentHits } = useSearchStudentsQuery(trimmed, {
-    skip: !resultsOpen || !canSeeStudents || trimmed.length < 2,
+    skip:
+      !resultsOpen || tenantIsPending || !canSeeStudents || trimmed.length < 2,
   });
   const students = useMemo(
     () => (trimmed.length >= 2 ? (studentHits?.data ?? []).slice(0, 5) : []),
