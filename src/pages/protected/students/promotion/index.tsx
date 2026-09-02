@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { GraduationCap } from "lucide-react";
+import { Check, GraduationCap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -151,19 +151,31 @@ export default function Promotion() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      {/* Hidden on phones, where four labels do not fit: the strip scrolls and
-          what a reader sees is "Target yea / Review studer / Dor" - clipped
-          words that read as broken. Nothing is lost, because the footer already
-          says "Step 2 of 4 · Review students" on every width. */}
-      <ol className="hidden max-w-full gap-1 overflow-x-auto pb-1 sm:flex">
+      <div className="min-w-0">
+        <h2 className="text-lg font-semibold text-black-01">Promotion</h2>
+        <p className="mt-1 text-sm text-gray-01">
+          The end-of-session move. Every student on the roll goes up, repeats,
+          graduates or is held, and you decide which before anything is written.
+        </p>
+      </div>
+
+      {/* In a tray, like the profile's tabs and the classes screen: four steps
+          loose on the page background read as four labels rather than one
+          progress indicator with a position in it.
+
+          Hidden on phones, where the labels do not fit - the strip scrolls and
+          a reader sees "Target yea / Review studer / Dor", clipped words that
+          read as broken. Nothing is lost: the footer says "Step 2 of 4 · Review
+          students" on every width. */}
+      <ol className="hidden max-w-full gap-1 overflow-x-auto rounded-lg bg-white p-1.5 sm:flex">
         {STEPS.map((label, i) => (
           <li key={label} className="min-w-0">
             <span
               aria-current={i === step ? "step" : undefined}
               className={cn(
-                "flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1.5 text-sm",
+                "flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-3.5 text-[13.5px]",
                 i === step && "bg-white-03 font-semibold text-primary",
-                i !== step && "text-gray-05",
+                i !== step && "text-gray-06",
               )}
             >
               <span
@@ -215,9 +227,13 @@ export default function Promotion() {
 
           {plan && (
             <>
-              <div className="rounded-xl border border-white-02 bg-white p-4">
-                <p className="text-xs font-medium text-gray-05">
+              <div className="rounded-lg bg-white px-5.5 py-5">
+                <h3 className="text-sm font-semibold text-black-01">
                   Where each class goes
+                </h3>
+                <p className="mt-0.5 text-xs text-gray-05">
+                  Resolved against the real class list, so a class can never be
+                  promoted into one the school does not run.
                 </p>
                 <ul className="mt-3 grid gap-2">
                   {plan.level_map.map((row) => (
@@ -273,7 +289,7 @@ export default function Promotion() {
             {(["promote", "repeat", "graduate", "hold"] as const).map((k) => (
               <div
                 key={k}
-                className="min-w-0 rounded-xl border border-white-02 bg-white p-4"
+                className="min-w-0 rounded-lg bg-white px-5 py-4"
               >
                 <p className="text-xs font-medium text-gray-05">
                   {OUTCOME[k.toUpperCase() as PromotionOutcome].label}
@@ -305,6 +321,26 @@ export default function Promotion() {
       {/* ── 4. done ─────────────────────────────────────────────────────── */}
       {step === 3 && done && (
         <section className="grid gap-4">
+          {/* An irreversible thing finished. The design marks it rather than
+              dropping the reader back onto four numbers - a run that ends the
+              same way it was previewed gives no sign it actually happened. */}
+          <div className="flex items-center gap-3.5 rounded-lg bg-white px-5.5 py-5">
+            <span
+              aria-hidden
+              className="grid size-13 shrink-0 place-content-center rounded-full bg-green-700/10 text-green-800"
+            >
+              <Check className="size-6" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-semibold text-black-01">
+                Promotion complete
+              </h3>
+              <p className="mt-0.5 text-sm text-gray-05">
+                Every move is on the students&apos; own history.
+              </p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {[
               ["Promoted", done.promoted],
@@ -314,7 +350,7 @@ export default function Promotion() {
             ].map(([label, value]) => (
               <div
                 key={String(label)}
-                className="min-w-0 rounded-xl border border-white-02 bg-white p-4"
+                className="min-w-0 rounded-lg bg-white px-5 py-4"
               >
                 <p className="text-xs font-medium text-gray-05">{label}</p>
                 <p className="mt-1 text-2xl font-semibold text-black-01">
@@ -324,8 +360,7 @@ export default function Promotion() {
             ))}
           </div>
           <p className="text-sm text-gray-05">
-            {done.from_session_name} to {done.to_session_name}. Every move is on
-            the students&apos; own history.
+            {done.from_session_name} to {done.to_session_name}.
             {done.failed > 0 &&
               ` ${done.failed} could not be written and were left where they are.`}
           </p>
@@ -442,7 +477,7 @@ function Exceptions({ plan }: { plan: PromotionPlan }) {
   if (byClass.length === 0 && byStudent.length === 0) return null;
 
   return (
-    <section className="rounded-xl border border-white-02 bg-white p-4">
+    <section className="rounded-lg bg-white px-5.5 py-5">
       <p className="text-xs font-medium text-gray-05">
         {byClass.length + byStudent.length}{" "}
         {byClass.length + byStudent.length === 1 ? "exception" : "exceptions"}

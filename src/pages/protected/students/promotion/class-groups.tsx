@@ -48,7 +48,7 @@ export function ClassGroups({
 
   if (groups.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-white-02 bg-white px-4 py-10 text-center text-sm text-gray-05">
+      <p className="rounded-lg bg-white px-4 py-10 text-center text-sm text-gray-05">
         No student in this year is a candidate for promotion.
       </p>
     );
@@ -70,7 +70,7 @@ export function ClassGroups({
         return (
           <section
             key={group.from_id}
-            className="min-w-0 rounded-xl border border-white-02 bg-white"
+            className="min-w-0 rounded-lg bg-white"
           >
             <div className="flex flex-wrap items-center gap-2 p-3.5">
               <button
