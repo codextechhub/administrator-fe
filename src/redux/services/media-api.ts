@@ -10,12 +10,21 @@ import { baseApi } from "./base-api";
 export const mediaApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     fetchAuthMedia: builder.query<string, string>({
+      // A picture that will not load is decoration failing, not an action the
+      // caller can retry: a school whose crest file is missing from storage got
+      // "Resource not found." on top of every screen the crest appears on, once
+      // per render. The image just does not draw.
+      extraOptions: { silent: true },
       // mediaUrl is the absolute URL the backend built (host + /media/...).
       // fetchBaseQuery uses an absolute http(s) URL as-is (no baseUrl prefix).
       queryFn: async (mediaUrl, _api, _extra, baseQuery) => {
         const result = await baseQuery({
           url: mediaUrl,
-          responseHandler: (r) => r.blob(),
+          // Only a successful body is bytes. Reading an ERROR body as a Blob
+          // put a Blob in `error.data`, and redux's serializable check then
+          // logged a wall of warnings for a single missing file - noise that
+          // buries whatever real error is on the same screen.
+          responseHandler: async (r) => (r.ok ? r.blob() : r.text()),
         });
         if ("error" in result && result.error) return { error: result.error };
         return { data: URL.createObjectURL(result.data as Blob) };
