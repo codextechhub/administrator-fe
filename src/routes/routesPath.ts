@@ -40,8 +40,13 @@ export const routesPath = {
       SETUP: "/finance/setup",
       LEDGER: "/finance/ledger",
       RECEIVABLES: "/finance/receivables",
-      RECEIPTS_ALLOCATION: "/finance/receipts-allocation",
-      RECORD_PAYMENT: "/finance/receipts-allocation?action=new",
+      // A section of Receivables, not a screen of its own - the same address
+      // console-fe declares. Naming it anything else unmounts it: the router
+      // registers one path per real section (`/finance/receivables/receipts`),
+      // the sidebar is filtered through the mounted set, and the finance
+      // dashboard's Record payment button navigates straight here.
+      RECEIPTS_ALLOCATION: "/finance/receivables/receipts",
+      RECORD_PAYMENT: "/finance/receivables/receipts?action=new",
       COLLECTIONS: "/finance/collections",
       PAYMENTS: "/finance/payments",
       BANKING: "/finance/banking",
