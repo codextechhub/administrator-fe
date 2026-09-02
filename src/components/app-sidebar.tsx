@@ -43,6 +43,9 @@ import { SchoolMark } from "./school-mark";
 type NavPermission = PermissionCode | PermissionCode[] | null | undefined;
 
 interface NavItem {
+  /** Show a trailing arrow: this link opens a different area, and the sidebar
+   *  changes under you. Finance and Procurement are separate consoles. */
+  affordance?: boolean;
   title: string;
   url: string;
   icon?: React.ElementType;
@@ -411,6 +414,12 @@ export function AppSidebar({
           },
         ],
       },
+    ],
+    // Finance and Procurement are separate consoles: opening one replaces this
+    // sidebar with that area's own. They are grouped apart from the school's
+    // day-to-day work for that reason, and each carries a trailing arrow so the
+    // change of context is visible before the click rather than after it.
+    business: [
       // Finance. The screens come from @xvs/finance, and the area builds its
       // own sub-navigation once you are inside it - this is only the door.
       //
@@ -427,6 +436,7 @@ export function AppSidebar({
             icon: Wallet,
             isActive: location.startsWith(routesPath.PROTECTED.FINANCE.INDEX),
             childActive: location.startsWith(routesPath.PROTECTED.FINANCE.INDEX),
+            affordance: true,
           }]
         : []),
       // Procurement, gated the same way and for the same reason.
@@ -437,6 +447,7 @@ export function AppSidebar({
             icon: ShoppingCart,
             isActive: location.startsWith(routesPath.PROTECTED.PROCUREMENT.INDEX),
             childActive: location.startsWith(routesPath.PROTECTED.PROCUREMENT.INDEX),
+            affordance: true,
           }]
         : []),
     ],
@@ -447,6 +458,7 @@ export function AppSidebar({
   const overview = data.overview.filter(canSee);
   const people = data.people.filter(canSee);
   const academics = data.academics.filter(canSee);
+  const business = data.business.filter(canSee);
 
   const { state } = useSidebar();
   return (
@@ -501,6 +513,9 @@ export function AppSidebar({
               )}
               {academics.length > 0 && (
                 <NavMain items={academics} groupTitle="Academics" />
+              )}
+              {business.length > 0 && (
+                <NavMain items={business} groupTitle="Finance & Operations" />
               )}
             </>
           )}

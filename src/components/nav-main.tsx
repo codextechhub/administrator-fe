@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, CircleArrowOutUpRight } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -76,6 +76,9 @@ export function NavMain({
     icon?: React.ElementType;
     isActive: boolean;
     childActive: boolean;
+    /** Show a trailing arrow: this link opens a separate area and the sidebar
+     *  changes under you. Finance and Procurement are their own consoles. */
+    affordance?: boolean;
     /**
      * A live count beside the label - work waiting behind this door.
      *
@@ -130,6 +133,9 @@ export function NavMain({
                   >
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
+                    {item.affordance && (
+                      <CircleArrowOutUpRight className="ml-auto size-4 text-gray-02" />
+                    )}
                     {item.badge != null && item.badge > 0 && (
                       <span
                         // Hidden when the rail is collapsed to icons: a floating
