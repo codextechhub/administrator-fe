@@ -122,6 +122,11 @@ export interface StudentDetail extends StudentScoped {
 }
 
 export interface StudentSummary {
+  /**
+   * True when a year lens is applied, so the status counts describe THIS
+   * YEAR'S students as they stand TODAY rather than as they stood then.
+   */
+  status_is_current?: boolean;
   total: number;
   on_roll: number;
   active: number;
@@ -529,5 +534,13 @@ export interface StudentListArgs {
   status?: StudentStatus | "ALL";
   /** Omitted at a single-branch school, and when the lens reads "all". */
   branch?: number;
+  /**
+   * The year to read the roll in.
+   *
+   * Changes WHICH students are listed and WHICH class each one shows - both are
+   * per-year. It does not change their status, which has no year; the summary
+   * flags that back as `status_is_current`.
+   */
+  session?: number;
   page?: number;
 }

@@ -36,16 +36,16 @@ import { statusChipClass } from "../status-chip";
  */
 export default function Applicants() {
   const navigate = useNavigate();
-  const { branch } = useStudentsLens();
+  const { lens } = useStudentsLens();
 
   const [enrolling, setEnrolling] = useState<StudentRow | null>(null);
   const [rejecting, setRejecting] = useState<StudentRow | null>(null);
 
-  const waiting = useGetStudentsQuery({ status: "APPLICANT", branch });
+  const waiting = useGetStudentsQuery({ ...lens, status: "APPLICANT" });
   // On the roll but not yet in a class - the design's "enrolled, not activated"
   // group, read from the state the backend actually keeps.
-  const recent = useGetStudentsQuery({ status: "ENROLLED", branch });
-  const closed = useGetStudentsQuery({ status: "REJECTED", branch });
+  const recent = useGetStudentsQuery({ ...lens, status: "ENROLLED" });
+  const closed = useGetStudentsQuery({ ...lens, status: "REJECTED" });
 
   if (waiting.isError) {
     return (

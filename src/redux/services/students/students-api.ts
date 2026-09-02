@@ -70,7 +70,7 @@ export const studentsApi = baseApi.injectEndpoints({
      */
     getStudentSummary: builder.query<
       Envelope<StudentSummary>,
-      { branch?: number } | void
+      { branch?: number; session?: number } | void
     >({
       query: (args) => ({
         url: `/students/summary/`,
@@ -98,7 +98,7 @@ export const studentsApi = baseApi.injectEndpoints({
      */
     getUnplacedStudents: builder.query<
       PaginatedEnvelope<StudentRow>,
-      { branch?: number } | void
+      { branch?: number; session?: number } | void
     >({
       query: (args) => ({
         url: `/students/unplaced/`,
@@ -145,7 +145,7 @@ export const studentsApi = baseApi.injectEndpoints({
 
     getGuardians: builder.query<
       PaginatedEnvelope<GuardianRow>,
-      { search?: string; page?: number; branch?: number } | void
+      { search?: string; page?: number; branch?: number; session?: number } | void
     >({
       query: (args) => ({
         url: `/guardians/`,
@@ -425,7 +425,7 @@ export const studentsApi = baseApi.injectEndpoints({
      * option and grow with the school, so this is the one call they share -
      * which also means they cannot disagree about a load.
      */
-    getClassSeats: builder.query<Envelope<ClassSeats[]>, { branch?: number } | void>({
+    getClassSeats: builder.query<Envelope<ClassSeats[]>, { branch?: number; session?: number } | void>({
       query: (args) => ({
         url: `/students/classes/seats/`,
         method: "GET",

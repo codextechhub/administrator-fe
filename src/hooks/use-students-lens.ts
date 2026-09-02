@@ -1,4 +1,5 @@
 import { useBranchLens } from "@/hooks/use-branch-lens";
+import { useSessionLens } from "@/hooks/use-session-lens";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The lens every People screen reads through: WHICH BRANCH.
@@ -13,26 +14,27 @@ import { useBranchLens } from "@/hooks/use-branch-lens";
 // screens passed it. The directory narrowed and the guardian list beside it did
 // not, which is the same screen contradicting itself one click apart.
 //
-// ── Why there is no session here, unlike academics ──────────────────────────
+// ── The session, and the one thing it cannot answer ─────────────────────────
 //
-// Academics carries a year because its rows BELONG to one: a level, a class and
-// a subject offering are all per-session, so reading last year back is what the
-// year control is for.
+// The ROLL is per-year and so is the CLASS. Lagoon View had 85 students in
+// 2026/2027 and has 73 in 2027/2028, and a child in SSS1 A last year is in
+// SSS2 A this one. Those are facts about students that only a year can answer,
+// which is why this lens carries one.
 //
-// A person is not per-session. `Student.status` is one current column, and
-// guardians and documents carry no year at all - only the class placement is
-// recorded per year, on ClassEnrolment. A year filter here would return a
-// register that is one fifth historical and four fifths current, with nothing
-// on screen separating the two: last year's SSS3 listing a child correctly from
-// their enrolment row, with today's Graduated chip beside their name.
+// What a year cannot answer is STATUS. `Student.status` is a single current
+// column, and guardians and documents carry no year at all. So under a session
+// lens the roll and the classes are historical while the chips beside them are
+// current - and the screens say so rather than implying the module knows who
+// was suspended in 2026. The server flags it back as `status_is_current`.
 //
-// The historical question is answered where it can be answered honestly - the
-// class register reads its own class's year, and the profile carries the class
-// trail. See section 2.0 of docs/students-design-phases.md.
+// An earlier version of this file argued the asymmetry meant no year control at
+// all. That was wrong: it threw away the two things a year CAN answer to avoid
+// mis-stating the one it cannot, when the fix was to label the one.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function useStudentsLens() {
   const branchLens = useBranchLens();
+  const sessionLens = useSessionLens();
 
   // "all" is the pill's word for every branch; the API wants the key absent,
   // and a single-branch school has no branch dimension in its responses at all.
@@ -41,9 +43,27 @@ export function useStudentsLens() {
       ? (branchLens.branch as number)
       : undefined;
 
+  // Left OFF while the year list is still loading, so the first request does
+  // not answer about the server's default year and then refetch - which shows
+  // the wrong roll for one frame.
+  const session = sessionLens.current?.id;
+
   return {
     /** Spread into any People list query. */
-    lens: { branch },
+    lens: { branch, session },
+    session,
+    sessionName: sessionLens.current?.name ?? null,
+    /** False before a year exists, or when there is only one. */
+    multiSession: sessionLens.applies,
+    /**
+     * True while a year other than the school's current one is being read.
+     *
+     * The screens use it to say that the chips are current where the roll is
+     * not - see the header note on the directory.
+     */
+    pastYear:
+      Boolean(sessionLens.current) &&
+      sessionLens.current?.status !== "ACTIVE",
     branch,
     /** False at a single-branch school - render no branch control, and say nothing about branches. */
     multiBranch: branchLens.applies,
@@ -51,6 +71,6 @@ export function useStudentsLens() {
     label: branchLens.label,
     /** True while a single branch is being read, so a screen can say which. */
     narrowed: branch !== undefined,
-    isLoading: branchLens.isLoading,
+    isLoading: branchLens.isLoading || sessionLens.isLoading,
   };
 }

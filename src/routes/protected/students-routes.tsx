@@ -30,11 +30,10 @@ const S = routesPath.PROTECTED.STUDENTS;
 // redirected to the not-live screen by base-api instead of being shown an
 // empty directory that looks broken.
 //
-// **`lenses: "branch"`.** These screens filter by branch and have no session
-// dimension to move: a student's status, branch, guardians and documents are
-// all current-state, and only the class placement is recorded per year. A
-// session pill here would relabel the header and change nothing beneath it.
-// See section 2.0 of docs/students-design-phases.md.
+// **Both lenses.** The roll and the class are per-year - a school had 85
+// students in 2026/2027 and has 73 in 2027/2028, and a child in SSS1 A last
+// year is in SSS2 A this one - so the year filters as much as the branch does.
+// Status carries no year, and the screens say so where it shows.
 // ─────────────────────────────────────────────────────────────────────────────
 export const studentsRoutes = [
   {
@@ -43,7 +42,6 @@ export const studentsRoutes = [
     handle: {
       title: "Student Directory",
       lens: true,
-      lenses: "branch",
     } satisfies DashboardHandle,
   },
   {
@@ -53,7 +51,6 @@ export const studentsRoutes = [
       title: "Applicants",
       hasBack: true,
       lens: true,
-      lenses: "branch",
     } satisfies DashboardHandle,
   },
   {
@@ -63,7 +60,6 @@ export const studentsRoutes = [
       title: "Enrol a student",
       hasBack: true,
       lens: true,
-      lenses: "branch",
     } satisfies DashboardHandle,
   },
   {
@@ -75,7 +71,6 @@ export const studentsRoutes = [
       title: "Student Profile",
       hasBack: true,
       lens: true,
-      lenses: "branch",
     } satisfies DashboardHandle,
   },
   {
@@ -84,7 +79,6 @@ export const studentsRoutes = [
     handle: {
       title: "Classes & Transfers",
       lens: true,
-      lenses: "branch",
     } satisfies DashboardHandle,
   },
   {
@@ -93,7 +87,6 @@ export const studentsRoutes = [
     handle: {
       title: "Guardians",
       lens: true,
-      lenses: "branch",
     } satisfies DashboardHandle,
   },
   {
@@ -103,7 +96,6 @@ export const studentsRoutes = [
       title: "Guardian",
       hasBack: true,
       lens: true,
-      lenses: "branch",
     } satisfies DashboardHandle,
   },
   {
@@ -112,7 +104,6 @@ export const studentsRoutes = [
     handle: {
       title: "Promotion",
       lens: true,
-      lenses: "branch",
     } satisfies DashboardHandle,
   },
 ] as RouteObject[];

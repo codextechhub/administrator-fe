@@ -47,7 +47,8 @@ import { statusChipClass } from "./status-chip";
  */
 export default function StudentDirectory() {
   const navigate = useNavigate();
-  const { branch, multiBranch, label: branchLabel } = useStudentsLens();
+  const { lens, multiBranch, label: branchLabel, sessionName, pastYear } =
+    useStudentsLens();
 
   const [search, setSearch] = useState("");
   const [classId, setClassId] = useState("all");
@@ -62,13 +63,13 @@ export default function StudentDirectory() {
 
 
   const listArgs = {
+    ...lens,
     search: search.trim() || undefined,
     // "unassigned" is not a class id: the server reads it as "on the roll with
     // no class", which is a different query from any particular class.
     class: unassignedOnly ? "unassigned" : classId === "all" ? undefined : classId,
     level: level === "all" ? undefined : level,
     status: status === "all" ? undefined : status,
-    branch,
     page,
   };
 
@@ -79,21 +80,21 @@ export default function StudentDirectory() {
     isError: listError,
     refetch,
   } = useGetStudentsQuery(listArgs);
-  // The same branch the table gets. These two used to disagree.
+  // The same lens the table gets, on both axes. These two used to disagree.
   const { data: summaryData, isLoading: summaryLoading } =
-    useGetStudentSummaryQuery({ branch });
+    useGetStudentSummaryQuery(lens);
   // The filter dropdowns' options. Classes are Academic Structure's, not ours.
   const { data: classesData } = useGetClassesQuery();
 
   // The three sources the work queue is composed from. All three are already
   // cached by other screens - the nav badge fetches unplaced, the applicants
   // board fetches applicants - so this costs a request only on a cold page.
-  const { data: unplacedData } = useGetUnplacedStudentsQuery();
+  const { data: unplacedData } = useGetUnplacedStudentsQuery(lens);
   const { data: applicantsData } = useGetStudentsQuery({
+    ...lens,
     status: "APPLICANT",
-    branch,
   });
-  const { data: seatsData } = useGetClassSeatsQuery({ branch });
+  const { data: seatsData } = useGetClassSeatsQuery(lens);
 
   const rows = useMemo(() => listData?.data ?? [], [listData]);
   const pagination = listData?.pagination;
@@ -228,6 +229,18 @@ export default function StudentDirectory() {
         </div>
       </div>
 
+      {/* Under a past year the roll and the classes are that year's, and the
+          status chips are not - status has no year to read. Said plainly,
+          because a Graduated chip beside a 2026 register otherwise looks like
+          a claim about 2026. */}
+      {pastYear && (
+        <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
+          Showing the {sessionName} roll and the classes held that year.
+          Statuses are current: the school records one status per student, not
+          one per year.
+        </p>
+      )}
+
       <OverviewCard
         summary={summary}
         loading={summaryLoading}
@@ -289,7 +302,8 @@ export default function StudentDirectory() {
             status: status === "all" ? undefined : status,
             class: classId === "all" ? undefined : classId,
             level: level === "all" ? undefined : level,
-            branch_name: branch !== undefined ? branchLabel : undefined,
+            branch_name: lens.branch !== undefined ? branchLabel : undefined,
+            session_name: sessionName ?? undefined,
           }}
         />
 
