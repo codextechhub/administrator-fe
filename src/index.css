@@ -11,7 +11,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  font-family: 'Outfit', system-ui, Helvetica, sans-serif;
+  font-family: var(--font-geist);
   line-height: 1.5;
   font-weight: 400;
 
@@ -58,7 +58,15 @@
 }
 
 @theme inline {
-  --font-mont: 'Montserrat', system-ui, Helvetica, sans-serif;
+  --font-geist: 'Geist Variable', system-ui, Helvetica, sans-serif;
+  --font-geist-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, monospace;
+  /* Geist, under a name that says Montserrat. The name is a handle, not a
+     promise: `font-mont` is written 1451 times inside @xvs/finance and hundreds
+     more here, and the package is shared with the console, where the class must
+     keep resolving to Montserrat outside its own screens. Renaming it there
+     would restyle the console. Pointing the token at Geist here restyles this
+     app and nothing else. */
+  --font-mont: var(--font-geist);
   /* The hand that writes the school's name on the sidebar mark. Copperplate
      rather than a casual script: a school's name belongs on a certificate, and
      that is the register Great Vibes is in. */
@@ -215,7 +223,7 @@
   box-shadow:
     0 12px 30px rgb(15 23 42 / 12%),
     0 2px 8px rgb(15 23 42 / 7%);
-  font-family: 'Outfit', system-ui, Helvetica, sans-serif;
+  font-family: var(--font-geist);
   font-size: 13px;
 }
 
@@ -655,4 +663,14 @@ button:focus-visible .school-mark__ink {
     margin: 12mm;
     size: landscape;
   }
+}
+
+/* Figures in mono inside the finance and procurement screens, so money and
+   codes line up in a column. Same rule the console carries, scoped the same
+   way: `console-geist` is the class @xvs/finance puts on its shell. The rest
+   of the app has no columns of figures to align, and mono there would read as
+   a different product. */
+.console-geist .tabular-nums {
+  font-family: var(--font-geist-mono);
+  font-variant-numeric: tabular-nums;
 }

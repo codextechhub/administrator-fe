@@ -7,16 +7,12 @@ import { installStaleChunkReload } from "@/utils/stale-chunk";
 // The sidebar mark writes the school's name in this on hover; nothing else
 // uses it, and it is one weight of one face.
 import "@fontsource/great-vibes/400.css";
-import "@fontsource/montserrat/400.css";
-import "@fontsource/montserrat/500.css";
-import "@fontsource/montserrat/600.css";
-import "@fontsource/montserrat/700.css";
-import "@fontsource/montserrat/800.css";
-import "@fontsource/outfit/400.css";
-import "@fontsource/outfit/500.css";
-import "@fontsource/outfit/600.css";
-import "@fontsource/outfit/700.css";
-import "@fontsource/outfit/800.css";
+// Geist is the app's typeface, the same one the CodeX console uses. Two
+// variable files replace the ten static weights of Montserrat and Outfit that
+// used to be shipped, so this is fewer bytes as well as one voice across both
+// products. Mono carries figures: money and codes line up in a column.
+import "@fontsource-variable/geist/index.css";
+import "@fontsource-variable/geist-mono/index.css";
 
 // Recover from stale dynamic-import chunks after a redeploy (guarded reload).
 installStaleChunkReload();

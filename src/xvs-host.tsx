@@ -96,6 +96,15 @@ export function UserAvatar({ name, className }: HostAvatarProps) {
   );
 }
 
+// A school runs one set of books and cannot see another school's, so there is
+// no roll-call to show. Rendering nothing is the whole answer, and it is
+// declared rather than omitted because the contract requires the member: the
+// package places this section on Setup -> Entities, which this app does not
+// even mount.
+export function PlatformLedgerInventory() {
+  return null;
+}
+
 // The school app has no dashboard-title mechanism of its own yet, so the title
 // goes to the browser tab. Deliberately not a no-op: a screen that asked to be
 // named and is not named anywhere reads as a bug the first time somebody looks
