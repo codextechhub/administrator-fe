@@ -45,6 +45,7 @@ import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { ClassDrawer } from "./class-drawer";
 import { GenerateArmsDrawer } from "./generate-arms-drawer";
 import { PageShell } from "@/components/layout/page-shell";
+import { useActionParam } from "@/hooks/use-action-param";
 
 /**
  * The classes pupils sit in, with their arms.
@@ -112,6 +113,14 @@ export default function Classes() {
   // would only answer 409.
   const canEdit = hasPermission(P.MODIFY_CLASS) && !readOnlyYear;
   const canManage = hasPermission(P.MANAGE_CLASSES) && !readOnlyYear;
+
+  // "Add a class" from the search box, on the Add button's own gate.
+  useActionParam("new", () => {
+    if (hasPermission(P.CREATE_CLASS) && !readOnlyYear) {
+      setEditing(null);
+      setDrawerOpen(true);
+    }
+  });
   const filtered = !!search || status !== "true" || levelFilter !== "all";
 
   const saveClass = async (body: ClassWrite) => {

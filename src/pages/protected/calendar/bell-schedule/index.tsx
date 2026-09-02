@@ -30,6 +30,7 @@ import { RowActions } from "../components/row-actions";
 import { PeriodDrawer } from "../components/period-drawer";
 import { blankPeriod, periodDraftFrom } from "../components/period-draft";
 import { PageShell } from "@/components/layout/page-shell";
+import { useActionParam } from "@/hooks/use-action-param";
 
 const DAY_TABS: { value: DayOfWeek | "all"; label: string; short: string }[] = [
   { value: "all", label: "The whole schedule", short: "All" },
@@ -114,6 +115,11 @@ export default function BellSchedule() {
     setEditing(period);
     setDrawerOpen(true);
   };
+
+  // "Add a period" from the search box, on the Add button's own gate.
+  useActionParam("new", () => {
+    if (canCreate) open(null);
+  });
 
   const save = async (body: PeriodWrite) => {
     const result = editing

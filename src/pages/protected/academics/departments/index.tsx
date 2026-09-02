@@ -43,6 +43,7 @@ import { ExportButton } from "@/components/custom/export-button";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 import { PageShell } from "@/components/layout/page-shell";
+import { useActionParam } from "@/hooks/use-action-param";
 
 /**
  * Faculty groupings that programmes and subjects hang off.
@@ -94,6 +95,11 @@ export default function Departments() {
     setEditing(null);
     setDrawerOpen(true);
   };
+  // "Add a department" from the search box. Gated on the same key the Add
+  // button is wrapped in: a query param is typed as easily as it is clicked.
+  useActionParam("new", () => {
+    if (hasPermission(P.CREATE_STRUCTURE)) openNew();
+  });
   // One list, running or not: the counts already say which.
   const renderList = (rows: Department[]) =>
     view === "cards" ? (

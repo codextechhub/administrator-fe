@@ -39,6 +39,7 @@ import { EventDetail, EventDrawer } from "../components/event-drawer";
 import { EventFilters } from "./event-filters";
 import { BLANK_FACETS, type EventFacets } from "./event-facets";
 import { PageShell } from "@/components/layout/page-shell";
+import { useActionParam } from "@/hooks/use-action-param";
 
 /**
  * Holidays, breaks, exam periods and school events, each dated inside a term.
@@ -120,6 +121,11 @@ export default function CalendarEvents() {
     setViewing(null);
     setFormOpen(true);
   };
+
+  // "Add an event" from the search box - the one people ask for by name.
+  useActionParam("new", () => {
+    if (canCreate) openForm(null);
+  });
 
   const save = async (body: CalendarEventWrite) => {
     const result = editing

@@ -315,6 +315,102 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.TIMETABLES.EXAMS },
   },
 
+  // ── Academics: the jobs, not the screens ───────────────────────────────────
+  //
+  // Each of these lands on a list screen with `?action=new` and the screen pops
+  // its create drawer (useActionParam). Two rules hold for every one of them:
+  //
+  //   - the gate is the SAME key the screen's Add button is wrapped in, so the
+  //     palette never offers a job whose button the reader cannot see; and
+  //   - the screen re-checks that key on arrival rather than trusting the URL.
+  //     A query param is typed as easily as it is clicked, and a create drawer
+  //     that opens because the address said so is a way round the screen.
+  //
+  // A read-only year (a closed session) disables some of these buttons. That is
+  // runtime state rather than a capability, so it cannot be a gate here - the
+  // landing hook carries it instead, and the action simply does nothing on a
+  // year nobody may edit, exactly as the disabled button does.
+  {
+    id: "add-department",
+    label: "Add a department",
+    aliases: ["faculty", "new department"],
+    section: "Academics",
+    group: "Academic structure",
+    kind: "do",
+    gate: { perm: P.CREATE_STRUCTURE },
+    run: { to: `${R.ACADEMIC_STRUCTURE.DEPARTMENTS}?action=new` },
+  },
+  {
+    id: "add-programme",
+    label: "Add a programme",
+    aliases: ["new level", "year group", "add a level"],
+    section: "Academics",
+    group: "Academic structure",
+    kind: "do",
+    gate: { perm: P.CREATE_STRUCTURE },
+    run: { to: `${R.ACADEMIC_STRUCTURE.PROGRAMS}?action=new` },
+  },
+  {
+    id: "add-subject",
+    label: "Add a subject",
+    aliases: ["new course", "put a subject on the curriculum"],
+    section: "Academics",
+    group: "Academic structure",
+    kind: "do",
+    gate: { perm: P.CREATE_SUBJECT },
+    run: { to: `${R.ACADEMIC_STRUCTURE.SUBJECTS}?action=new` },
+  },
+  {
+    id: "add-class",
+    label: "Add a class",
+    aliases: ["new arm", "open a class"],
+    section: "Academics",
+    group: "Academic structure",
+    kind: "do",
+    gate: { perm: P.CREATE_CLASS },
+    run: { to: `${R.ACADEMIC_STRUCTURE.CLASSES}?action=new` },
+  },
+  {
+    id: "add-session",
+    label: "Add a session",
+    aliases: ["new school year", "start a session", "new term"],
+    section: "Academics",
+    group: "Academic structure",
+    kind: "do",
+    gate: { perm: P.CREATE_SESSION },
+    run: { to: `${R.ACADEMIC_STRUCTURE.SESSIONS}?action=new` },
+  },
+  {
+    id: "add-event",
+    label: "Add an event",
+    aliases: ["new holiday", "midterm break", "put a date on the calendar"],
+    section: "Academics",
+    group: "Academic calendar",
+    kind: "do",
+    gate: { perm: P.CREATE_CALENDAR_EVENT },
+    run: { to: `${R.ACADEMIC_CALENDAR.EVENTS}?action=new` },
+  },
+  {
+    id: "add-room",
+    label: "Add a room",
+    aliases: ["new classroom", "new venue", "add a lab"],
+    section: "Academics",
+    group: "Timetables",
+    kind: "do",
+    gate: { perm: P.CREATE_TIMETABLE_ENTRY },
+    run: { to: `${R.TIMETABLES.ROOMS}?action=new` },
+  },
+  {
+    id: "add-period",
+    label: "Add a period",
+    aliases: ["new bell", "lesson time", "add to the bell schedule"],
+    section: "Academics",
+    group: "Timetables",
+    kind: "do",
+    gate: { perm: P.CREATE_TIMETABLE_ENTRY },
+    run: { to: `${R.TIMETABLES.BELL_SCHEDULE}?action=new` },
+  },
+
   // ── Onboarding ─────────────────────────────────────────────────────────────
   {
     id: "view-control-room",

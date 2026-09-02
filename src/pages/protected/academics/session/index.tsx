@@ -48,6 +48,7 @@ import { CardActions, ClickableCard } from "@/components/custom/surface";
 import { SessionStatusChip } from "./session-chips";
 import { scopeOf, statusOf, TERM_TONE, termState } from "./session-format";
 import { PageShell } from "@/components/layout/page-shell";
+import { useActionParam } from "@/hooks/use-action-param";
 
 /**
  * The school years this school has defined.
@@ -102,6 +103,10 @@ export default function AcademicSessions() {
     setDrawerFor(null);
     setDrawerOpen(true);
   };
+  // "Add a session" from the search box, on the Add button's own key.
+  useActionParam("new", () => {
+    if (hasPermission(P.CREATE_SESSION)) openNew();
+  });
   const openEdit = (session: AcademicSession) => {
     setDrawerFor(session);
     setDrawerOpen(true);

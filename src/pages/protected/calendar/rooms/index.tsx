@@ -38,6 +38,7 @@ import { roomIcon } from "../components/room-kind";
 import { RoomFilters } from "./room-filters";
 import { BLANK_ROOM_FACETS, type RoomFacets } from "./room-facets";
 import { PageShell } from "@/components/layout/page-shell";
+import { useActionParam } from "@/hooks/use-action-param";
 
 /**
  * The places lessons and examinations happen in.
@@ -99,6 +100,11 @@ export default function Rooms() {
     setEditing(room);
     setDrawerOpen(true);
   };
+
+  // "Add a room" from the search box, on the Add button's own gate.
+  useActionParam("new", () => {
+    if (canCreate) open(null);
+  });
 
   const save = async (body: RoomWrite) => {
     const result = editing

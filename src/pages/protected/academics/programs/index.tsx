@@ -58,6 +58,7 @@ import {
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 import { PageShell } from "@/components/layout/page-shell";
+import { useActionParam } from "@/hooks/use-action-param";
 
 /**
  * Programmes, and the levels inside them.
@@ -131,6 +132,12 @@ export default function Programs() {
   const canEdit = hasPermission(P.MODIFY_STRUCTURE) && !readOnlyYear;
   const canCreate = hasPermission(P.CREATE_STRUCTURE) && !readOnlyYear;
   const canManage = hasPermission(P.MANAGE_STRUCTURE) && !readOnlyYear;
+
+  // "Add a programme" from the search box. `canCreate` is CREATE_STRUCTURE and
+  // the read-only year, which is exactly what wraps the Add button.
+  useActionParam("new", () => {
+    if (canCreate) setProgramDrawer("new");
+  });
 
   // One place the row's wiring is written, so the two lists below cannot
   // drift apart in what a row can do.

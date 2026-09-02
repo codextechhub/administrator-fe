@@ -160,6 +160,21 @@ const navActions = ACTIONS.filter(
 const isConsolePath = (to: string): boolean =>
   to.startsWith("/finance") || to.startsWith("/procurement");
 
+// This app's screens that answer `?action=new` by opening their create drawer.
+// Kept here rather than inferred, because the only honest way to infer it is to
+// render each screen; what this catches is the half-done edit - an action added
+// with no landing hook wired, which looks like a palette row that does nothing.
+const SCREENS_WITH_CREATE_LANDING = [
+  routesPath.PROTECTED.ACADEMIC_STRUCTURE.DEPARTMENTS,
+  routesPath.PROTECTED.ACADEMIC_STRUCTURE.PROGRAMS,
+  routesPath.PROTECTED.ACADEMIC_STRUCTURE.SUBJECTS,
+  routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES,
+  routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS,
+  routesPath.PROTECTED.ACADEMIC_CALENDAR.EVENTS,
+  routesPath.PROTECTED.TIMETABLES.ROOMS,
+  routesPath.PROTECTED.TIMETABLES.BELL_SCHEDULE,
+];
+
 describe("action registry shape", () => {
   it("is a non-empty list", () => {
     expect(ACTIONS.length).toBeGreaterThan(0);
@@ -215,7 +230,40 @@ describe("action registry destinations", () => {
       // guarantee is the stronger one anyway: those actions are derived FROM
       // the mounted paths, so the test above is the whole check.
       if (isConsolePath(action.run.to)) continue;
-      expect(DECLARED_PATHS.has(action.run.to), action.id).toBe(true);
+      // The path, not the whole string: a `do` action carries a landing param
+      // ("?action=new") that no path table would ever name. The param is
+      // checked separately below.
+      expect(DECLARED_PATHS.has(pathOf(action.run.to)), action.id).toBe(true);
+    }
+  });
+
+  it("asks for a landing the app knows how to answer", () => {
+    // A query string on an action is an instruction to the screen it lands on,
+    // and the only instructions any screen listens for are these two - `action`
+    // through useActionParam, `tab` on the roles screen. A row carrying
+    // anything else silently does nothing on arrival, which reads to the person
+    // who picked it as the palette being broken.
+    for (const action of navActions) {
+      const query = action.run.to.split("?")[1];
+      if (!query) continue;
+      for (const key of new URLSearchParams(query).keys()) {
+        expect(["action", "tab"], `${action.id} -> ?${key}`).toContain(key);
+      }
+    }
+  });
+
+  it("only asks a screen to create when the screen can be asked", () => {
+    // Every "?action=new" row needs a landing hook on the other end, or picking
+    // it opens the list screen and nothing else happens. This pins the two
+    // together: the screens wired with useActionParam, and the actions that
+    // navigate to them.
+    const wired = new Set(
+      SCREENS_WITH_CREATE_LANDING.map((path) => path),
+    );
+    for (const action of navActions) {
+      if (!action.run.to.includes("action=new")) continue;
+      if (isConsolePath(action.run.to)) continue;
+      expect(wired.has(pathOf(action.run.to)), action.id).toBe(true);
     }
   });
 

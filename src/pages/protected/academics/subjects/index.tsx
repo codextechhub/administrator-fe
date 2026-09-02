@@ -50,6 +50,7 @@ import { blankDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 import { OfferedAt } from "./offered-at";
 import { PageShell } from "@/components/layout/page-shell";
+import { useActionParam } from "@/hooks/use-action-param";
 
 /**
  * What is taught, and the levels it is offered at.
@@ -122,6 +123,12 @@ export default function Subjects() {
     setEditing(subject);
     setDrawerOpen(true);
   };
+
+  // "Add a subject" from the search box. Both halves of the button's gate: the
+  // permission, and the read-only year that disables it for a closed session.
+  useActionParam("new", () => {
+    if (hasPermission(P.CREATE_SUBJECT) && !readOnlyYear) open(null);
+  });
 
   const save = async (body: SubjectWrite) => {
     const result = editing
