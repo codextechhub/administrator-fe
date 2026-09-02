@@ -2,6 +2,8 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { WorkspaceToaster } from "@/components/ui/sonner";
 import { AppSidebar } from "../app-sidebar";
+import { ConsoleSidebar } from "@/components/finance-ui/console-sidebar";
+import { financeNav } from "@/pages/protected/finance/finance-nav";
 import { ChevronLeft, Headset, Loader2, LogOut, Undo2, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLogout } from "@/hooks/use-logout";
@@ -44,9 +46,21 @@ import { exitProxySession } from "@/utils/proxy-session";
 // it renders once above the lazy page chunks and can't receive props from the
 // page it wraps - the route's `handle` is react-router's channel for exactly
 // this kind of static, route-owned metadata.
+/** Which sidebar a route wants. Omitted means the school's own. */
+export type SidebarKind = "finance" | "procurement";
+
 export type DashboardHandle = {
   /** Header title. Falls back to a generic greeting when omitted. */
   title?: string;
+  /**
+   * Swap the shell's sidebar for an area's own sub-navigation.
+   *
+   * The finance and procurement screens come from @xvs/finance and each wraps
+   * itself in that package's ConsoleShell, which renders a full sidebar. Without
+   * this the school's sidebar and the area's would both mount, nested. The route
+   * owns the CHOICE; the area still builds its own nav config.
+   */
+  sidebar?: SidebarKind;
   /** Show the back affordance (defaults to history-back). */
   hasBack?: boolean;
   /**
@@ -107,6 +121,7 @@ export default function DashboardLayout() {
     onboarding: onboardingRoute = false,
     lens: showLens = false,
     pendingSurface = false,
+    sidebar,
   } = matches.reduce<DashboardHandle>(
     (acc, m) => ({ ...acc, ...((m.handle as DashboardHandle | undefined) ?? {}) }),
     {},
@@ -191,7 +206,9 @@ export default function DashboardLayout() {
       />
       <SidebarProvider>
         <DashboardToaster />
-        <AppSidebar onboarding={onboarding} />
+        {sidebar === "finance"
+          ? <ConsoleSidebar title="Finance" nav={financeNav} />
+          : <AppSidebar onboarding={onboarding} />}
         <SidebarInset className="bg-white-05 min-w-0 w-auto">
           {/* Banner + header pin together: two independently sticky bars at
               top-0 would overlap as soon as the page scrolls. */}

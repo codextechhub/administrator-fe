@@ -18,6 +18,7 @@ import { Link, useLocation } from "react-router";
 import {
   BookOpen,
   CalendarClock,
+  Wallet,
   CalendarRange,
   ArrowLeftRight,
   Contact,
@@ -69,8 +70,9 @@ export function AppSidebar({
 }) {
   const location = useLocation().pathname;
 
-  const { hasPermission, hasAnyPermission, hasAllPermissions } =
-    usePermissions();
+  const {
+    hasPermission, hasAnyPermission, hasAllPermissions, hasModuleAccess,
+  } = usePermissions();
 
   const school = useAppSelector(selectSchool);
   const user = useAppSelector(selectUser);
@@ -408,6 +410,24 @@ export function AppSidebar({
           },
         ],
       },
+      // Finance. The screens come from @xvs/finance, and the area builds its
+      // own sub-navigation once you are inside it - this is only the door.
+      //
+      // Gated on holding ANY finance permission, not on one code. The package's
+      // 145 codes gate individual ACTIONS (create an invoice, post a journal);
+      // there is no "may use finance" code to point at, and picking one action
+      // would hide the area from somebody who legitimately holds a different
+      // part of it. hasModuleAccess reads the backend keys directly, which is
+      // what the area's own sub-navigation already does with its prefixes.
+      ...(hasModuleAccess("finance.")
+        ? [{
+            title: "Finance",
+            url: routesPath.PROTECTED.FINANCE.INDEX,
+            icon: Wallet,
+            isActive: location.startsWith(routesPath.PROTECTED.FINANCE.INDEX),
+            childActive: location.startsWith(routesPath.PROTECTED.FINANCE.INDEX),
+          }]
+        : []),
     ],
   };
 
