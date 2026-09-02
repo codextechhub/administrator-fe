@@ -274,7 +274,10 @@ function ExistingPicker({
   }
 
   return (
-    <div className="grid gap-2">
+    // Relative, because the matches float OVER the form rather than pushing it
+    // down. Inline results reflow every field below the box on each keystroke,
+    // so the row you were reaching for moves as you type towards it.
+    <div className="relative grid gap-2">
       <Field
         label="Search the school's guardians"
         hint="A parent already here should be reused, not typed again - that is what keeps siblings together."
@@ -286,11 +289,14 @@ function ExistingPicker({
           className={inputClass}
         />
       </Field>
+      <div className="absolute inset-x-0 top-full z-20 grid gap-1.5 empty:hidden">
       {query.length >= 2 &&
         (isFetching ? (
-          <p className="text-xs text-gray-05">Searching…</p>
+          <p className="rounded-lg border border-white-02 bg-white px-3 py-2 text-xs text-gray-05 shadow-sm">
+            Searching…
+          </p>
         ) : matches.length === 0 ? (
-          <p className="text-xs text-gray-05">
+          <p className="rounded-lg border border-white-02 bg-white px-3 py-2 text-xs text-gray-05 shadow-sm">
             Nobody here matches "{query}". Use "Add a new one" instead.
           </p>
         ) : (
@@ -309,7 +315,7 @@ function ExistingPicker({
                   })
                 }
                 className={cn(
-                  "min-w-0 rounded-lg border px-3 py-2 text-left",
+                  "min-w-0 rounded-lg border px-3 py-2 text-left shadow-sm",
                   taken
                     ? "cursor-not-allowed border-white-02 bg-gray-04 opacity-70"
                     : "border-white-02 bg-white hover:border-primary/40",
@@ -323,6 +329,7 @@ function ExistingPicker({
             );
           })
         ))}
+      </div>
     </div>
   );
 }

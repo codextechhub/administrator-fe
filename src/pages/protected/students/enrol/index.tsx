@@ -23,6 +23,7 @@ import {
 
 import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { Field, errorInputClass, inputClass } from "../drawers/drawer-shell";
+import { ChoiceButtons } from "./choice-buttons";
 import { GuardianRows, type GuardianDraft } from "./guardian-rows";
 
 function today() {
@@ -509,7 +510,7 @@ export default function EnrolStudent() {
       {step === "student" && (
       <Section title="The student">
         <div className="grid gap-3.5 sm:grid-cols-2">
-          <Field label="First name" error={err("first_name")}>
+          <Field label="First name" error={err("first_name")} required>
             <input
               value={form.first_name}
               onChange={(e) => set("first_name", e.target.value)}
@@ -524,7 +525,7 @@ export default function EnrolStudent() {
               className={inputClass}
             />
           </Field>
-          <Field label="Last name" error={err("last_name")}>
+          <Field label="Last name" error={err("last_name")} required>
             <input
               value={form.last_name}
               onChange={(e) => set("last_name", e.target.value)}
@@ -534,6 +535,7 @@ export default function EnrolStudent() {
           </Field>
           <Field
             label="Date of birth"
+            required
             error={err("date_of_birth")}
             hint={
               !problems.date_of_birth && form.date_of_birth
@@ -549,19 +551,19 @@ export default function EnrolStudent() {
               className={err("date_of_birth") ? errorInputClass : inputClass}
             />
           </Field>
-          <Field label="Gender" error={err("gender")}>
-            <NativeSelect
+          <Field label="Gender" error={err("gender")} required>
+            <ChoiceButtons
+              ariaLabel="Gender"
               value={form.gender}
-              onChange={(e) => {
-                set("gender", e.target.value);
+              onChange={(next) => {
+                set("gender", next);
                 touch("gender");
               }}
-              className="h-9"
-            >
-              <option value="">Select a gender</option>
-              <option value="FEMALE">Female</option>
-              <option value="MALE">Male</option>
-            </NativeSelect>
+              options={[
+                { value: "FEMALE", label: "Female" },
+                { value: "MALE", label: "Male" },
+              ]}
+            />
           </Field>
           <Field label="Nationality">
             <input
@@ -619,7 +621,7 @@ export default function EnrolStudent() {
           )}
 
           {asApplicant ? (
-            <Field label="Level applied for" error={err("applied_for")}>
+            <Field label="Level applied for" error={err("applied_for")} required>
               <NativeSelect
                 value={form.applied_for}
                 onChange={(e) => {
@@ -638,7 +640,12 @@ export default function EnrolStudent() {
             </Field>
           ) : (
             <>
-              <Field label="Entry class" error={err("school_class")}>
+              <Field
+                label="Entry class"
+                required
+                error={err("school_class")}
+                hint="Classes come from Academic Structure."
+              >
                 <NativeSelect
                   value={form.school_class}
                   onChange={(e) => {

@@ -97,11 +97,20 @@ export function Field({
   label,
   error,
   hint,
+  required,
   children,
 }: {
   label: string;
   error?: string;
   hint?: string;
+  /**
+   * Mark the label with the design's red asterisk.
+   *
+   * Marking the required ones rather than writing "(optional)" after the rest:
+   * on a form where most fields ARE required, the second reads as an
+   * apologetic list and the eye stops picking out anything.
+   */
+  required?: boolean;
   children: ReactNode;
 }) {
   const id = useId();
@@ -112,6 +121,11 @@ export function Field({
     <div className="grid gap-1.5">
       <label htmlFor={id} className="text-xs font-medium text-gray-05">
         {label}
+        {required && (
+          <span aria-hidden className="pl-1 text-red-600">
+            *
+          </span>
+        )}
       </label>
       {isValidElement(children)
         ? cloneElement(children as ReactElement<Record<string, unknown>>, {
