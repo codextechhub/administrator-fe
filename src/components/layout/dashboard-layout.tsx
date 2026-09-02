@@ -5,11 +5,16 @@ import { AppSidebar } from "../app-sidebar";
 import { ConsoleSidebar } from "@/components/finance-ui/console-sidebar";
 import { schoolFinanceNav, schoolProcurementNav } from "./console-nav-for-school";
 import { ChevronLeft, Headset, Loader2, LogOut, Undo2, UsersRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLogout } from "@/hooks/use-logout";
 import useToggleModal from "@/hooks/use-toggle";
 import PromptModal from "@/components/modal/prompt-modal";
-import { Outlet, useMatches, useNavigate } from "react-router";
+import { Outlet, useLocation, useMatches, useNavigate } from "react-router";
+import {
+  DashboardHeaderContext,
+  resolveHeaderTitle,
+  type HeaderOverride,
+} from "./dashboard-header";
 import { useSessionTimeout } from "@/hooks/use-session-timeout";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
 import { SessionTimeoutModal } from "@/components/session-timeout-modal";
@@ -116,7 +121,7 @@ export default function DashboardLayout() {
   // header without the parent knowing about it.
   const matches = useMatches();
   const {
-    title,
+    title: handleTitle,
     hasBack = false,
     onboarding: onboardingRoute = false,
     lens: showLens = false,
@@ -126,6 +131,29 @@ export default function DashboardLayout() {
     (acc, m) => ({ ...acc, ...((m.handle as DashboardHandle | undefined) ?? {}) }),
     {},
   );
+
+  // The runtime title channel. The finance and procurement areas are dozens of
+  // screens under one route parent, so `handle.title` can only ever say
+  // "Finance" for all of them; @xvs/finance names the actual screen through
+  // useDashboardTitle and it arrives here. The override carries the location it
+  // was set under, so it dies the moment the caller navigates away rather than
+  // bleeding into the next screen.
+  const location = useLocation();
+  const [override, setOverride] = useState<HeaderOverride | null>(null);
+  const setTitle = useCallback(
+    (next?: string) =>
+      setOverride((current) => {
+        // Cleanup fires after the next screen has already set its own title.
+        // Without this guard the unmount of the screen being left would clear
+        // the incoming one, and the header would blank on every navigation.
+        if (next === undefined && current && current.key !== location.key) return current;
+        return { key: location.key, title: next };
+      }),
+    [location.key],
+  );
+  const headerApi = useMemo(() => ({ setTitle }), [setTitle]);
+  const title = resolveHeaderTitle(handleTitle, override, location.key);
+
   const dispatch = useAppDispatch();
 
   // A school that has not gone live may reach onboarding and nothing else. The
@@ -195,7 +223,7 @@ export default function DashboardLayout() {
   };
 
   return (
-    <>
+    <DashboardHeaderContext.Provider value={headerApi}>
       <SessionTimeoutModal
         open={open}
         secondsLeft={secondsLeft}
@@ -401,7 +429,7 @@ export default function DashboardLayout() {
           </div>
         </SidebarInset>
       </SidebarProvider>
-    </>
+    </DashboardHeaderContext.Provider>
   );
 }
 

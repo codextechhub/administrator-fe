@@ -8,7 +8,7 @@
 // asks its tenant-admin services, this app asks its own.
 //
 
-import { useEffect, type ComponentType } from "react";
+import { type ComponentType } from "react";
 // The REAL contract types, from the package. Previously copied locally,
 // which meant this app satisfied a copy and the compile-time assertion
 // checked nothing here.
@@ -21,6 +21,9 @@ import { returnInitial } from "@/utils/helpers";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import { useGetSchoolStaffQuery } from "@/redux/services/staff/staff-api";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
+import { SchoolMark } from "@/components/school-mark";
+import { useAppSelector } from "@/redux/store";
+import { selectSchool } from "@/redux/features/auth/auth-slice";
 
 
 /** Every branch this caller may see. The server scopes it by their grants. */
@@ -44,12 +47,30 @@ export function useDirectory(): HostQueryResult<HostPerson> {
   return { data: rows, isLoading, isError };
 }
 
-/** The school's own logo, not the platform's. */
-export const AppLogo: ComponentType<{ animate?: boolean; className?: string }> = ({ className }) => {
+/** The school's own mark, not the platform's.
+ *
+ *  The same component the school's own sidebar uses, deliberately: crossing
+ *  into Finance should not change who the header says you are looking at. It
+ *  also has the fallback this used not to have. A school whose crest is missing
+ *  from storage - never uploaded, or the file gone - rendered an empty span
+ *  here, so the top of the finance sidebar was simply blank, with nothing to
+ *  say whether the logo was loading, missing or broken.
+ */
+export const AppLogo: ComponentType<{ animate?: boolean; className?: string }> = ({
+  animate = true,
+  className,
+}) => {
   const logo = useSchoolLogo();
-  return logo
-    ? <img src={logo} alt="" className={className} />
-    : <span className={className} aria-hidden="true" />;
+  const school = useAppSelector(selectSchool);
+  return (
+    <SchoolMark
+      logo={logo}
+      name={school?.name}
+      slug={school?.slug}
+      animate={animate}
+      className={className}
+    />
+  );
 };
 
 /** Scroll the sidebar so the active item is visible.
@@ -105,15 +126,9 @@ export function PlatformLedgerInventory() {
   return null;
 }
 
-// The school app has no dashboard-title mechanism of its own yet, so the title
-// goes to the browser tab. Deliberately not a no-op: a screen that asked to be
-// named and is not named anywhere reads as a bug the first time somebody looks
-// for it, and the tab is where a title is least surprising.
-export function useDashboardTitle(title: string) {
-  useEffect(() => {
-    if (!title) return;
-    const previous = document.title;
-    document.title = title;
-    return () => { document.title = previous; };
-  }, [title]);
-}
+// The header names the screen. Routes carry a static title in their handle,
+// which is the whole answer for this app's own screens; it is not the answer
+// for finance and procurement, where dozens of screens sit under one route
+// parent and would all read "Finance". The package works out the right name
+// from its own nav and calls this with it.
+export { useDashboardTitle } from "@/components/layout/dashboard-header";
