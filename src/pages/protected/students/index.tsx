@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import PermissionGate from "@/components/custom/permission-gate";
 import { P } from "@/permissions";
 import { PageShell } from "@/components/layout/page-shell";
+import BulkImportDrawer from "@/components/custom/bulk-import-drawer";
 import { ExportButton } from "@/components/custom/export-button";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
@@ -55,6 +56,7 @@ export default function StudentDirectory() {
   const [status, setStatus] = useState<StudentStatus | "all">("all");
   const [page, setPage] = useState(1);
   const [view, setView] = useState<"list" | "cards">("list");
+  const [importing, setImporting] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
@@ -212,7 +214,7 @@ export default function StudentDirectory() {
           <PermissionGate permission={P.IMPORT_STUDENTS}>
             <button
               type="button"
-              onClick={() => navigate(routesPath.PROTECTED.STUDENTS.IMPORT)}
+              onClick={() => setImporting(true)}
               className="inline-flex h-10.5 items-center gap-2 rounded-lg border border-white-02 bg-white px-4 text-sm font-medium text-gray-01 hover:bg-gray-03 hover:text-primary"
             >
               <Upload className="size-4" />
@@ -464,6 +466,26 @@ export default function StudentDirectory() {
       )}
 
       <StudentDrawers request={drawer} onClose={() => setDrawer(null)} />
+      {/* The console component, not a second implementation of it.
+          Bulk import is a THING YOU DO TO the directory, not a place you go -
+          so it is a drawer over this screen rather than a nav item and a page
+          of its own. That is also how console launches it, from the list the
+          rows will land in. */}
+      <BulkImportDrawer
+        open={importing}
+        datasetType="students"
+        title="Import students"
+        description="Load a roll from a spreadsheet. Nothing is written until you confirm."
+        returnLabel="Back to students"
+        onClose={() => setImporting(false)}
+        // School has no batch-details screen, so "view this import" comes back
+        // to the directory the new rows are now in - which is the thing the
+        // person actually wanted to see.
+        onViewBatch={() => setImporting(false)}
+        onFinished={() => {
+          void refetch();
+        }}
+      />
     </PageShell>
   );
 }

@@ -2,7 +2,20 @@ import type { PaginatedResponse } from "./security-types";
 
 // ── Enums (mirrored from backend) ────────────────────────────────────────────
 
-export type DatasetType = "schools" | "branches" | "cx_users" | "bank_statements";
+/**
+ * The datasets the import engine can load.
+ *
+ * The first four are console's, which is where this module was ported from.
+ * `students` is school's, seeded by vs_import_data migration 0011 as
+ * `students_v1` - the engine is shared, so the union is shared too and a
+ * dataset missing from it is a dataset the wizard refuses to be pointed at.
+ */
+export type DatasetType =
+  | "schools"
+  | "branches"
+  | "cx_users"
+  | "bank_statements"
+  | "students";
 
 export type FileFormat = "csv" | "xlsx" | "xls";
 

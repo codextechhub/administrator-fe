@@ -23,7 +23,6 @@ import {
   Contact,
   GraduationCap,
   ListChecks,
-  Upload,
   Rocket,
   UserPlus,
   Users,
@@ -228,17 +227,6 @@ export function AppSidebar({
         isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.PROMOTION),
         childActive: false,
         permission: P.MANAGE_STUDENTS,
-      },
-      {
-        // Loading an existing roll. Gated on the import key rather than
-        // create: the engine writes the rows, and a school administrator who
-        // may add one student by hand is not thereby cleared to load 400.
-        title: "Bulk Import",
-        url: routesPath.PROTECTED.STUDENTS.IMPORT,
-        icon: Upload,
-        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.IMPORT),
-        childActive: false,
-        permission: P.IMPORT_STUDENTS,
       },
     ],
     academics: [

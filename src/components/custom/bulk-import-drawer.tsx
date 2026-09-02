@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/sheet";
 import { useCancelImportBatchMutation } from "@/redux/services/dashboard/import-api";
 import type { DatasetType } from "@/redux/services/dashboard/import-types";
-import { routesPath } from "@/routes/routes-path";
+import { routesPath } from "@/routes/routesPath";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function ImportProcessDrawer({
@@ -111,6 +111,7 @@ export default function BulkImportDrawer({
   returnLabel,
   onClose,
   onFinished,
+  onViewBatch,
 }: {
   open: boolean;
   datasetType: Exclude<DatasetType, "bank_statements">;
@@ -119,6 +120,15 @@ export default function BulkImportDrawer({
   returnLabel: string;
   onClose: () => void;
   onFinished?: (completion: ImportWizardCompletion) => void | Promise<void>;
+  /**
+   * Where "view this import" goes, when the host app has somewhere to send it.
+   *
+   * Console has a batch-details screen and defaults to it. School does not, and
+   * navigating a school administrator to a route that does not exist is worse
+   * than not offering the trip - so a host without the page passes its own
+   * destination instead.
+   */
+  onViewBatch?: (batchId: number) => void;
 }) {
   const navigate = useNavigate();
   const [batchId, setBatchId] = useState<number | null>(null);
@@ -169,6 +179,7 @@ export default function BulkImportDrawer({
 
   const viewDetails = (id: number) => {
     resetAndClose();
+    if (onViewBatch) return onViewBatch(id);
     navigate(routesPath.PROTECTED.DATA_IMPORTS.BATCHES.VIEW(String(id)));
   };
 
