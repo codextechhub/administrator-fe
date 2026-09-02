@@ -60,6 +60,10 @@ export function TransferDrawer({
   const [effective, setEffective] = useState(today());
   const [override, setOverride] = useState(false);
 
+  // No lens, deliberately. This picker feeds a WRITE, and a placement is
+  // always made in the year the school is running - the backend refuses one
+  // against a closed year. Offering last year's classes while somebody browses
+  // last year would offer a seat that cannot be taken.
   const { data: classesData } = useGetClassSeatsQuery();
   // The student's own branch, or school-wide, and nothing else: the server
   // refuses a placement that crosses branches, so offering one here would walk

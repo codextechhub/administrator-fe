@@ -180,6 +180,10 @@ export default function EnrolStudent() {
   const [confirmDuplicate, setConfirmDuplicate] = useState<string | null>(null);
   const [allowOverCapacity, setAllowOverCapacity] = useState(false);
 
+  // No lens, deliberately. This picker feeds a WRITE, and a placement is
+  // always made in the year the school is running - the backend refuses one
+  // against a closed year. Offering last year's classes while somebody browses
+  // last year would offer a seat that cannot be taken.
   const { data: classesData } = useGetClassSeatsQuery();
   const { data: policyData } = useGetAdmissionPolicyQuery();
   const [enrol, { isLoading }] = useEnrolStudentMutation();
