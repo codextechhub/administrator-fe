@@ -3,8 +3,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from "@/com
 import { WorkspaceToaster } from "@/components/ui/sonner";
 import { AppSidebar } from "../app-sidebar";
 import { ConsoleSidebar } from "@/components/finance-ui/console-sidebar";
-import { financeNav } from "@/pages/protected/finance/finance-nav";
-import { procurementNav } from "@/pages/protected/procurement/procurement-nav";
+import { schoolFinanceNav, schoolProcurementNav } from "./console-nav-for-school";
 import { ChevronLeft, Headset, Loader2, LogOut, Undo2, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLogout } from "@/hooks/use-logout";
@@ -208,9 +207,9 @@ export default function DashboardLayout() {
       <SidebarProvider>
         <DashboardToaster />
         {sidebar === "finance"
-          ? <ConsoleSidebar title="Finance" nav={financeNav} />
+          ? <ConsoleSidebar title="Finance" nav={schoolFinanceNav} />
           : sidebar === "procurement"
-            ? <ConsoleSidebar title="Procurement" nav={procurementNav} />
+            ? <ConsoleSidebar title="Procurement" nav={schoolProcurementNav} />
             : <AppSidebar onboarding={onboarding} />}
         <SidebarInset className="bg-white-05 min-w-0 w-auto">
           {/* Banner + header pin together: two independently sticky bars at

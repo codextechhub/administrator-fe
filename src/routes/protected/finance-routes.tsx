@@ -99,3 +99,16 @@ export const financeRoutes: RouteObject[] = [
     ],
   },
 ];
+
+/** Every path this app actually mounts.
+ *
+ *  The sidebar is filtered through this rather than through a second list of
+ *  exclusions, so the nav can never offer a screen the router does not serve.
+ *  A hand-kept list drifts the moment somebody mounts a route and forgets the
+ *  nav, and the failure looks like a broken link rather than a missing edit.
+ */
+export const FINANCE_MOUNTED_PATHS: ReadonlySet<string> = new Set(
+  (financeRoutes[0].children ?? [])
+    .map((route) => route.path)
+    .filter((path): path is string => typeof path === "string"),
+);
