@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Outlet } from "react-router";
 import ArrangingShapes from "@/components/auth/arranging-shapes";
+import SchoolMark from "@/components/auth/school-mark";
 import { AuthToaster } from "@/components/ui/sonner";
 import { resetFavicon } from "@/utils/favicon";
 
@@ -31,19 +32,13 @@ export default function AuthLayout() {
           fields on a short phone). `100dvh` accounts for mobile browser chrome. */}
       <div className="w-full flex-1 relative px-6 hide-scrollbar overflow-y-auto flex flex-col min-h-[100dvh]">
         <div className="w-full m-auto max-w-107.5 py-6 shrink-0">
-          {/* Mobile-only logo - part of the centered block below lg. The blue
-              panel carries the logo on desktop, so this is hidden there. */}
-          <img
-            src="/image/logo.png"
-            alt="XVS logo"
-            className="lg:hidden h-8 w-auto mx-auto mb-6"
-          />
-          {/* Desktop-only logo (blue panel is shown alongside). */}
-          <img
-            src="/image/logo.png"
-            alt="XVS logo"
-            className="hidden lg:block h-12 w-auto mx-auto mb-6"
-          />
+          {/* The school's own crest when the address names one, the XVS mark
+              otherwise. See components/auth/school-mark. */}
+          {/* Mobile-only - part of the centered block below lg. The blue
+              panel carries the mark on desktop, so this is hidden there. */}
+          <SchoolMark className="lg:hidden h-8 w-auto mx-auto mb-6" />
+          {/* Desktop-only (blue panel is shown alongside). */}
+          <SchoolMark className="hidden lg:block h-12 w-auto mx-auto mb-6" />
           <Outlet />
         </div>
       </div>
