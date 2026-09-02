@@ -1,8 +1,9 @@
-// ─────────────────────────────────────────────────────────────────────────────
 import {
   P as FINANCE_CODES,
   FINANCE_PERMISSION_REGISTRY as FINANCE_REGISTRY,
 } from "@xvs/finance/permissions";
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PERMISSION REGISTRY
 //
 // Single source of truth. The backend permission keys ("module.resource.action")
