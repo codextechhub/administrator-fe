@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Panel } from "@/components/custom/surface";
 import { cn } from "@/lib/utils";
 import type {
   PromotionOutcome,
@@ -48,9 +49,9 @@ export function ClassGroups({
 
   if (groups.length === 0) {
     return (
-      <p className="rounded-lg bg-white px-4 py-10 text-center text-sm text-gray-05">
+      <Panel as="section" className="px-4 py-10 text-center text-sm text-gray-05">
         No student in this year is a candidate for promotion.
-      </p>
+      </Panel>
     );
   }
 
@@ -68,9 +69,10 @@ export function ClassGroups({
           .join(" · ");
 
         return (
-          <section
+          <Panel
+            as="section"
             key={group.from_id}
-            className="min-w-0 rounded-lg bg-white"
+            className="min-w-0"
           >
             <div className="flex flex-wrap items-center gap-2 p-3.5">
               <button
@@ -163,7 +165,7 @@ export function ClassGroups({
                 })}
               </ul>
             )}
-          </section>
+          </Panel>
         );
       })}
     </div>

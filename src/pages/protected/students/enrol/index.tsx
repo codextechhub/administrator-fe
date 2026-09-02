@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
+import { Panel } from "@/components/custom/surface";
 import { PageShell } from "@/components/layout/page-shell";
 import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
@@ -1024,7 +1025,7 @@ function Block({
   children: React.ReactNode;
 }) {
   return (
-    <section className="min-w-0 rounded-xl border border-white-02 bg-white p-4">
+    <Panel as="section" className="min-w-0 p-4">
       <div className="mb-2.5 flex items-center justify-between gap-2">
         <h3 className="text-xs font-medium text-gray-05">{title}</h3>
         <button
@@ -1036,7 +1037,7 @@ function Block({
         </button>
       </div>
       {children}
-    </section>
+    </Panel>
   );
 }
 

@@ -3,16 +3,15 @@ import { useNavigate } from "react-router";
 import { LayoutGrid, List, Search, Upload, UserPlus, Users, X } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
-import { Button } from "@/components/ui/button";
 import PermissionGate from "@/components/custom/permission-gate";
 import { P } from "@/permissions";
 import { PageShell } from "@/components/layout/page-shell";
 import BulkImportDrawer from "@/components/custom/bulk-import-drawer";
+import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { ExportButton } from "@/components/custom/export-button";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
-import { cn } from "@/lib/utils";
 import {
   useGetClassSeatsQuery,
   useGetStudentSummaryQuery,
@@ -299,22 +298,20 @@ export default function StudentDirectory() {
           }}
         />
 
-        <div className="ml-auto inline-flex rounded-lg border border-white-02 bg-white p-0.5">
-          <ViewButton
-            active={view === "list"}
-            onClick={() => setView("list")}
-            label="List view"
-          >
-            <List className="size-4" />
-          </ViewButton>
-          <ViewButton
-            active={view === "cards"}
-            onClick={() => setView("cards")}
-            label="Card view"
-          >
-            <LayoutGrid className="size-4" />
-          </ViewButton>
-        </div>
+        {/* The app's toggle, not a ninth copy of it. Its own comment warned
+            that five hand-rolled ones existed and a sixth was coming; this
+            screen had written the seventh. The sliding marker is the part that
+            cannot be reproduced consistently by hand. */}
+        <SegmentedToggle
+          className="ml-auto"
+          ariaLabel="Directory layout"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "list", label: "List", icon: List },
+            { value: "cards", label: "Cards", icon: LayoutGrid },
+          ]}
+        />
       </div>
 
       {/* Two or more filters is where a reader loses track of what is applied,
@@ -499,31 +496,3 @@ function initials(fullName: string) {
   return (first + last).toUpperCase();
 }
 
-function ViewButton({
-  active,
-  onClick,
-  label,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Button
-      type="button"
-      size="sm"
-      variant="ghost"
-      aria-label={label}
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        "h-8 rounded-full px-3",
-        active ? "bg-white-03 text-primary" : "text-gray-05",
-      )}
-    >
-      {children}
-    </Button>
-  );
-}

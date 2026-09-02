@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Panel } from "@/components/custom/surface";
 import { PageShell } from "@/components/layout/page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
@@ -61,7 +62,7 @@ export default function GuardianDetail() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <header className="rounded-lg bg-white px-6 py-5.5">
+      <Panel className="px-6 py-5.5">
         {isLoading || !guardian ? (
           <div className="grid gap-2">
             <Skeleton className="h-6 w-56" />
@@ -119,7 +120,7 @@ export default function GuardianDetail() {
             </Button>
           </div>
         )}
-      </header>
+      </Panel>
 
       {/* The ward count is in the header now, so this says only what the
           header cannot: WHY the school treats these children as one household. */}

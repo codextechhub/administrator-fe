@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ClickableCard } from "@/components/custom/surface";
 import type { StudentRow } from "@/redux/services/students/students-types";
 
 import { statusChipClass } from "./status-chip";
@@ -51,10 +52,13 @@ export function StudentCards({
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {rows.map((s) => (
           <li key={s.id} className="min-w-0">
-            <button
-              type="button"
-              onClick={() => onOpen(s.id)}
-              className="flex w-full min-w-0 flex-col gap-2 rounded-xl border border-white-02 bg-white p-4 text-left hover:border-primary/40"
+            {/* The app's clickable card. Its own comment records four
+                hand-rolled copies of which only two animated, so half the
+                academics screens looked unclickable; this was a fifth. */}
+            <ClickableCard
+              onOpen={() => onOpen(s.id)}
+              label={`Open ${s.full_name}'s record`}
+              className="flex w-full min-w-0 flex-col gap-2 p-4 text-left"
             >
               <div className="flex min-w-0 items-start justify-between gap-2">
                 {/* min-w-0 on the growing side, or truncate silently stops. */}
@@ -89,7 +93,7 @@ export function StudentCards({
               <p className="truncate text-xs text-gray-05">
                 {s.primary_guardian || "No guardian linked"}
               </p>
-            </button>
+            </ClickableCard>
           </li>
         ))}
       </ul>

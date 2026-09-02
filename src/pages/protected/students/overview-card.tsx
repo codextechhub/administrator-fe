@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { Panel } from "@/components/custom/surface";
 import { cn } from "@/lib/utils";
 import type {
   StudentStatus,
@@ -73,7 +74,7 @@ export function OverviewCard({
   const total = Math.max(1, summary?.total ?? 0);
 
   return (
-    <section className="min-w-0 rounded-xl border border-white-02 bg-white px-6 py-5.5">
+    <Panel as="section" className="min-w-0 px-6 py-5.5">
       <div className="flex flex-wrap items-start gap-8">
         {/* ── The roll, and how it splits ─────────────────────────────────── */}
         <div className="min-w-0 flex-[1_1_300px]">
@@ -203,6 +204,6 @@ export function OverviewCard({
           )}
         </div>
       </div>
-    </section>
+    </Panel>
   );
 }

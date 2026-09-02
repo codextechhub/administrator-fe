@@ -1,3 +1,4 @@
+import { Panel } from "@/components/custom/surface";
 /**
  * An absence drawn as a shape, not as a failed container.
  *
@@ -12,10 +13,10 @@
  */
 export function EmptyRing({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid place-content-center rounded-lg bg-white p-11">
+    <Panel className="grid place-content-center p-11">
       <div className="grid size-40 place-content-center rounded-full border border-primary p-5 text-center">
         <p className="text-[13px] text-gray-01">{children}</p>
       </div>
-    </div>
+    </Panel>
   );
 }

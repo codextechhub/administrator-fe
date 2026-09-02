@@ -23,6 +23,8 @@ import type {
 
 import { StudentDrawers, type DrawerRequest } from "../drawers";
 import { formatDate, formatDateTime, titleCaseCode } from "../format";
+import { Panel as Surface } from "@/components/custom/surface";
+
 import { statusChipClass } from "../status-chip";
 import { Dot } from "../guardians/person-card";
 import { personInitials } from "../person-name";
@@ -79,7 +81,7 @@ export default function StudentProfile() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <header className="rounded-lg bg-white px-6 py-5.5">
+      <Surface as="section" className="px-6 py-5.5">
         {isLoading || !student ? (
           <div className="grid gap-2">
             <Skeleton className="h-6 w-56" />
@@ -190,7 +192,7 @@ export default function StudentProfile() {
             </div>
           </>
         )}
-      </header>
+      </Surface>
 
       {/* A segmented control on its own surface, not pills floating on the
           page. Six tabs sitting loose read as six links; sitting in a tray
@@ -606,12 +608,10 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section
-      className={cn(
-        "min-w-0 rounded-lg bg-white px-5.5 py-5",
-        className,
-      )}
-    >
+    // The app's surface, not a ninth hand-written one. This wrapper stays
+    // because it also owns the heading, the badge and the note - what it no
+    // longer owns is what a white box looks like.
+    <Surface as="section" className={cn("px-5.5 py-5", className)}>
       <div className="mb-3.5 flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-semibold text-black-01">{title}</h3>
         {badge && (
@@ -624,7 +624,7 @@ function Panel({
         )}
       </div>
       {children}
-    </section>
+    </Surface>
   );
 }
 
@@ -639,9 +639,9 @@ function PanelSkeleton() {
 
 function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <p className="rounded-lg bg-white px-4 py-10 text-center text-sm text-gray-05">
+    <Surface className="px-4 py-10 text-center text-sm text-gray-05">
       {children}
-    </p>
+    </Surface>
   );
 }
 

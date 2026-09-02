@@ -3,6 +3,9 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { Check, GraduationCap } from "lucide-react";
 
+import KpiCard from "@/components/custom/kpi-card";
+import { Panel } from "@/components/custom/surface";
+
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { PageShell } from "@/components/layout/page-shell";
@@ -227,7 +230,7 @@ export default function Promotion() {
 
           {plan && (
             <>
-              <div className="rounded-lg bg-white px-5.5 py-5">
+              <Panel className="px-5.5 py-5">
                 <h3 className="text-sm font-semibold text-black-01">
                   Where each class goes
                 </h3>
@@ -254,7 +257,7 @@ export default function Promotion() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Panel>
               <Exceptions plan={plan} />
             </>
           )}
@@ -286,18 +289,15 @@ export default function Promotion() {
       {step === 2 && counts && (
         <section className="grid gap-4">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {/* The app's KPI card. Four label-and-number tiles is exactly
+                what it is for, and a hand-written pair drifts in type scale
+                the moment somebody edits one of the two screens. */}
             {(["promote", "repeat", "graduate", "hold"] as const).map((k) => (
-              <div
+              <KpiCard
                 key={k}
-                className="min-w-0 rounded-lg bg-white px-5 py-4"
-              >
-                <p className="text-xs font-medium text-gray-05">
-                  {OUTCOME[k.toUpperCase() as PromotionOutcome].label}
-                </p>
-                <p className="mt-1 text-2xl font-semibold text-black-01">
-                  {counts[k]}
-                </p>
-              </div>
+                label={OUTCOME[k.toUpperCase() as PromotionOutcome].label}
+                value={counts[k]}
+              />
             ))}
           </div>
           <p className="text-sm text-gray-05">
@@ -324,7 +324,7 @@ export default function Promotion() {
           {/* An irreversible thing finished. The design marks it rather than
               dropping the reader back onto four numbers - a run that ends the
               same way it was previewed gives no sign it actually happened. */}
-          <div className="flex items-center gap-3.5 rounded-lg bg-white px-5.5 py-5">
+          <Panel className="flex items-center gap-3.5 px-5.5 py-5">
             <span
               aria-hidden
               className="grid size-13 shrink-0 place-content-center rounded-full bg-green-700/10 text-green-800"
@@ -339,7 +339,7 @@ export default function Promotion() {
                 Every move is on the students&apos; own history.
               </p>
             </div>
-          </div>
+          </Panel>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {[
@@ -348,15 +348,7 @@ export default function Promotion() {
               ["Graduated", done.graduated],
               ["Held", done.held],
             ].map(([label, value]) => (
-              <div
-                key={String(label)}
-                className="min-w-0 rounded-lg bg-white px-5 py-4"
-              >
-                <p className="text-xs font-medium text-gray-05">{label}</p>
-                <p className="mt-1 text-2xl font-semibold text-black-01">
-                  {value}
-                </p>
-              </div>
+              <KpiCard key={String(label)} label={String(label)} value={value} />
             ))}
           </div>
           <p className="text-sm text-gray-05">
@@ -477,7 +469,7 @@ function Exceptions({ plan }: { plan: PromotionPlan }) {
   if (byClass.length === 0 && byStudent.length === 0) return null;
 
   return (
-    <section className="rounded-lg bg-white px-5.5 py-5">
+    <Panel as="section" className="px-5.5 py-5">
       <p className="text-xs font-medium text-gray-05">
         {byClass.length + byStudent.length}{" "}
         {byClass.length + byStudent.length === 1 ? "exception" : "exceptions"}
@@ -532,6 +524,6 @@ function Exceptions({ plan }: { plan: PromotionPlan }) {
           </li>
         ))}
       </ul>
-    </section>
+    </Panel>
   );
 }
