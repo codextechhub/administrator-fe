@@ -21,6 +21,13 @@ export const AUTH_ENDPOINTS = new Set([
   "passwordResetConfirm",
   "activationPreview",
   "activateAccount",
+  // Paying an invoice from its email link. The payer holds no account, and the
+  // signed token in the path is their whole authority. A Bearer token left over
+  // from a staff session on the same browser must not ride along: the backend
+  // route takes no authentication at all, and sending one would only mean the
+  // page behaves differently on a colleague's laptop than on a parent's phone.
+  "invoicePaySummary",
+  "startInvoiceCheckout",
 ]);
 
 // Endpoints that operate purely on the caller and therefore must NOT carry the

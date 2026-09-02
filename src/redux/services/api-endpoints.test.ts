@@ -75,3 +75,31 @@ describe("endpoint set invariants", () => {
     }
   });
 });
+
+// The public invoice pay routes. A parent opening the link in their email has
+// no account, but they may well open it on a device where somebody IS signed
+// in - a bursar checking a link a parent says is broken, or a shared family
+// laptop. Either would send that person's Bearer token and tenant to a route
+// that takes neither, so the page would behave differently depending on who
+// last used the browser.
+describe("public invoice pay endpoints", () => {
+  const PAY_ENDPOINTS = ["invoicePaySummary", "startInvoiceCheckout"];
+
+  it("never carries a Bearer token", () => {
+    for (const endpoint of PAY_ENDPOINTS) {
+      expect(AUTH_ENDPOINTS.has(endpoint)).toBe(true);
+    }
+  });
+
+  it("never carries a ?tenant= assertion", () => {
+    for (const endpoint of PAY_ENDPOINTS) {
+      expect(TENANT_EXEMPT_ENDPOINTS.has(endpoint)).toBe(true);
+    }
+  });
+
+  it("never rides an impersonation session", () => {
+    for (const endpoint of PAY_ENDPOINTS) {
+      expect(sendsImpersonationHeader(endpoint)).toBe(false);
+    }
+  });
+});

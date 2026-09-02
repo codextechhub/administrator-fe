@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { authRoutes } from "./auth";
+import { publicRoutes } from "./public";
 import { protectedRoutes } from "./protected";
 import LazyRoot from "./lazy-root";
 import NotFound from "@/pages/not-found";
@@ -14,6 +15,9 @@ export const router = createBrowserRouter([
     // react-router's default stack trace.
     ErrorBoundary: RouteError,
     children: [
+      // Before the auth routes so "/" -> /accounts cannot shadow them, and
+      // outside the Authenticated gate because the caller has no session.
+      ...publicRoutes,
       ...authRoutes,
       { element: <Authenticated />, children: protectedRoutes },
       { path: "*", Component: NotFound },

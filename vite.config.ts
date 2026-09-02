@@ -5,6 +5,11 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Fixed port so the two apps can run side by side: 5174 is the school app.
+  // Without this both default to 5173 and whichever starts second silently
+  // moves to the next free port, which breaks any link built against it.
+  // strictPort makes that failure loud instead of silent.
+  server: { port: 5174, strictPort: true },
   plugins: [
     react({
       babel: {

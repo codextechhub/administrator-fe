@@ -1,4 +1,15 @@
 export const routesPath = {
+  // Reachable with no session and no account at all. Not AUTH: nobody here is
+  // signing in, and there is nothing to sign in to. The signed token in the
+  // path is the caller's whole authority, so these paths must stay outside
+  // both the Guest gate and the Authenticated one.
+  PUBLIC: {
+    PAY_INVOICE: "/pay/:token",
+    PAY_INVOICE_ID: (token: string) => `/pay/${token}`,
+    // Where the payment provider returns a payer once they are done. The
+    // backend sends this address to the provider, so the two must agree.
+    PAYMENT_RETURN: "/payments/return",
+  },
   AUTH: {
     ACCOUNTS: "/accounts",
     LOGIN: "/accounts",
