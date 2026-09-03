@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { NativeSelect } from "@/components/ui/native-select";
+import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { cn } from "@/lib/utils";
 import { apiDetailMessage } from "@/utils/api-error";
 import {
@@ -116,24 +117,24 @@ export function LinkGuardianDrawer({
       canSave={valid}
       saving={isLoading}
     >
-      <div className="mb-4 inline-flex rounded-full border border-white-02 bg-white p-0.5">
-        {(["search", "new"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => {
-              setMode(m);
-              setPicked(null);
-            }}
-            className={cn(
-              "rounded-full px-3 py-1.5 text-sm",
-              mode === m ? "bg-white-03 font-semibold text-primary" : "text-gray-05",
-            )}
-          >
-            {m === "search" ? "Find an existing guardian" : "Add a new one"}
-          </button>
-        ))}
-      </div>
+      {/* The app's toggle, so the marker SLIDES between the two rather than
+          blinking off one and onto the other. This drawer's choice is the one
+          that decides whether a household stays whole or gets a duplicate
+          parent, so which side you are on has to be unmistakable - and a plain
+          background swap is the weakest way to say it. */}
+      <SegmentedToggle
+        className="mb-4"
+        ariaLabel="How to link a guardian"
+        value={mode}
+        onChange={(next) => {
+          setMode(next);
+          setPicked(null);
+        }}
+        options={[
+          { value: "search", label: "Find an existing guardian" },
+          { value: "new", label: "Add a new one" },
+        ]}
+      />
 
       <div className="grid gap-4">
         {mode === "search" ? (
