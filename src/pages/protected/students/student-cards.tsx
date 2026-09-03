@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ClickableCard } from "@/components/custom/surface";
 import type { StudentRow } from "@/redux/services/students/students-types";
 
-import { statusChipClass } from "./status-chip";
+import { StudentStatusBadge } from "./status-badge";
 
 /**
  * The directory as cards.
@@ -70,9 +70,7 @@ export function StudentCards({
                     {s.student_number || "Not issued"}
                   </p>
                 </div>
-                <span className={statusChipClass(s.status)}>
-                  {s.status_label}
-                </span>
+                <StudentStatusBadge status={s.status} label={s.status_label} />
               </div>
 
               <div className="flex flex-wrap items-center gap-1.5">

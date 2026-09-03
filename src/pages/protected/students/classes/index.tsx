@@ -24,7 +24,7 @@ import {
 } from "@/redux/services/students/students-api";
 import type { BulkResultRow, StudentRow } from "@/redux/services/students/students-types";
 
-import { statusChipClass } from "../status-chip";
+import { StudentStatusBadge } from "../status-badge";
 import { TransferDrawer } from "../drawers/transfer-drawer";
 
 type Tab = "unplaced" | "roster";
@@ -250,7 +250,7 @@ export default function ClassesAndTransfers() {
                   Student: s.full_name,
                   "Admission no.": s.student_number || "Not issued",
                   Status: (
-                    <span className={statusChipClass(s.status)}>{s.status_label}</span>
+                    <StudentStatusBadge status={s.status} label={s.status_label} />
                   ),
                   "Level applied for": s.level_name || "-",
                   "Primary guardian": s.primary_guardian || "None linked",
@@ -436,7 +436,7 @@ export default function ClassesAndTransfers() {
               Student: s.full_name,
               "Admission no.": s.student_number || "Not issued",
               Status: (
-                <span className={statusChipClass(s.status)}>{s.status_label}</span>
+                <StudentStatusBadge status={s.status} label={s.status_label} />
               ),
               "Primary guardian": s.primary_guardian || "None linked",
               "": (

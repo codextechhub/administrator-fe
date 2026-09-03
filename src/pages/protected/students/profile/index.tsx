@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { UserRound } from "lucide-react";
+import { toast } from "sonner";
+import { Camera, Loader2, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
@@ -8,6 +9,8 @@ import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
+import { writeErrorMessage } from "@/utils/api-error";
+import { useLazyFetchAuthMediaQuery } from "@/redux/services/media-api";
 import {
   useGetStudentClassHistoryQuery,
   useGetStudentDocumentsQuery,
@@ -15,13 +18,17 @@ import {
   useGetStudentHistoryQuery,
   useGetStudentQuery,
   useGetStudentSubjectsQuery,
+  useUploadStudentDocumentMutation,
+  useDeleteStudentDocumentMutation,
 } from "@/redux/services/students/students-api";
 import type {
   StudentDetail,
+  StudentDocumentRow,
   StudentStatus,
 } from "@/redux/services/students/students-types";
 
 import { StudentDrawers, type DrawerRequest } from "../drawers";
+import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { formatDate, formatDateTime, titleCaseCode } from "../format";
 import PermissionGate from "@/components/custom/permission-gate";
 import Tabs from "@/components/custom/tab";
@@ -30,7 +37,7 @@ import { useStudentsLens } from "@/hooks/use-students-lens";
 import { Panel as Surface } from "@/components/custom/surface";
 
 import { PersonAvatar } from "../person-avatar";
-import { statusChipClass } from "../status-chip";
+import { StudentStatusBadge } from "../status-badge";
 import { Dot } from "../guardians/person-card";
 import { Lifecycle } from "./lifecycle";
 import { EmptyRing } from "../empty-ring";
@@ -99,24 +106,14 @@ export default function StudentProfile() {
         ) : (
           <>
             <div className="flex flex-wrap items-start gap-4.5">
-              {/* The face of the record. A profile that opens with a line of
-                  text reads like a row that happened to fill the page; the
-                  avatar is what makes it a person's record. */}
-              <PersonAvatar
-                name={student.full_name}
-                photoUrl={student.photo_url}
-                className="size-18 shrink-0"
-                textClassName="text-2xl"
-              />
+              <StudentPhoto student={student} />
 
               <div className="min-w-55 flex-1">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <h2 className="text-[22px] font-semibold text-black-01">
                     {student.full_name}
                   </h2>
-                  <span className={statusChipClass(student.status)}>
-                    {student.status_label}
-                  </span>
+                  <StudentStatusBadge status={student.status} label={student.status_label} />
                 </div>
                 {/* Dot-separated rather than comma'd: these are four unrelated
                     facts, not a sentence, and the dots stop them reading as
@@ -509,6 +506,82 @@ function MedicalTab({
   );
 }
 
+// ── The photograph ───────────────────────────────────────
+
+/**
+ * The face of the record, and the place a photograph is put on it.
+ *
+ * A profile that opens with a line of text reads like a row that happened to
+ * fill the page; the avatar is what makes it a person's record.
+ *
+ * **The picker is on the picture.** Somebody looking for where a passport
+ * photograph goes looks at the empty circle where the face should be, not at a
+ * Documents tab two clicks away - so the circle is the control. It still writes
+ * the same PASSPORT_PHOTO document the checklist lists, so there is one
+ * photograph and not two, and replacing it from either place changes the other.
+ */
+function StudentPhoto({ student }: { student: StudentDetail }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [upload, { isLoading }] = useUploadStudentDocumentMutation();
+
+  async function choose(file: File | undefined) {
+    if (!file) return;
+    try {
+      await upload({
+        id: student.id, documentType: "PASSPORT_PHOTO", file,
+      }).unwrap();
+      toast.success("Photograph saved.");
+    } catch (error) {
+      toast.error(writeErrorMessage(error, "We could not save that photograph."));
+    }
+  }
+
+  return (
+    <div className="relative shrink-0">
+      <PersonAvatar
+        name={student.full_name}
+        photoUrl={student.photo_url}
+        className="size-18"
+        textClassName="text-2xl"
+      />
+      <PermissionGate permission={P.MODIFY_STUDENT}>
+        <input
+          ref={input}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            void choose(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          disabled={isLoading}
+          onClick={() => input.current?.click()}
+          aria-label={
+            student.photo_url
+              ? `Replace ${student.full_name}'s photograph`
+              : `Add a photograph for ${student.full_name}`
+          }
+          title={student.photo_url ? "Replace photograph" : "Add a photograph"}
+          className={cn(
+            "absolute -right-0.5 -bottom-0.5 grid size-7 place-items-center",
+            "rounded-full border border-white-02 bg-white text-gray-06 shadow-sm",
+            "transition-colors hover:text-primary disabled:opacity-60",
+          )}
+        >
+          {isLoading ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Camera className="size-3.5" />
+          )}
+        </button>
+      </PermissionGate>
+    </div>
+  );
+}
+
 // ── Documents ───────────────────────────────────────────────────────────────
 
 function DocumentsTab({ studentId }: { studentId: number }) {
@@ -518,39 +591,200 @@ function DocumentsTab({ studentId }: { studentId: number }) {
   if (isLoading) return <PanelSkeleton />;
 
   return (
-    <Panel title="Documents">
+    <Panel
+      title="Documents"
+      note="The passport photograph is also the picture shown beside this student everywhere in the app."
+    >
       <ul className="grid gap-2.5">
         {docs.map((d) => (
-          <li
-            key={d.document_type}
-            className="flex flex-wrap items-center justify-between gap-2 border-b border-white-02 pb-2.5 last:border-0 last:pb-0"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm text-black-01">{d.label}</p>
-              <p className="text-xs text-gray-05">
-                {d.required ? "Required" : "Optional"}
-              </p>
-            </div>
-            {d.attached ? (
-              <a
-                href={d.url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs text-primary underline-offset-2 hover:underline"
-              >
-                View
-              </a>
-            ) : (
-              <span
-                className={`text-xs ${d.required ? "text-amber-700" : "text-gray-05"}`}
-              >
-                Not on file
-              </span>
-            )}
-          </li>
+          <DocumentRow key={d.document_type} studentId={studentId} doc={d} />
         ))}
       </ul>
     </Panel>
+  );
+}
+
+/**
+ * Open an attached document.
+ *
+ * **A plain link could never have worked.** MediaView is behind the JWT, and a
+ * new tab opened from an <a href> sends no Authorization header - so "View" on
+ * a birth certificate answered 401 for as long as the tab has existed. The
+ * signature on the url binds it to one reader; it is not what authenticates
+ * the read.
+ *
+ * So the bytes are fetched with the token and opened as a local blob. Same
+ * route the school crest and the student's own photograph take.
+ */
+function ViewDocument({ url, label }: { url: string; label: string }) {
+  const [fetchMedia, { isFetching }] = useLazyFetchAuthMediaQuery();
+
+  async function open() {
+    // The tab is opened ON THE CLICK, before the await. A window opened from an
+    // async continuation has lost the user gesture and the browser blocks it as
+    // a popup - which is silent: nothing opens and nothing says why.
+    //
+    // No "noopener" here on purpose: with it window.open returns null by spec
+    // and there would be no handle to point at the bytes. The opener is cleared
+    // by hand instead.
+    const tab = window.open("", "_blank");
+    if (tab) tab.opener = null;
+    try {
+      const blobUrl = await fetchMedia(url).unwrap();
+      if (tab) {
+        tab.location.href = blobUrl;
+        return;
+      }
+      // Popups blocked. Save it instead of navigating this page away from a
+      // record the reader is in the middle of.
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = label;
+      link.click();
+    } catch {
+      tab?.close();
+      toast.error(`We could not open the ${label.toLowerCase()}.`);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={open}
+      disabled={isFetching}
+      className="text-xs text-primary underline-offset-2 hover:underline disabled:opacity-60"
+    >
+      {isFetching ? "Opening…" : "View"}
+    </button>
+  );
+}
+
+/**
+ * One checklist row, and the control that was missing from all of them.
+ *
+ * **Nothing on any screen could attach a document.** The checklist has asked
+ * for a birth certificate and a passport photograph since the module shipped,
+ * the route to send one has existed just as long, and no page ever offered a
+ * file picker - so both required rows read "Not on file" for ever, and the
+ * passport photograph that gives a student their face could not be supplied at
+ * all. The upload lives here, on the list that names what is wanted, rather
+ * than on a separate screen that would have to repeat it.
+ */
+function DocumentRow({
+  studentId,
+  doc,
+}: {
+  studentId: number;
+  doc: StudentDocumentRow;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const [upload, { isLoading: uploading }] = useUploadStudentDocumentMutation();
+  const [remove, { isLoading: removing }] = useDeleteStudentDocumentMutation();
+  const [confirming, setConfirming] = useState(false);
+  const busy = uploading || removing;
+
+  // The photograph is rendered in an <img>, so the picker offers images only -
+  // the backend refuses anything else, and a refusal after the upload is a
+  // worse way to learn it than a picker that never shows the PDF.
+  const isPhoto = doc.document_type === "PASSPORT_PHOTO";
+
+  async function choose(file: File | undefined) {
+    if (!file) return;
+    try {
+      await upload({ id: studentId, documentType: doc.document_type, file }).unwrap();
+      toast.success(`${doc.label} attached.`);
+    } catch (error) {
+      toast.error(writeErrorMessage(error, "We could not attach that file."));
+    }
+  }
+
+  async function drop() {
+    if (doc.id == null) return;
+    try {
+      await remove({ id: studentId, docId: doc.id }).unwrap();
+      toast.success(`${doc.label} removed.`);
+      setConfirming(false);
+    } catch (error) {
+      toast.error(writeErrorMessage(error, "We could not remove that file."));
+    }
+  }
+
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-2 border-b border-white-02 pb-2.5 last:border-0 last:pb-0">
+      <div className="min-w-0">
+        <p className="truncate text-sm text-black-01">{doc.label}</p>
+        {/* The state is said ONCE. It used to be here and again on the right,
+            so every row read "Required - not on file … Not on file". */}
+        <p
+          className={cn(
+            "text-xs",
+            !doc.attached && doc.required ? "text-amber-700" : "text-gray-05",
+          )}
+        >
+          {doc.attached
+            ? doc.required
+              ? "Required · on file"
+              : "On file"
+            : doc.required
+              ? "Required · not on file"
+              : "Optional · not on file"}
+        </p>
+      </div>
+
+      <div className="flex shrink-0 flex-wrap items-center gap-3">
+        {doc.attached && <ViewDocument url={doc.url} label={doc.label} />}
+
+        <PermissionGate permission={P.MODIFY_STUDENT}>
+          <input
+            ref={input}
+            type="file"
+            accept={isPhoto ? "image/*" : undefined}
+            className="hidden"
+            onChange={(e) => {
+              void choose(e.target.files?.[0]);
+              // Cleared so picking the SAME file again still fires a change -
+              // which is exactly what retrying a failed upload looks like.
+              e.target.value = "";
+            }}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => input.current?.click()}
+          >
+            {uploading ? "Uploading…" : doc.attached ? "Replace" : "Upload"}
+          </Button>
+          {doc.attached && (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => setConfirming(true)}
+              className="text-error-text hover:text-error-text"
+            >
+              {removing ? "Removing…" : "Remove"}
+            </Button>
+          )}
+          {/* Asked, because the bytes do not come back. Deleting the row
+              retires the stored file, so a misclick beside "Replace" loses a
+              birth certificate the family may not be able to produce twice. */}
+          <ConfirmDialog
+            open={confirming}
+            onCancel={() => setConfirming(false)}
+            onConfirm={drop}
+            title={`Remove this ${doc.label.toLowerCase()}?`}
+            body={
+              doc.required
+                ? `The file is deleted and cannot be recovered, and ${doc.label.toLowerCase()} is one this school requires - the record will show it as missing until a new one is uploaded.`
+                : "The file is deleted and cannot be recovered. A new one can be uploaded at any time."
+            }
+            confirmLabel="Remove"
+            busy={removing}
+          />
+        </PermissionGate>
+      </div>
+    </li>
   );
 }
 

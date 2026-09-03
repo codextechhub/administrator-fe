@@ -15,6 +15,7 @@ import type {
   GuardianRow,
   GuardianSummary,
   HistoryEntry,
+  DocumentType,
   StudentDetail,
   StudentDocumentRow,
   StudentGuardianLink,
@@ -133,6 +134,50 @@ export const studentsApi = baseApi.injectEndpoints({
     getStudentDocuments: builder.query<Envelope<StudentDocumentRow[]>, number>({
       query: (id) => ({ url: `/students/${id}/documents/`, method: "GET" }),
       providesTags: ["Students"],
+    }),
+
+    /**
+     * Attach or replace one document - including the passport photograph,
+     * which is where a student's face comes from.
+     *
+     * **This is the write the module never had a control for.** The route has
+     * always existed and the checklist has always asked for a birth
+     * certificate and a passport photograph, but no screen could send one - so
+     * every record showed "Not on file" for two required documents with no way
+     * to change it, and every avatar in the app showed initials.
+     *
+     * FormData, not JSON: fetchBaseQuery leaves a FormData body alone and lets
+     * the browser set the multipart boundary. Setting Content-Type by hand here
+     * would break it, which is why prepareHeaders does not.
+     *
+     * Invalidates Students, not just this document list: the photograph is on
+     * the directory row, the class register and the guardian's list of
+     * children too.
+     */
+    uploadStudentDocument: builder.mutation<
+      Envelope<StudentDocumentRow[]>,
+      { id: number; documentType: DocumentType; file: File }
+    >({
+      query: ({ id, documentType, file }) => {
+        const body = new FormData();
+        body.append("document_type", documentType);
+        body.append("file", file);
+        return { url: `/students/${id}/documents/`, method: "POST", body };
+      },
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
+    deleteStudentDocument: builder.mutation<
+      Envelope<null>,
+      { id: number; docId: number }
+    >({
+      query: ({ id, docId }) => ({
+        url: `/students/${id}/documents/${docId}/`,
+        method: "DELETE",
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
     }),
 
     /**
@@ -531,6 +576,8 @@ export const {
   useGetStudentSubjectsQuery,
   useGetStudentClassHistoryQuery,
   useGetStudentDocumentsQuery,
+  useUploadStudentDocumentMutation,
+  useDeleteStudentDocumentMutation,
   useGetStudentHistoryQuery,
   useGetGuardiansQuery,
   useSearchStudentsQuery,

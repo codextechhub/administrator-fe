@@ -36,4 +36,4 @@ export const mediaApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useFetchAuthMediaQuery } = mediaApi;
+export const { useFetchAuthMediaQuery, useLazyFetchAuthMediaQuery } = mediaApi;

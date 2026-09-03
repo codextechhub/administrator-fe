@@ -13,7 +13,7 @@ import { routesPath } from "@/routes/routesPath";
 import { useGetGuardianQuery } from "@/redux/services/students/students-api";
 import { RELATIONSHIPS } from "@/redux/services/students/students-types";
 
-import { statusChipClass } from "../status-chip";
+import { StudentStatusBadge } from "../status-badge";
 import { EmptyRing } from "../empty-ring";
 import { LinkChildDrawer } from "../drawers/link-child-drawer";
 import { EditGuardianDrawer } from "./edit-guardian-drawer";
@@ -168,9 +168,7 @@ export default function GuardianDetail() {
               name={w.name}
               sub={w.student_number || "No admission number"}
               chip={
-                <span className={statusChipClass(w.status)}>
-                  {w.status_label}
-                </span>
+                <StudentStatusBadge status={w.status} label={w.status_label} />
               }
               footerLead={
                 <FooterLead tone={w.class_name ? "primary" : "warn"}>

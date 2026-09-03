@@ -23,7 +23,7 @@ import type { StudentRow } from "@/redux/services/students/students-types";
 import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { DrawerShell, Field, inputClass } from "../drawers/drawer-shell";
 import { formatDate } from "../format";
-import { statusChipClass } from "../status-chip";
+import { StudentStatusBadge } from "../status-badge";
 
 /**
  * The front of the lifecycle: who has applied, and the two ends it can reach.
@@ -212,9 +212,7 @@ function Group({
                       {s.level_name || "No level recorded"}
                     </p>
                   </button>
-                  <span className={statusChipClass(s.status)}>
-                    {s.status_label}
-                  </span>
+                  <StudentStatusBadge status={s.status} label={s.status_label} />
                 </div>
 
                 <div className="mt-3.5 flex flex-col gap-[7px] border-t border-white-02 pt-3">

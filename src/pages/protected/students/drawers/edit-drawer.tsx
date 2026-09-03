@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { NativeSelect } from "@/components/ui/native-select";
-import { cn } from "@/lib/utils";
+import { SegmentedToggle } from "@/components/custom/segmented-toggle";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { writeErrorMessage } from "@/utils/api-error";
 import { useUpdateStudentMutation } from "@/redux/services/students/students-api";
 import type {
@@ -41,10 +42,10 @@ const SECTIONS = {
 type SectionKey = keyof typeof SECTIONS;
 type FieldKey = keyof StudentWrite;
 
-const TABS: { key: SectionKey; label: string }[] = [
-  { key: "bio", label: "Biography" },
-  { key: "contact", label: "Contact" },
-  { key: "medical", label: "Medical" },
+const TABS: { value: SectionKey; label: string }[] = [
+  { value: "bio", label: "Biography" },
+  { value: "contact", label: "Contact" },
+  { value: "medical", label: "Medical" },
 ];
 
 /** Under 2 or over 25 is a typed year, not a pupil. Matches the backend's rule. */
@@ -153,22 +154,18 @@ export function EditDrawer({
       canSave={valid}
       saving={isLoading}
     >
-      <div className="mb-4 flex max-w-full gap-1 overflow-x-auto">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setSection(t.key)}
-            className={cn(
-              "whitespace-nowrap rounded-full px-3 py-1.5 text-sm",
-              section === t.key
-                ? "bg-white-03 font-semibold text-primary"
-                : "text-gray-05 hover:text-black-01",
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
+      {/* The active section was marked by a pale tint on a pale chip, which
+          at a glance is three identical pills - so the reader had to read the
+          form to work out which one they were on. SegmentedToggle is what the
+          rest of the app uses, and it SLIDES the marker, so switching sections
+          is visible as movement rather than as a colour you have to compare. */}
+      <div className="mb-4 max-w-full overflow-x-auto">
+        <SegmentedToggle
+          value={section}
+          options={TABS}
+          onChange={setSection}
+          ariaLabel="Record section"
+        />
       </div>
 
       {section === "medical" && !canSeeMedical ? (
@@ -196,9 +193,21 @@ export function EditDrawer({
                     <option value="FEMALE">Female</option>
                     <option value="MALE">Male</option>
                   </NativeSelect>
+                ) : type === "date" ? (
+                  // The house calendar, not the browser's. Every other date in
+                  // the module goes through it - enrolment, transfer, status -
+                  // and this one input was still handing the reader whatever
+                  // Chrome draws, in whatever order their locale writes it.
+                  <DatePickerInput
+                    value={value(key)}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, [key]: e.target.value }))
+                    }
+                    className={err ? errorInputClass : inputClass}
+                  />
                 ) : (
                   <input
-                    type={type === "date" ? "date" : type === "email" ? "email" : "text"}
+                    type={type === "email" ? "email" : "text"}
                     value={value(key)}
                     onChange={(e) =>
                       setDraft((d) => ({ ...d, [key]: e.target.value }))

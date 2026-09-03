@@ -30,7 +30,7 @@ import { OverviewCard } from "./overview-card";
 import { buildWorkQueue, type QueueRow } from "./work-queue";
 import { StudentCards } from "./student-cards";
 import { PersonAvatar } from "./person-avatar";
-import { statusChipClass } from "./status-chip";
+import { StudentStatusBadge } from "./status-badge";
 
 /**
  * The student directory. The module's front door, and its biggest screen.
@@ -445,7 +445,7 @@ export default function StudentDirectory() {
               </span>
             ),
             Status: (
-              <span className={statusChipClass(s.status)}>{s.status_label}</span>
+              <StudentStatusBadge status={s.status} label={s.status_label} />
             ),
             "Primary guardian": s.primary_guardian || "None linked",
           }))}
