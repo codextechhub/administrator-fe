@@ -9,20 +9,20 @@ import type {
   SchoolRoleDetail,
 } from "./roles-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The school's own roles, at /v1/rbac/tenants/<slug>/…
-//
-// Unlike the profile and staff surfaces, these endpoints DO carry the school in
-// the path. That is the platform's existing shape, not a choice made here, and
-// it is not a hole: the view refuses any slug that is not the one the session
-// asserts, with a 404 rather than a 403 so slugs cannot be probed. The slug is
-// read from the same store the base query reads it from, so the path and the
-// ?tenant= assertion can never disagree.
-//
-// All of it is open to a school that has not gone live except DELETE, which
-// stays closed - onboarding asks a school to confirm and extend the baseline,
-// not to dismantle it.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The school's own roles, at /v1/rbac/tenants/<slug>/…
+ *
+ * Unlike the profile and staff surfaces, these endpoints DO carry the school in
+ * the path. That is the platform's existing shape, not a choice made here, and
+ * it is not a hole: the view refuses any slug that is not the one the session
+ * asserts, with a 404 rather than a 403 so slugs cannot be probed. The slug is
+ * read from the same store the base query reads it from, so the path and the
+ * ?tenant= assertion can never disagree.
+ *
+ * All of it is open to a school that has not gone live except DELETE, which
+ * stays closed - onboarding asks a school to confirm and extend the baseline,
+ * not to dismantle it.
+ */
 const scope = () => `/rbac/tenants/${getTenantSlug()}`;
 
 export const rolesApi = baseApi.injectEndpoints({

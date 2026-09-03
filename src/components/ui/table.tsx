@@ -5,12 +5,14 @@ import * as React from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 
-// Every table in the app scrolls sideways through here, which is why the
-// overlay scrollbar goes in at this level rather than table by table. A native
-// horizontal scrollbar is the worst case of the problem it solves: it appears
-// underneath the last row, takes 8-15px of height out of the container, and
-// shoves whatever sits below the table down the page the moment one more
-// column arrives.
+/**
+ * Every table in the app scrolls sideways through here, which is why the
+ * overlay scrollbar goes in at this level rather than table by table. A native
+ * horizontal scrollbar is the worst case of the problem it solves: it appears
+ * underneath the last row, takes 8-15px of height out of the container, and
+ * shoves whatever sits below the table down the page the moment one more
+ * column arrives.
+ */
 function Table({
   className,
   containerClassName,

@@ -1,24 +1,24 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Shapes returned by /v1/students/ and /v1/guardians/.
-//
-// Three rules from the backend's own serializers run through all of them, and
-// the types say so rather than leaving a reader to discover them:
-//
-//   1. The branch dimension RECEDES at a single-branch school. `branch` and
-//      `branch_name` are dropped from the payload entirely - not nulled - so
-//      both are optional here. A screen must read "absent" as "this school has
-//      one branch", never as "no branch set". Verified against the seeded
-//      sunrise-academy, which returns neither key.
-//
-//   2. Enums come back as CODES with a `*_label` beside them. Render the label;
-//      compare on the code. Never build a label from the code in a screen, or
-//      two screens will spell the same status differently.
-//
-//   3. There is no per-session anything here except the class placement. A
-//      student's status, branch, guardians and documents are all current-state,
-//      so nothing in this file is scoped to a year. See section 2.0 of
-//      docs/students-design-phases.md for why that settles the session pill.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Shapes returned by /v1/students/ and /v1/guardians/.
+ *
+ * Three rules from the backend's own serializers run through all of them, and
+ * the types say so rather than leaving a reader to discover them:
+ *
+ *   1. The branch dimension RECEDES at a single-branch school. `branch` and
+ *      `branch_name` are dropped from the payload entirely - not nulled - so
+ *      both are optional here. A screen must read "absent" as "this school has
+ *      one branch", never as "no branch set". Verified against the seeded
+ *      sunrise-academy, which returns neither key.
+ *
+ *   2. Enums come back as CODES with a `*_label` beside them. Render the label;
+ *      compare on the code. Never build a label from the code in a screen, or
+ *      two screens will spell the same status differently.
+ *
+ *   3. There is no per-session anything here except the class placement. A
+ *      student's status, branch, guardians and documents are all current-state,
+ *      so nothing in this file is scoped to a year. See section 2.0 of
+ *      docs/students-design-phases.md for why that settles the session pill.
+ */
 
 /** Present on every row at a multi-branch school; absent entirely otherwise. */
 export interface StudentScoped {

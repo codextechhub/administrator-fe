@@ -1,15 +1,17 @@
-// Registry shape, not registry vocabulary.
-//
-// These tests do NOT assert that a particular action exists or is worded a
-// particular way: rewording "View students" must not turn a test red. They
-// assert the four things that make an entry safe to ship, each of which is a
-// real failure mode rather than a style rule:
-//   - a duplicated or renamed id silently resets a user's learned ranking,
-//     because the id is the popularity storage key;
-//   - a `to` that no route serves is a palette row that lands on nothing;
-//   - a gate naming a code the permission registry does not resolve denies
-//     everybody (see the `holds` helper in gate.ts), so the action vanishes;
-//   - two identical labels are two indistinguishable rows.
+/**
+ * Registry shape, not registry vocabulary.
+ *
+ * These tests do NOT assert that a particular action exists or is worded a
+ * particular way: rewording "View students" must not turn a test red. They
+ * assert the four things that make an entry safe to ship, each of which is a
+ * real failure mode rather than a style rule:
+ *   - a duplicated or renamed id silently resets a user's learned ranking,
+ *     because the id is the popularity storage key;
+ *   - a `to` that no route serves is a palette row that lands on nothing;
+ *   - a gate naming a code the permission registry does not resolve denies
+ *     everybody (see the `holds` helper in gate.ts), so the action vanishes;
+ *   - two identical labels are two indistinguishable rows.
+ */
 
 import { describe, expect, it } from "vitest";
 import { P, resolvePermissionKey, type PermissionCode } from "@/permissions";
@@ -33,15 +35,17 @@ import {
 } from "./registry";
 import type { ActionDef } from "./types";
 
-// The paths the router genuinely mounts. Taken from the route modules rather
-// than from routesPath, because the two can drift: a path can be named without
-// anything mounting it, which is exactly how /school-fees and /settings sat in
-// the sidebar pointing at "#" until the stubs were removed.
-// Every one of these modules is import-cheap (lazy() page imports plus
-// type-only handles), so pulling them in costs no page bundle.
-//
-// The protected route barrel is deliberately NOT imported: it pulls in
-// DashboardLayout eagerly, and with it the whole shell.
+/**
+ * The paths the router genuinely mounts. Taken from the route modules rather
+ * than from routesPath, because the two can drift: a path can be named without
+ * anything mounting it, which is exactly how /school-fees and /settings sat in
+ * the sidebar pointing at "#" until the stubs were removed.
+ * Every one of these modules is import-cheap (lazy() page imports plus
+ * type-only handles), so pulling them in costs no page bundle.
+ *
+ * The protected route barrel is deliberately NOT imported: it pulls in
+ * DashboardLayout eagerly, and with it the whole shell.
+ */
 const SERVED_PATHS = new Set([
   ...[
     onboardingWelcomeRoute,
@@ -61,15 +65,17 @@ const SERVED_PATHS = new Set([
   ...PROCUREMENT_MOUNTED_PATHS,
 ]);
 
-// Which screens a school may open before go-live, straight off the route
-// handles. DashboardLayout closes a page when
-// `tenantIsPending && !onboardingRoute && !pendingSurface`, so those two flags
-// ARE the rule; the palette keeps its own prefix list and these tests are what
-// stop the two from drifting.
-//
-// Handles are inherited: the finance and procurement children sit under one
-// parent that carries the handle for all of them, exactly as DashboardLayout
-// merges `useMatches()` from the root down.
+/**
+ * Which screens a school may open before go-live, straight off the route
+ * handles. DashboardLayout closes a page when
+ * `tenantIsPending && !onboardingRoute && !pendingSurface`, so those two flags
+ * ARE the rule; the palette keeps its own prefix list and these tests are what
+ * stop the two from drifting.
+ *
+ * Handles are inherited: the finance and procurement children sit under one
+ * parent that carries the handle for all of them, exactly as DashboardLayout
+ * merges `useMatches()` from the root down.
+ */
 interface RouteLike {
   path?: string;
   handle?: { pendingSurface?: boolean; onboarding?: boolean };
@@ -89,11 +95,13 @@ function collectHandles(
   return into;
 }
 
-// `onboardingWelcomeRoute` is deliberately absent. It is mounted as a SIBLING
-// of the layout route rather than a child, so it has no shell and the closed
-// wall cannot be drawn over it - the handle flags say nothing about it because
-// there is nothing for them to say. It is still a served path; it is just not
-// somewhere the go-live rule applies.
+/**
+ * `onboardingWelcomeRoute` is deliberately absent. It is mounted as a SIBLING
+ * of the layout route rather than a child, so it has no shell and the closed
+ * wall cannot be drawn over it - the handle flags say nothing about it because
+ * there is nothing for them to say. It is still a served path; it is just not
+ * somewhere the go-live rule applies.
+ */
 const ROUTE_HANDLES = collectHandles([
   ...onboardingRoutes,
   ...overviewRoutes,
@@ -110,11 +118,13 @@ const routeOpensBeforeGoLive = (path: string): boolean => {
   return !!(handle?.pendingSurface || handle?.onboarding);
 };
 
-// The old addresses `redirects()` still answers. `pendingSurface` on a redirect
-// is not a statement about a screen - it is what stops the layout answering
-// before the redirect runs - so they are nobody's destination and sit outside
-// this agreement. A new redirect appearing should fail here and be added
-// deliberately, not slip through.
+/**
+ * The old addresses `redirects()` still answers. `pendingSurface` on a redirect
+ * is not a statement about a screen - it is what stops the layout answering
+ * before the redirect runs - so they are nobody's destination and sit outside
+ * this agreement. A new redirect appearing should fail here and be added
+ * deliberately, not slip through.
+ */
 const LEGACY_REDIRECTS = new Set([
   "/academic",
   "/academic/session",
@@ -122,10 +132,12 @@ const LEGACY_REDIRECTS = new Set([
   "/classes",
 ]);
 
-// Every literal path routesPath declares, so an action's `to` can be traced
-// back to the path table as well as to the router. Path *builders* (functions)
-// and their `:param` templates are skipped: no palette action can navigate to
-// one without an id it has no way to know.
+/**
+ * Every literal path routesPath declares, so an action's `to` can be traced
+ * back to the path table as well as to the router. Path *builders* (functions)
+ * and their `:param` templates are skipped: no palette action can navigate to
+ * one without an id it has no way to know.
+ */
 function literalPaths(node: unknown, out: Set<string> = new Set()): Set<string> {
   if (typeof node === "string") {
     if (!node.includes(":")) out.add(node);
@@ -160,10 +172,12 @@ const navActions = ACTIONS.filter(
 const isConsolePath = (to: string): boolean =>
   to.startsWith("/finance") || to.startsWith("/procurement");
 
-// This app's screens that answer `?action=new` by opening their create drawer.
-// Kept here rather than inferred, because the only honest way to infer it is to
-// render each screen; what this catches is the half-done edit - an action added
-// with no landing hook wired, which looks like a palette row that does nothing.
+/**
+ * This app's screens that answer `?action=new` by opening their create drawer.
+ * Kept here rather than inferred, because the only honest way to infer it is to
+ * render each screen; what this catches is the half-done edit - an action added
+ * with no landing hook wired, which looks like a palette row that does nothing.
+ */
 const SCREENS_WITH_CREATE_LANDING = [
   routesPath.PROTECTED.ACADEMIC_STRUCTURE.DEPARTMENTS,
   routesPath.PROTECTED.ACADEMIC_STRUCTURE.PROGRAMS,

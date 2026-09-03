@@ -21,29 +21,29 @@ import {
   type EntityDraft,
 } from "./entity-draft";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// One drawer for every catalogue entity: department, programme, level, class,
-// subject.
-//
-// One form because they ARE one form - a name, a code and where it applies -
-// and five copies of it would drift the moment one of them gained a field. The
-// kinds differ in their labels, in the extra controls they need, and in nothing
-// else; the extras arrive as `children` rather than as five branches inside
-// this file.
-//
-// Two rules live here rather than in each screen:
-//
-// **Scope is stated, not offered, where it is not a choice.** An account tied
-// to one branch cannot create something school-wide, and a level inside a
-// branch-only programme cannot be wider than its parent. In both cases the
-// server would refuse a wider write, so a radio would be a control that lies.
-// `lockedTo` replaces it with a sentence saying which branch and why.
-//
-// **The server's duplicate refusal lands under the field it names.** The API
-// answers DUPLICATE_NAME or DUPLICATE_CODE with a sentence written for this
-// screen, and `detail.field` says which box was wrong. A toast would put it
-// where the reader is not looking and take it away before they look up.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * One drawer for every catalogue entity: department, programme, level, class,
+ * subject.
+ *
+ * One form because they ARE one form - a name, a code and where it applies -
+ * and five copies of it would drift the moment one of them gained a field. The
+ * kinds differ in their labels, in the extra controls they need, and in nothing
+ * else; the extras arrive as `children` rather than as five branches inside
+ * this file.
+ *
+ * Two rules live here rather than in each screen:
+ *
+ * **Scope is stated, not offered, where it is not a choice.** An account tied
+ * to one branch cannot create something school-wide, and a level inside a
+ * branch-only programme cannot be wider than its parent. In both cases the
+ * server would refuse a wider write, so a radio would be a control that lies.
+ * `lockedTo` replaces it with a sentence saying which branch and why.
+ *
+ * **The server's duplicate refusal lands under the field it names.** The API
+ * answers DUPLICATE_NAME or DUPLICATE_CODE with a sentence written for this
+ * screen, and `detail.field` says which box was wrong. A toast would put it
+ * where the reader is not looking and take it away before they look up.
+ */
 
 export function EntityDrawer({
   open,

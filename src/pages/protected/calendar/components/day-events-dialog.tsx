@@ -15,18 +15,18 @@ import { eventVariant } from "./event-kind";
 import { audienceLine } from "./audience";
 import { formatDate, formatRange } from "./dates";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// What is on one day, when there is something on it.
-//
-// Pressing an empty day goes straight to the form - there is only one thing it
-// could mean. Pressing a day that already holds something is ambiguous: it
-// might mean "show me what is on", "let me fix that one", or "add another". So
-// it opens this instead, which offers all three rather than guessing.
-//
-// The list is the day's events in full, not the two the cell had room for, and
-// each row is the whole row rather than a small link inside it - a dialog you
-// opened to act on something should not then ask you to find the target.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * What is on one day, when there is something on it.
+ *
+ * Pressing an empty day goes straight to the form - there is only one thing it
+ * could mean. Pressing a day that already holds something is ambiguous: it
+ * might mean "show me what is on", "let me fix that one", or "add another". So
+ * it opens this instead, which offers all three rather than guessing.
+ *
+ * The list is the day's events in full, not the two the cell had room for, and
+ * each row is the whole row rather than a small link inside it - a dialog you
+ * opened to act on something should not then ask you to find the target.
+ */
 
 export function DayEventsDialog({
   date,

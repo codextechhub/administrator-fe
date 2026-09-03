@@ -1,8 +1,10 @@
-// The entity drawer's data, apart from the drawer itself.
-//
-// Split out because a module that exports both components and plain functions
-// breaks Fast Refresh for everything importing it - the same reason
-// session-format.ts sits beside session-chips.tsx.
+/**
+ * The entity drawer's data, apart from the drawer itself.
+ *
+ * Split out because a module that exports both components and plain functions
+ * breaks Fast Refresh for everything importing it - the same reason
+ * session-format.ts sits beside session-chips.tsx.
+ */
 
 export interface EntityDraft {
   name: string;

@@ -1,36 +1,38 @@
-// Which screen the person was on when they raised a ticket.
-//
-// ── Why a ticket carries this ────────────────────────────────────────────────
-//
-// A ticket lands in a queue staffed from outside the school, and the first
-// thing anybody there has to work out is which part of the product broke. The
-// title rarely says: "it is not adding up" could be a fee invoice, a payroll
-// run or a report. Until now the only routing a ticket carried was the word
-// "Onboarding", stamped on every ticket whether or not the school was still
-// onboarding - so it routed a live bursar's fees complaint to the setup queue
-// and told the reader nothing true.
-//
-// The screen is the honest version of that same signal, and the server already
-// takes it: `route_pattern` and `product_area` are two of the four keys the
-// context allowlist declares (apps/vs_tickets/serializers.py).
-//
-// ── What may be sent, and why the rules are strict ───────────────────────────
-//
-// A ticket is read outside the tenant, so anything a client can put in one is
-// something a client can leak into one. That is why the allowlist exists, and
-// why the route is a PATTERN rather than the address: `/students/1042` names a
-// child to a stranger, `/students/:id` names a screen.
-//
-// The server enforces exactly that. `route_pattern` must match
-// `^/[a-z0-9_./:-]{0,199}$` AND contain no digit, no "?" and no "#" - the
-// no-digit rule being what proves the record ids were taken out. So a
-// placeholder has to be lowercase too: `:batchid`, never `:batchId`.
-//
-// Everything here mirrors those rules and then checks its own work, because of
-// what a rejection would cost. A 400 on the context would fail the whole
-// request, and the person filing the ticket is by definition someone for whom
-// something is already broken. If a pattern cannot be made valid, it is left
-// out and the ticket goes without it.
+/**
+ * Which screen the person was on when they raised a ticket.
+ *
+ * ── Why a ticket carries this ────────────────────────────────────────────────
+ *
+ * A ticket lands in a queue staffed from outside the school, and the first
+ * thing anybody there has to work out is which part of the product broke. The
+ * title rarely says: "it is not adding up" could be a fee invoice, a payroll
+ * run or a report. Until now the only routing a ticket carried was the word
+ * "Onboarding", stamped on every ticket whether or not the school was still
+ * onboarding - so it routed a live bursar's fees complaint to the setup queue
+ * and told the reader nothing true.
+ *
+ * The screen is the honest version of that same signal, and the server already
+ * takes it: `route_pattern` and `product_area` are two of the four keys the
+ * context allowlist declares (apps/vs_tickets/serializers.py).
+ *
+ * ── What may be sent, and why the rules are strict ───────────────────────────
+ *
+ * A ticket is read outside the tenant, so anything a client can put in one is
+ * something a client can leak into one. That is why the allowlist exists, and
+ * why the route is a PATTERN rather than the address: `/students/1042` names a
+ * child to a stranger, `/students/:id` names a screen.
+ *
+ * The server enforces exactly that. `route_pattern` must match
+ * `^/[a-z0-9_./:-]{0,199}$` AND contain no digit, no "?" and no "#" - the
+ * no-digit rule being what proves the record ids were taken out. So a
+ * placeholder has to be lowercase too: `:batchid`, never `:batchId`.
+ *
+ * Everything here mirrors those rules and then checks its own work, because of
+ * what a rejection would cost. A 400 on the context would fail the whole
+ * request, and the person filing the ticket is by definition someone for whom
+ * something is already broken. If a pattern cannot be made valid, it is left
+ * out and the ticket goes without it.
+ */
 
 /** The twenty values the server's ChoiceField accepts, verbatim. */
 export type ProductArea =

@@ -1,19 +1,19 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Every query param this module sends, built in one place.
-//
-// Separate from calendar-api.ts so the rules can be asserted without pulling the
-// whole store and api graph into a test, and because they are the rules a screen
-// must not be trusted to remember. Two of them are load-bearing:
-//
-//   1. **The lens is applied here, never at a call site.** Every row in this
-//      module belongs to one branch scope and one school year. A screen that
-//      forgets either shows another branch's rooms, or last year's bell
-//      schedule, with nothing on screen to say so.
-//
-//   2. **"all" is dropped, not sent.** The server's default IS every branch the
-//      caller may see, and `branch=all` would be read as a literal branch
-//      reference and answer 404.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Every query param this module sends, built in one place.
+ *
+ * Separate from calendar-api.ts so the rules can be asserted without pulling the
+ * whole store and api graph into a test, and because they are the rules a screen
+ * must not be trusted to remember. Two of them are load-bearing:
+ *
+ *   1. **The lens is applied here, never at a call site.** Every row in this
+ *      module belongs to one branch scope and one school year. A screen that
+ *      forgets either shows another branch's rooms, or last year's bell
+ *      schedule, with nothing on screen to say so.
+ *
+ *   2. **"all" is dropped, not sent.** The server's default IS every branch the
+ *      caller may see, and `branch=all` would be read as a literal branch
+ *      reference and answer 404.
+ */
 import type { EventListArgs, PeriodListArgs, RoomListArgs } from "./calendar-types";
 
 export type Params = Record<string, string | number>;

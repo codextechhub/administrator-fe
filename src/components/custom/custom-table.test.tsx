@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import CustomTable from "./custom-table";
 
-// The loading state is a *shape* promise: while a list loads the user should
-// see the table that is about to arrive (ghost rows under the real header),
-// not a spinner. These lock the geometry - ghost row count and, critically,
-// ghost column count derived from the real column definitions, so the ghosts
-// line up under the headers instead of drifting.
+/**
+ * The loading state is a *shape* promise: while a list loads the user should
+ * see the table that is about to arrive (ghost rows under the real header),
+ * not a spinner. These lock the geometry - ghost row count and, critically,
+ * ghost column count derived from the real column definitions, so the ghosts
+ * line up under the headers instead of drifting.
+ */
 
 const HEADERS = ["S/N", "Student", "Class", "Guardian", "Status", "Action"];
 

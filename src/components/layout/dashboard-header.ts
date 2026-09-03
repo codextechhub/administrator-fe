@@ -1,21 +1,23 @@
-// The runtime channel for the header title.
-//
-// DashboardLayout is an eager LAYOUT ROUTE: it renders once above the lazy page
-// chunks, so a page cannot pass it a title as a prop. Routes declare a static
-// one in `handle.title`, which covers this app's own screens because each of
-// them is one route with one name.
-//
-// It does not cover the finance and procurement areas. Those are dozens of
-// screens under two route parents, and the parent declares "Finance" for all of
-// them: without this the header read "Finance" on the dashboard, on Chart of
-// Accounts, on AR Invoices and on every other screen in the area, so the one
-// piece of chrome that says where you are said nothing. @xvs/finance already
-// computes the right name from its own nav and calls `useDashboardTitle` with
-// it; this is the end of that wire.
-//
-// An override is stamped with the location key it was set under and ignored the
-// moment the location changes, so a title cannot bleed into the next screen
-// even if a page forgets to clean up.
+/**
+ * The runtime channel for the header title.
+ *
+ * DashboardLayout is an eager LAYOUT ROUTE: it renders once above the lazy page
+ * chunks, so a page cannot pass it a title as a prop. Routes declare a static
+ * one in `handle.title`, which covers this app's own screens because each of
+ * them is one route with one name.
+ *
+ * It does not cover the finance and procurement areas. Those are dozens of
+ * screens under two route parents, and the parent declares "Finance" for all of
+ * them: without this the header read "Finance" on the dashboard, on Chart of
+ * Accounts, on AR Invoices and on every other screen in the area, so the one
+ * piece of chrome that says where you are said nothing. @xvs/finance already
+ * computes the right name from its own nav and calls `useDashboardTitle` with
+ * it; this is the end of that wire.
+ *
+ * An override is stamped with the location key it was set under and ignored the
+ * moment the location changes, so a title cannot bleed into the next screen
+ * even if a page forgets to clean up.
+ */
 
 import { createContext, useContext, useEffect } from "react";
 

@@ -1,10 +1,12 @@
-// Host-contract module for @xvs/finance, which imports `@/utils/api-errors`.
-//
-// This app also has `api-error.ts` (singular), its own older helper. The two
-// overlap on apiErrorMessage and that is deliberate for now: the package needs
-// apiFieldError, which the singular file does not have, and rewriting every
-// existing caller to merge them is a separate change from making the package
-// installable. Prefer this file in new code.
+/**
+ * Host-contract module for @xvs/finance, which imports `@/utils/api-errors`.
+ *
+ * This app also has `api-error.ts` (singular), its own earlier helper. The two
+ * overlap on apiErrorMessage deliberately: the package needs apiFieldError,
+ * which the singular file does not have, and merging every existing caller is
+ * a separate change from making the package installable. Prefer this file in
+ * new code.
+ */
 
 /**
  * Pull the user-facing explanation from the platform's error envelope.

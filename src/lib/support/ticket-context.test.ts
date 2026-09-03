@@ -1,9 +1,11 @@
-// The server's rules, restated as tests.
-//
-// Everything in the first block is a direct transcription of what
-// apps/vs_tickets/serializers.py will accept, because the cost of getting it
-// wrong is not a wrong value - it is a 400 on the whole request, from somebody
-// who is filing a ticket precisely because something is already broken.
+/**
+ * The server's rules, restated as tests.
+ *
+ * Everything in the first block is a direct transcription of what
+ * apps/vs_tickets/serializers.py will accept, because the cost of getting it
+ * wrong is not a wrong value - it is a 400 on the whole request, from somebody
+ * who is filing a ticket precisely because something is already broken.
+ */
 
 import { describe, expect, it } from "vitest";
 import {

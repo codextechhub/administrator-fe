@@ -7,26 +7,27 @@ import {
 import { useGetSessionsQuery } from "@/redux/services/academics/academics-api";
 import type { AcademicSession } from "@/redux/services/academics/academics-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The session lens.
-//
-// It FILTERS. Levels, classes and subjects each belong to one year, so the year
-// chosen here decides which rows every academics screen is looking at - and
-// which year a new one is written into. It used to be a caption over rows from
-// every year at once; that is what the session FK on those three models fixed.
-//
-// Screens do not read this hook directly. They read `useAcademicsLens`, which
-// hands back the branch and the year together as one object to spread into a
-// query, so a screen cannot filter by branch and quietly forget the year.
-//
-// Defaults to the ACTIVE year, not the first row: a school with a draft year
-// for next term should still land on the one it is running.
-//
-// It RECEDES at one session, the way the branch pill recedes at one branch. A
-// picker with a single option is not a choice - it is a label pretending to be
-// a control, and a reader who taps it learns nothing. The screens still know
-// which year they are in; they just do not ask.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The session lens.
+ *
+ * It FILTERS. Levels, classes and subjects each belong to one year, so the year
+ * chosen here decides which rows every academics screen is looking at, and
+ * which year a new one is written into. It is not a caption over rows from
+ * every year at once: the session FK on those three models is what makes it a
+ * real filter.
+ *
+ * Screens do not read this hook directly. They read `useAcademicsLens`, which
+ * hands back the branch and the year together as one object to spread into a
+ * query, so a screen cannot filter by branch and quietly forget the year.
+ *
+ * Defaults to the ACTIVE year, not the first row: a school with a draft year
+ * for next term should still land on the one it is running.
+ *
+ * It RECEDES at one session, the way the branch pill recedes at one branch. A
+ * picker with a single option is not a choice - it is a label pretending to be
+ * a control, and a reader who taps it learns nothing. The screens still know
+ * which year they are in; they just do not ask.
+ */
 
 export function useSessionLens() {
   const dispatch = useAppDispatch();

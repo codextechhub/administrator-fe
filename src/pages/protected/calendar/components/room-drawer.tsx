@@ -22,25 +22,25 @@ import type { RoomDraft } from "./room-draft";
 import { problemsOf, useFormProblems } from "./form-problems";
 import { ProblemSummary } from "./problem-summary";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Add or edit a room.
-//
-// **The branch is required and can never be "the whole school".** It is the one
-// non-null branch column in the schools product, and the reason is physical: a
-// room is a place, and a place is at one site. So this drawer has a branch
-// PICKER where the event drawer has a whole-school / one-branch choice, and no
-// third option to leave out.
-//
-// **Capacity is advisory and the form says so.** Nothing in the platform
-// compares it with anything - there is no student count in this module at all -
-// so a class of forty fits a room of twenty-five as far as the server is
-// concerned. Saying that under the box is honest; a validation that pretended
-// otherwise would be a rule with nothing behind it.
-//
-// **Active is not archive-by-another-name, and the copy distinguishes them.**
-// An inactive room stops being offered when anyone picks a room, and everything
-// already scheduled in it stays exactly where it is.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Add or edit a room.
+ *
+ * **The branch is required and can never be "the whole school".** It is the one
+ * non-null branch column in the schools product, and the reason is physical: a
+ * room is a place, and a place is at one site. So this drawer has a branch
+ * PICKER where the event drawer has a whole-school / one-branch choice, and no
+ * third option to leave out.
+ *
+ * **Capacity is advisory and the form says so.** Nothing in the platform
+ * compares it with anything - there is no student count in this module at all -
+ * so a class of forty fits a room of twenty-five as far as the server is
+ * concerned. Saying that under the box is honest; a validation that pretended
+ * otherwise would be a rule with nothing behind it.
+ *
+ * **Active is not archive-by-another-name, and the copy distinguishes them.**
+ * An inactive room stops being offered when anyone picks a room, and everything
+ * already scheduled in it stays exactly where it is.
+ */
 
 export function RoomDrawer({
   open,

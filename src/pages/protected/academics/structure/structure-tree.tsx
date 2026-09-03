@@ -9,20 +9,20 @@ import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { useGetStructureTreeQuery } from "@/redux/services/academics/academics-api";
 import type { TreeRow } from "@/redux/services/academics/academics-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The structure tree.
-//
-// The API returns a FLAT pre-order list with a `depth` on each row and no
-// "has children" flag, so both facts are derived here: a row has children when
-// the next row is deeper, and a row is visible when every one of its ancestors
-// is open. Deriving beats asking the server for a nested document - the flat
-// list is one query per level of the tree rather than one per parent, which is
-// the whole reason this screen is safe to serve unpaginated.
-//
-// Depth is fetched lazily. The default stops at levels with counts, and that
-// cap is what keeps the payload bounded; classes and subjects are only asked
-// for once somebody actually opens a level.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The structure tree.
+ *
+ * The API returns a FLAT pre-order list with a `depth` on each row and no
+ * "has children" flag, so both facts are derived here: a row has children when
+ * the next row is deeper, and a row is visible when every one of its ancestors
+ * is open. Deriving beats asking the server for a nested document - the flat
+ * list is one query per level of the tree rather than one per parent, which is
+ * the whole reason this screen is safe to serve unpaginated.
+ *
+ * Depth is fetched lazily. The default stops at levels with counts, and that
+ * cap is what keeps the payload bounded; classes and subjects are only asked
+ * for once somebody actually opens a level.
+ */
 
 interface Node extends TreeRow {
   hasChildren: boolean;

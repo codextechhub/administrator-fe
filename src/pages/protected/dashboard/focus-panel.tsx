@@ -12,29 +12,29 @@ import { cn } from "@/lib/utils";
 import type { AttentionItem, AttentionTone } from "./attention";
 import { initialPanelState, panelOpenReducer } from "./panel-open-state";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Today's focus: what the school has to do something about.
-//
-// The console's Action Centre, in a school's terms. Everything structural is
-// the same and deliberately so - the header pair, the summary after a rule, the
-// maximise control, the collapse, the two groups, the tinted cards with a
-// figure on the right - because a person who works in both should not have to
-// learn the screen twice.
-//
-// **The two groups mean something different here, and that is the one real
-// change.** The console splits work the reader personally clears from
-// conditions across the organisation, because it has an approvals queue and a
-// task table and most of what it reports belongs to somebody else. A school
-// administrator owns all of it. So the split is by whether the school has to
-// ACT: a clash, a missing timetable, a year with no terms are theirs to fix; a
-// holiday dated between two terms is a thing to know, because the December
-// break is exactly that and is not a mistake.
-//
-// **Nothing here is dismissible**, unlike the console's blue notices. Every row
-// is a live condition the server recomputes: it goes away when the school fixes
-// it, and a control that hides a clash would be a lie about a timetable that
-// still cannot be published.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Today's focus: what the school has to do something about.
+ *
+ * The console's Action Centre, in a school's terms. Everything structural is
+ * the same and deliberately so - the header pair, the summary after a rule, the
+ * maximise control, the collapse, the two groups, the tinted cards with a
+ * figure on the right - because a person who works in both should not have to
+ * learn the screen twice.
+ *
+ * **The two groups mean something different here, and that is the one real
+ * change.** The console splits work the reader personally clears from
+ * conditions across the organisation, because it has an approvals queue and a
+ * task table and most of what it reports belongs to somebody else. A school
+ * administrator owns all of it. So the split is by whether the school has to
+ * ACT: a clash, a missing timetable, a year with no terms are theirs to fix; a
+ * holiday dated between two terms is a thing to know, because the December
+ * break is exactly that and is not a mistake.
+ *
+ * **Nothing here is dismissible**, unlike the console's blue notices. Every row
+ * is a live condition the server recomputes: it goes away when the school fixes
+ * it, and a control that hides a clash would be a lie about a timetable that
+ * still cannot be published.
+ */
 
 const TONES: Record<
   AttentionTone,

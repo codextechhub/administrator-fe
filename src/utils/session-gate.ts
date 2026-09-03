@@ -1,9 +1,11 @@
-// Pure session-liveness check, shared by the route guards (Authenticated bounces
-// a dead session to /login; Guest bounces a live session away from /login). Kept
-// in one place so the two can never disagree. A deliberate once-per-decision
-// snapshot of external state (cookies, last-activity timestamp, wall clock) -
-// live expiry while mounted is handled by useSessionTimeout + the 401
-// interceptor, not by this gate.
+/**
+ * Pure session-liveness check, shared by the route guards (Authenticated bounces
+ * a dead session to /login; Guest bounces a live session away from /login). Kept
+ * in one place so the two can never disagree. A deliberate once-per-decision
+ * snapshot of external state (cookies, last-activity timestamp, wall clock) -
+ * live expiry while mounted is handled by useSessionTimeout + the 401
+ * interceptor, not by this gate.
+ */
 import Cookies from "js-cookie";
 import { IDLE_MS, WARNING_MS } from "@/hooks/use-session-timeout";
 import { getLastActivity } from "@/utils/session-activity";

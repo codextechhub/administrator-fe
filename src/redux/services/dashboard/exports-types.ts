@@ -1,8 +1,10 @@
-// Types for the Export Centre (backend app `vs_exports`, mounted at /v1/exports/).
-//
-// Every shape here is read from apps/vs_exports/serializers.py - this feature's
-// API already exists, so nothing below is invented. See
-// docs/EXPORT_BUILD_NOTES.md for the endpoint→screen map.
+/**
+ * Types for the Export Centre (backend app `vs_exports`, mounted at /v1/exports/).
+ *
+ * Every shape here is read from apps/vs_exports/serializers.py - this feature's
+ * API already exists, so nothing below is invented. See
+ * docs/EXPORT_BUILD_NOTES.md for the endpoint→screen map.
+ */
 
 // ── Closed vocabularies (vs_exports/constants.py) ─────────────────────────────
 
@@ -217,10 +219,12 @@ export interface CatalogueModule {
   available: boolean;
 }
 
-// ── Filter values as the builder holds them ──────────────────────────────────
-// The shape is the filter's kind, and the keys are the backend's:
-// date_range → {start, end}; choice → {values}; text/boolean → {value};
-// number_range → {min, max}. Getting these wrong fails silently at run time.
+/**
+ * ── Filter values as the builder holds them ──────────────────────────────────
+ * The shape is the filter's kind, and the keys are the backend's:
+ * date_range → {start, end}; choice → {values}; text/boolean → {value};
+ * number_range → {min, max}. Getting these wrong fails silently at run time.
+ */
 export interface FilterSpec {
   id: string;
   start?: string;

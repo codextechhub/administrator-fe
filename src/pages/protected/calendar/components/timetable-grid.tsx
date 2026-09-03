@@ -7,28 +7,28 @@ import type {
 } from "@/redux/services/calendar/calendar-types";
 import { clashedSlotIds, toRows } from "./grid-shape";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The weekly grid, drawn once and read by both the class screen and the
-// teacher screen.
-//
-// One component because it IS one document: the same periods down the side, the
-// same five days across, the same four cell states. What differs is the second
-// line of a filled cell - a class's grid names the teacher, a teacher's grid
-// names the class - and whether a cell can be pressed. Two copies of this would
-// drift the day one of them learned about a new period type.
-//
-// **A clash is a property of a PAIR, so it is matched by slot id.** The server
-// sends warnings carrying the ids of both slots involved, and never a flag on a
-// row - a flag would be a cache of a relationship, with nothing to invalidate
-// it when the other half moves. So a cell is in clash when its own slot id
-// appears in a warning, which means both cells go red and neither has to know
-// about the other.
-//
-// **Rows are the periods in force, which is not every period on file.** A day
-// running its own schedule shows only that schedule, and a period that does not
-// run on a given day leaves a struck-through gap rather than an empty cell that
-// invites a click.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The weekly grid, drawn once and read by both the class screen and the
+ * teacher screen.
+ *
+ * One component because it IS one document: the same periods down the side, the
+ * same five days across, the same four cell states. What differs is the second
+ * line of a filled cell - a class's grid names the teacher, a teacher's grid
+ * names the class - and whether a cell can be pressed. Two copies of this would
+ * drift the day one of them learned about a new period type.
+ *
+ * **A clash is a property of a PAIR, so it is matched by slot id.** The server
+ * sends warnings carrying the ids of both slots involved, and never a flag on a
+ * row - a flag would be a cache of a relationship, with nothing to invalidate
+ * it when the other half moves. So a cell is in clash when its own slot id
+ * appears in a warning, which means both cells go red and neither has to know
+ * about the other.
+ *
+ * **Rows are the periods in force, which is not every period on file.** A day
+ * running its own schedule shows only that schedule, and a period that does not
+ * run on a given day leaves a struck-through gap rather than an empty cell that
+ * invites a click.
+ */
 
 export function TimetableGrid({
   days,

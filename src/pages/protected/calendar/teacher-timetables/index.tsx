@@ -137,11 +137,10 @@ export default function TeacherTimetables() {
             )}
           </div>
 
-          {/* The cross-branch case used to be a paragraph here saying the week
-              covers every branch. It is gone: the Branches figure above already
-              names them, and a sentence repeating a number the reader can see
-              is one more thing to read past on every teacher who works at two
-              branches. */}
+          {/* No paragraph for the cross-branch case: the Branches figure above
+              already names them, and a sentence repeating a number the reader
+              can see is one more thing to read past on every teacher who works
+              at two branches. */}
 
           {warnings.length > 0 && (
             <div className="mt-4 rounded-lg border border-error-text/30 bg-error-text/5 px-3 py-2.5">

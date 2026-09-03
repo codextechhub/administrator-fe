@@ -1,10 +1,12 @@
-// Deterministic width cycle for loading ghosts. Real data has ragged cell
-// widths, so uniform full-width bars read as a progress bar rather than as
-// content. The cycle is keyed off the ghost's position - never Math.random(),
-// which would make every re-render jitter and would break DOM assertions.
-//
-// Lives apart from skeletons.tsx so that file exports components only
-// (react-refresh/only-export-components).
+/**
+ * Deterministic width cycle for loading ghosts. Real data has ragged cell
+ * widths, so uniform full-width bars read as a progress bar rather than as
+ * content. The cycle is keyed off the ghost's position - never Math.random(),
+ * which would make every re-render jitter and would break DOM assertions.
+ *
+ * Lives apart from skeletons.tsx so that file exports components only
+ * (react-refresh/only-export-components).
+ */
 
 const GHOST_WIDTHS = [
   "w-4/5",

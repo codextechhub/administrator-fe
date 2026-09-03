@@ -3,37 +3,37 @@ import {
   FINANCE_PERMISSION_REGISTRY as FINANCE_REGISTRY,
 } from "@xvs/finance/permissions";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PERMISSION REGISTRY
-//
-// Single source of truth. The backend permission keys ("module.resource.action")
-// exist ONLY inside REGISTRY below - nowhere else in the codebase.
-//
-// P.* names describe what the user is doing in the UI, not how the backend
-// models the permission. A reader of any other file cannot infer the backend
-// key format from the constant name alone.
-//
-// ── Code format: MM RR AA (6 digits) ─────────────────────────────────────────
-//   MM = module group   10=school  20=onboarding  30=academics  40=import
-//                       92=exports (the Export Centre, shared with console-fe)
-//   RR = resource       01 02 03 … (assigned sequentially per module)
-//   AA = action         01=view   02=create  03=update  04=delete
-//                       05=approve 08=manage  09=suspend  10=reactivate
-//                       11=assign  12=start   13=end   14=run   15=execute
-//                       16=publish 17=import  18=export
-//                       39=view_sensitive
-//
-// ── Adding a permission ───────────────────────────────────────────────────────
-//   1. Pick the next free code in the right MM RR range.
-//   2. Add  "MMRRAA": "module.resource.action"  to REGISTRY.
-//   3. Add a named constant to P that describes the UI capability.
-//   4. Use P.YOUR_CONSTANT everywhere - never the raw key or the code directly.
-//
-// ── Adding a new module ───────────────────────────────────────────────────────
-//   1. Pick the next free MM.
-//   2. Start RR at 01 and AA at 01 within that range.
-//   3. Add a comment block and constants to P below.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * PERMISSION REGISTRY
+ *
+ * Single source of truth. The backend permission keys ("module.resource.action")
+ * exist ONLY inside REGISTRY below - nowhere else in the codebase.
+ *
+ * P.* names describe what the user is doing in the UI, not how the backend
+ * models the permission. A reader of any other file cannot infer the backend
+ * key format from the constant name alone.
+ *
+ * ── Code format: MM RR AA (6 digits) ─────────────────────────────────────────
+ *   MM = module group   10=school  20=onboarding  30=academics  40=import
+ *                       92=exports (the Export Centre, shared with console-fe)
+ *   RR = resource       01 02 03 … (assigned sequentially per module)
+ *   AA = action         01=view   02=create  03=update  04=delete
+ *                       05=approve 08=manage  09=suspend  10=reactivate
+ *                       11=assign  12=start   13=end   14=run   15=execute
+ *                       16=publish 17=import  18=export
+ *                       39=view_sensitive
+ *
+ * ── Adding a permission ───────────────────────────────────────────────────────
+ *   1. Pick the next free code in the right MM RR range.
+ *   2. Add  "MMRRAA": "module.resource.action"  to REGISTRY.
+ *   3. Add a named constant to P that describes the UI capability.
+ *   4. Use P.YOUR_CONSTANT everywhere - never the raw key or the code directly.
+ *
+ * ── Adding a new module ───────────────────────────────────────────────────────
+ *   1. Pick the next free MM.
+ *   2. Start RR at 01 and AA at 01 within that range.
+ *   3. Add a comment block and constants to P below.
+ */
 
 const REGISTRY: Record<string, string> = {
   // Shipped with the package's codes: a code with no mapping resolves to ""
@@ -219,10 +219,10 @@ const REGISTRY: Record<string, string> = {
 
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Public constants
-// Names describe UI capabilities - not backend keys or permission structure.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Public constants
+ * Names describe UI capabilities - not backend keys or permission structure.
+ */
 export const P = {
   // Owned by @xvs/finance, because they gate that package's screens. Spread in
   // rather than transcribed: this app must not hold a second copy of a code

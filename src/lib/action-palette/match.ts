@@ -1,7 +1,9 @@
-// Matching engine: score an action against a typed query. Supports plain
-// substring, prefix, and token/initials matching ("vi ho" → View home,
-// "vi m-p" → View my profile), plus global verb synonyms so "new student",
-// "add student" and "register student" all hit the same action.
+/**
+ * Matching engine: score an action against a typed query. Supports plain
+ * substring, prefix, and token/initials matching ("vi ho" → View home,
+ * "vi m-p" → View my profile), plus global verb synonyms so "new student",
+ * "add student" and "register student" all hit the same action.
+ */
 
 import type { ActionDef } from "./types";
 

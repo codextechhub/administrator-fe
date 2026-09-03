@@ -4,14 +4,14 @@ import type {
   TermState,
 } from "@/redux/services/academics/academics-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The bits of a session both the list and the detail screen print, spelled once
-// so the two cannot disagree about what "archived" looks like.
-//
-// Plain functions only. The chip that renders them lives in session-chips.tsx,
-// because a module that exports both components and helpers breaks Fast Refresh
-// for everything that imports it.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The bits of a session both the list and the detail screen print, spelled once
+ * so the two cannot disagree about what "archived" looks like.
+ *
+ * Plain functions only. The chip that renders them lives in session-chips.tsx,
+ * because a module that exports both components and helpers breaks Fast Refresh
+ * for everything that imports it.
+ */
 
 const STATUS: Record<SessionStatus, { label: string; variant: string }> = {
   ACTIVE: { label: "Active", variant: "active" },

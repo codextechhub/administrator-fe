@@ -9,21 +9,21 @@ import {
 } from "@/redux/services/pay/pay-api";
 import { useBrandFavicon } from "@/hooks/use-brand-favicon";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Paying an invoice from the link in its email.
-//
-// The person on this page is a parent or a customer. They have no account here,
-// they did not sign in, and they will not: the signed token in the address is
-// the whole of their authority. So the page sits outside every layout the rest
-// of the app uses - no sidebar, no auth chrome, nothing that assumes a session.
-//
-// It shows what is owed before it sends anybody to a card form. That is the
-// point of the page existing at all rather than the email linking straight to
-// the provider: a parent who paid part of the bill by transfer last week should
-// see the smaller number and be able to check it is right before committing.
-// The number comes from the backend, read off the invoice when this page loads,
-// never from the link.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Paying an invoice from the link in its email.
+ *
+ * The person on this page is a parent or a customer. They have no account here,
+ * they did not sign in, and they will not: the signed token in the address is
+ * the whole of their authority. So the page sits outside every layout the rest
+ * of the app uses - no sidebar, no auth chrome, nothing that assumes a session.
+ *
+ * It shows what is owed before it sends anybody to a card form. That is the
+ * point of the page existing at all rather than the email linking straight to
+ * the provider: a parent who paid part of the bill by transfer last week should
+ * see the smaller number and be able to check it is right before committing.
+ * The number comes from the backend, read off the invoice when this page loads,
+ * never from the link.
+ */
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (

@@ -20,21 +20,21 @@ const Applicants = lazy(() => import("@/pages/protected/students/applicants"));
 
 const S = routesPath.PROTECTED.STUDENTS;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Student Management.
-//
-// **No `pendingSurface`.** Absence means closed, and closed is right: the whole
-// module answers 403 TENANT_NOT_LIVE to a school still onboarding, because
-// enrolling a child and running a promotion are operations of a live school.
-// The frontend mirrors the backend rather than guessing, so a pending school is
-// redirected to the not-live screen by base-api instead of being shown an
-// empty directory that looks broken.
-//
-// **Both lenses.** The roll and the class are per-year - a school had 85
-// students in 2026/2027 and has 73 in 2027/2028, and a child in SSS1 A last
-// year is in SSS2 A this one - so the year filters as much as the branch does.
-// Status carries no year, and the screens say so where it shows.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Student Management.
+ *
+ * **No `pendingSurface`.** Absence means closed, and closed is right: the whole
+ * module answers 403 TENANT_NOT_LIVE to a school still onboarding, because
+ * enrolling a child and running a promotion are operations of a live school.
+ * The frontend mirrors the backend rather than guessing, so a pending school is
+ * redirected to the not-live screen by base-api instead of being shown an
+ * empty directory that looks broken.
+ *
+ * **Both lenses.** The roll and the class are per-year - a school had 85
+ * students in 2026/2027 and has 73 in 2027/2028, and a child in SSS1 A last
+ * year is in SSS2 A this one - so the year filters as much as the branch does.
+ * Status carries no year, and the screens say so where it shows.
+ */
 export const studentsRoutes = [
   {
     path: S.INDEX,

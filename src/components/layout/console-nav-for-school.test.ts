@@ -4,15 +4,17 @@ import { financeNav } from "@/pages/protected/finance/finance-nav";
 import { FINANCE_MOUNTED_PATHS } from "@/routes/protected/finance-routes";
 import { routesPath } from "@/routes/routesPath";
 
-// The screens this app deliberately does not mount, so the sidebar deliberately
-// does not offer them: a school keeps one set of books, bills in naira, uses no
-// analytical tagging, and does not run the payment gateway's own payouts.
-//
-// Written out in full, and asserted to be the WHOLE of what gets dropped. The
-// filter cannot tell "we chose not to mount this" from "the nav is pointing at
-// the wrong address", and the second one is silent: Receipts & Allocation
-// vanished from the sidebar for exactly that reason, while its screen sat
-// mounted at /finance/receivables/receipts the whole time.
+/**
+ * The screens this app deliberately does not mount, so the sidebar deliberately
+ * does not offer them: a school keeps one set of books, bills in naira, uses no
+ * analytical tagging, and does not run the payment gateway's own payouts.
+ *
+ * Written out in full, and asserted to be the WHOLE of what gets dropped. The
+ * filter cannot tell "we chose not to mount this" from "the nav is pointing at
+ * the wrong address", and the second one is silent: Receipts & Allocation
+ * vanished from the sidebar for exactly that reason, while its screen sat
+ * mounted at /finance/receivables/receipts the whole time.
+ */
 const INTENTIONALLY_UNMOUNTED = [
   "/finance/setup/entities",
   "/finance/setup/currencies",

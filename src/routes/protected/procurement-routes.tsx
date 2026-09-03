@@ -27,20 +27,22 @@ const ProcurementSettings = lazy(() => import("@/pages/protected/procurement/set
 
 const P = routesPath.PROTECTED.PROCUREMENT;
 
-// Unlike Finance, this area is mounted WHOLE, and the difference is worth
-// stating rather than looking like an oversight.
-//
-// Finance carries platform machinery a school can never hold - several sets of
-// books, foreign currencies, analytical dimensions, the payment gateway's own
-// payouts and webhooks - so those routes are left unmounted. Procurement has no
-// equivalent: every screen here is a school buying something. A storekeeper
-// counts exercise books, a vice principal raises a requisition, a bursar
-// matches a supplier's bill. There is nothing in vs_procurement that belongs to
-// the platform and not to a school.
-//
-// What a given person may DO here is still decided by permissions, and most of
-// it is deliberately not grantable through a group: creating a supplier payment
-// is CRITICAL, so it travels through a named role rather than a dropdown.
+/**
+ * Unlike Finance, this area is mounted WHOLE, and the difference is worth
+ * stating rather than looking like an oversight.
+ *
+ * Finance carries platform machinery a school can never hold - several sets of
+ * books, foreign currencies, analytical dimensions, the payment gateway's own
+ * payouts and webhooks - so those routes are left unmounted. Procurement has no
+ * equivalent: every screen here is a school buying something. A storekeeper
+ * counts exercise books, a vice principal raises a requisition, a bursar
+ * matches a supplier's bill. There is nothing in vs_procurement that belongs to
+ * the platform and not to a school.
+ *
+ * What a given person may DO here is still decided by permissions, and most of
+ * it is deliberately not grantable through a group: creating a supplier payment
+ * is CRITICAL, so it travels through a named role rather than a dropdown.
+ */
 export const procurementRoutes: RouteObject[] = [
   {
     handle: { sidebar: "procurement", title: "Procurement" } satisfies DashboardHandle,

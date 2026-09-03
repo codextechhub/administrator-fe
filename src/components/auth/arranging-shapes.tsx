@@ -1,10 +1,12 @@
 import { motion, useReducedMotion } from "motion/react";
 
-// Decorative background for the login page's blue panel: a swarm of small
-// shapes that begin scattered and settle into a neat centered grid formation,
-// then breathe with a gentle infinite float. Purely presentational - the
-// container is aria-hidden and pointer-events-none so it never interferes with
-// the form. All motion is transform/opacity only (GPU-composited).
+/**
+ * Decorative background for the login page's blue panel: a swarm of small
+ * shapes that begin scattered and settle into a neat centered grid formation,
+ * then breathe with a gentle infinite float. Purely presentational - the
+ * container is aria-hidden and pointer-events-none so it never interferes with
+ * the form. All motion is transform/opacity only (GPU-composited).
+ */
 
 const SHAPE_COUNT = 28;
 

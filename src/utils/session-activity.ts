@@ -1,8 +1,10 @@
-// Persists the wall-clock timestamp of the user's last interaction so the
-// Authenticated gate can detect "left overnight" sessions on the next reload.
-// Activity events fire very frequently (mousemove, scroll), so writes are
-// throttled - the in-memory ref in useSessionTimeout remains the authoritative
-// source while the page is open; this is only a stale-on-mount safety net.
+/**
+ * Persists the wall-clock timestamp of the user's last interaction so the
+ * Authenticated gate can detect "left overnight" sessions on the next reload.
+ * Activity events fire very frequently (mousemove, scroll), so writes are
+ * throttled - the in-memory ref in useSessionTimeout remains the authoritative
+ * source while the page is open; this is only a stale-on-mount safety net.
+ */
 
 const KEY = "_last_activity";
 const THROTTLE_MS = 5_000;

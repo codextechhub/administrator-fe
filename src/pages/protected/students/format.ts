@@ -1,8 +1,10 @@
-// How this module writes dates and enum codes on screen.
-//
-// Both exist because the API answers in machine terms and the screen must not.
-// A date arrives as "2012-11-07" and a gender as "FEMALE", and printing either
-// verbatim reads as a database row rather than a child's record.
+/**
+ * How this module writes dates and enum codes on screen.
+ *
+ * Both exist because the API answers in machine terms and the screen must not.
+ * A date arrives as "2012-11-07" and a gender as "FEMALE", and printing either
+ * verbatim reads as a database row rather than a child's record.
+ */
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",

@@ -3,27 +3,26 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { ClashWarning } from "@/redux/services/calendar/calendar-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// What this would clash with, said while the form is still open.
-//
-// A clash used to be discovered afterwards: the school filled in a teacher, a
-// room and a subject, pressed Add, and read about Mr Eze on a toast over a grid
-// it had already changed. The information existed before the write - the server
-// can answer it from the draft - and it belongs where the decision is made.
-//
-// **The server answers, not this component.** It calls the preview endpoint,
-// which runs the same clash function the write runs. Working it out here would
-// be a second implementation of rules that span the whole tenant and redact the
-// other side of a clash the reader may not see, and it would drift from the
-// real engine the first time either changed.
-//
-// **A clash still saves. It just has to be meant.** The module's standing rule
-// is that a clash is a warning and not a refusal - a school building a grid
-// over several sittings needs to save a state it knows is wrong, and publishing
-// is where the refusal lives. So this does not block the save; it makes the
-// school say out loud that it knows. The tick is the whole difference between
-// a mistake and a decision.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * What this would clash with, said while the form is still open.
+ *
+ * A clash discovered afterwards reaches the school as a toast about Mr Eze,
+ * over a grid it has already changed. The server can answer from the draft
+ * before the write, so the answer belongs where the decision is made.
+ *
+ * **The server answers, not this component.** It calls the preview endpoint,
+ * which runs the same clash function the write runs. Working it out here would
+ * be a second implementation of rules that span the whole tenant and redact the
+ * other side of a clash the reader may not see, and it would drift from the
+ * real engine the first time either changed.
+ *
+ * **A clash still saves. It just has to be meant.** The module's standing rule
+ * is that a clash is a warning and not a refusal - a school building a grid
+ * over several sittings needs to save a state it knows is wrong, and publishing
+ * is where the refusal lives. So this does not block the save; it makes the
+ * school say out loud that it knows. The tick is the whole difference between
+ * a mistake and a decision.
+ */
 
 export function ClashPreview({
   warnings,

@@ -15,14 +15,14 @@ export interface NotificationItem {
   created_at: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The notification bell and its tray.
-//
-// Every endpoint here is open to a school that has not gone live: the backend
-// opens exactly the personal-inbox actions (list, retrieve, unread-count,
-// mark-read, mark-all-read) and keeps settings, history and templates shut. The
-// queryset is scoped to the recipient, so there is nobody else's post to read.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The notification bell and its tray.
+ *
+ * Every endpoint here is open to a school that has not gone live: the backend
+ * opens exactly the personal-inbox actions (list, retrieve, unread-count,
+ * mark-read, mark-all-read) and keeps settings, history and templates shut. The
+ * queryset is scoped to the recipient, so there is nobody else's post to read.
+ */
 export const notificationsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getUnreadNotificationCount: builder.query<

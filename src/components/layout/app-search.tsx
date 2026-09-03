@@ -45,12 +45,11 @@ type SearchVariant = "desktop" | "mobile";
  * can see what the box offers without committing to a full-screen takeover,
  * and Escape puts them back on the page they were already reading.
  *
- * **It launches actions, and it finds students.** For a long time it did only
- * the first, because there was no search endpoint - not closed, absent - and a
- * box promising to find a child by name would have been a lie in the most
- * prominent place on the page. M11 shipped `/v1/students/search/`, so the
- * promise is now kept: type two characters and matching students appear above
- * the actions, gated on the same key the directory checks.
+ * **It launches actions, and it finds students.** Students are searched
+ * through `/v1/students/search/`: type two characters and matching students
+ * appear above the actions, gated on the same key the directory checks. The
+ * box must never promise to find a child by name without an endpoint behind
+ * it, which would be a lie in the most prominent place on the page.
  *
  * Students come FIRST when they match. Somebody typing "Chiamaka" wants the
  * child, not an action whose description happens to contain those letters, and

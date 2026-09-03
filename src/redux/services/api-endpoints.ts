@@ -1,15 +1,15 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Endpoint classification for the base query.
-//
-// `prepareHeaders` and the base-query wrapper only ever see the RTK Query
-// endpoint *name* - never the final URL - so every "does this request get X?"
-// rule has to be expressed as a name set. They live here (rather than inline in
-// base-api.ts) so the rules are a single source of truth and can be unit tested
-// without pulling the whole store/api graph into the test.
-//
-// Adding an endpoint to an api slice? If it is unauthenticated, self-scoped, or
-// must always act as the *original* signed-in user, register it below.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Endpoint classification for the base query.
+ *
+ * `prepareHeaders` and the base-query wrapper only ever see the RTK Query
+ * endpoint *name* - never the final URL - so every "does this request get X?"
+ * rule has to be expressed as a name set. They live here (rather than inline in
+ * base-api.ts) so the rules are a single source of truth and can be unit tested
+ * without pulling the whole store/api graph into the test.
+ *
+ * Adding an endpoint to an api slice? If it is unauthenticated, self-scoped, or
+ * must always act as the *original* signed-in user, register it below.
+ */
 
 // Endpoints that must never carry a (possibly stale) Bearer token. Sending one
 // to the login/activation/reset routes makes the backend treat the request as
@@ -42,10 +42,12 @@ export const TENANT_EXEMPT_ENDPOINTS = new Set([
   "changeMyPassword",
 ]);
 
-// The impersonation management endpoints themselves. They are authorised as the
-// ORIGINAL actor (starting/ending/listing proxy sessions), never as the proxied
-// target - riding them with the session header would either 403 (the target
-// rarely holds school.impersonation.*) or, worse, allow proxy chaining.
+/**
+ * The impersonation management endpoints themselves. They are authorised as the
+ * ORIGINAL actor (starting/ending/listing proxy sessions), never as the proxied
+ * target - riding them with the session header would either 403 (the target
+ * rarely holds school.impersonation.*) or, worse, allow proxy chaining.
+ */
 export const IMPERSONATION_ENDPOINTS = new Set([
   "getProxyTargets",
   "startProxySession",
@@ -53,11 +55,13 @@ export const IMPERSONATION_ENDPOINTS = new Set([
   "getProxySessions",
 ]);
 
-// Requests that must always run as the token owner regardless of an active
-// proxy session: the unauthenticated auth routes and logout (which revokes the
-// ACTOR's token pair). `/me` is intentionally absent - while proxying it must
-// return the *target's* identity, which is exactly how the client learns who it
-// is now acting as.
+/**
+ * Requests that must always run as the token owner regardless of an active
+ * proxy session: the unauthenticated auth routes and logout (which revokes the
+ * ACTOR's token pair). `/me` is intentionally absent - while proxying it must
+ * return the *target's* identity, which is exactly how the client learns who it
+ * is now acting as.
+ */
 export const IMPERSONATION_HEADER_EXEMPT_ENDPOINTS = new Set([
   ...AUTH_ENDPOINTS,
   "logout",

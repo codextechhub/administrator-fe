@@ -3,42 +3,42 @@ import { ScrollArea as ScrollAreaPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// A scrollbar that sits ON the content instead of taking a slice out of it.
-//
-// **The problem is not that native scrollbars are ugly. It is that they are
-// part of the layout.** A native scrollbar takes its width out of the box it
-// belongs to, so a table that is 900px wide with nothing to scroll becomes
-// 885px wide the moment one more row arrives, and every column shifts. That is
-// the jump you see when a list grows past its box. It also means the same
-// screen is laid out differently on a Mac with a trackpad (overlay scrollbars,
-// zero width) and on Windows with a mouse (15px gone), so a layout verified on
-// one is not verified on the other.
-//
-// CSS alone cannot fix that. `scrollbar-width: thin` makes it narrower and
-// `::-webkit-scrollbar` restyles it, but a native scrollbar with a width still
-// occupies that width. The only way to float one over the content is to hide
-// the native one and draw the thumb yourself, which is what this does through
-// Radix: the viewport is the full width of the box, and the scrollbar is
-// positioned over it.
-//
-// **It is quiet until you go near it.** Nothing renders while the pointer is
-// elsewhere; hovering the box fades a thin thumb in; hovering the thumb itself
-// thickens it enough to grab. There is no track line, because a groove down the
-// side of every panel is furniture that says nothing the thumb does not.
-//
-// The trade this makes, stated so nobody rediscovers it as a bug: while the
-// thumb is showing, it covers about 10px at the right edge of the content. That
-// is the price of the content never moving, and it is the right way round -
-// something briefly on top of a word beats every column shifting sideways.
-//
-// **Where to use it.** Boxes with a bounded height: drawer bodies, dialog
-// lists, table wrappers, menus, grids that scroll sideways. **Not the page.**
-// Replacing the window's scroll breaks anchor links, `scrollIntoView` (which
-// the forms rely on to move the cursor to a missing field), sticky headers and
-// browser scroll restoration. The page keeps its native scroll, styled thin in
-// index.css so the two look like the same scrollbar.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * A scrollbar that sits ON the content instead of taking a slice out of it.
+ *
+ * **The problem is not that native scrollbars are ugly. It is that they are
+ * part of the layout.** A native scrollbar takes its width out of the box it
+ * belongs to, so a table that is 900px wide with nothing to scroll becomes
+ * 885px wide the moment one more row arrives, and every column shifts. That is
+ * the jump you see when a list grows past its box. It also means the same
+ * screen is laid out differently on a Mac with a trackpad (overlay scrollbars,
+ * zero width) and on Windows with a mouse (15px gone), so a layout verified on
+ * one is not verified on the other.
+ *
+ * CSS alone cannot fix that. `scrollbar-width: thin` makes it narrower and
+ * `::-webkit-scrollbar` restyles it, but a native scrollbar with a width still
+ * occupies that width. The only way to float one over the content is to hide
+ * the native one and draw the thumb yourself, which is what this does through
+ * Radix: the viewport is the full width of the box, and the scrollbar is
+ * positioned over it.
+ *
+ * **It is quiet until you go near it.** Nothing renders while the pointer is
+ * elsewhere; hovering the box fades a thin thumb in; hovering the thumb itself
+ * thickens it enough to grab. There is no track line, because a groove down the
+ * side of every panel is furniture that says nothing the thumb does not.
+ *
+ * The trade this makes, stated so nobody rediscovers it as a bug: while the
+ * thumb is showing, it covers about 10px at the right edge of the content. That
+ * is the price of the content never moving, and it is the right way round -
+ * something briefly on top of a word beats every column shifting sideways.
+ *
+ * **Where to use it.** Boxes with a bounded height: drawer bodies, dialog
+ * lists, table wrappers, menus, grids that scroll sideways. **Not the page.**
+ * Replacing the window's scroll breaks anchor links, `scrollIntoView` (which
+ * the forms rely on to move the cursor to a missing field), sticky headers and
+ * browser scroll restoration. The page keeps its native scroll, styled thin in
+ * index.css so the two look like the same scrollbar.
+ */
 
 function ScrollArea({
   className,

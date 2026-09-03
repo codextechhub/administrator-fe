@@ -10,24 +10,24 @@ import {
 
 import type { RoomType } from "@/redux/services/calendar/calendar-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// What each kind of room is called, and what it looks like.
-//
-// One list, read by the card, the drawer and the filter. There were three of
-// these - two spelling out the same six labels and a card that spelled out
-// none - which is how a seventh room type would have been added in two places
-// and missed in the third.
-//
-// **The icon carries the type on a card; it never carries it alone anywhere
-// else.** A flask is only obvious once you already know the scheme, so every
-// use pairs it with the label or with an accessible name. The table keeps its
-// words, and the card's icon is titled.
-//
-// Chosen to be distinguishable at 16px from each other rather than to be the
-// most literal drawing of each thing: a dumbbell for sports rather than a
-// volleyball, because it does not imply one game; shapes for Other, because it
-// deliberately implies nothing.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * What each kind of room is called, and what it looks like.
+ *
+ * One list, read by the card, the drawer and the filter. There were three of
+ * these - two spelling out the same six labels and a card that spelled out
+ * none - which is how a seventh room type would have been added in two places
+ * and missed in the third.
+ *
+ * **The icon carries the type on a card; it never carries it alone anywhere
+ * else.** A flask is only obvious once you already know the scheme, so every
+ * use pairs it with the label or with an accessible name. The table keeps its
+ * words, and the card's icon is titled.
+ *
+ * Chosen to be distinguishable at 16px from each other rather than to be the
+ * most literal drawing of each thing: a dumbbell for sports rather than a
+ * volleyball, because it does not imply one game; shapes for Other, because it
+ * deliberately implies nothing.
+ */
 
 export const ROOM_KINDS: {
   value: RoomType;

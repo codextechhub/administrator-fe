@@ -31,22 +31,26 @@ const initialState: Auth = {
    impersonation: null,
 };
 
-// `/me` re-runs on mount, on token refresh and (since focus-refetch) every time
-// the user tabs back - but the context it returns is almost always identical to
-// what is already in the store. Assigning unconditionally would hand every
-// `selectPermissions` / `selectTenant` consumer a brand-new reference on each of
-// those runs, re-rendering the whole protected tree and rewriting redux-persist
-// for nothing. Compare first and no-op when nothing actually changed; Immer then
-// returns the very same state object.
+/**
+ * `/me` re-runs on mount, on token refresh and (since focus-refetch) every time
+ * the user tabs back - but the context it returns is almost always identical to
+ * what is already in the store. Assigning unconditionally would hand every
+ * `selectPermissions` / `selectTenant` consumer a brand-new reference on each of
+ * those runs, re-rendering the whole protected tree and rewriting redux-persist
+ * for nothing. Compare first and no-op when nothing actually changed; Immer then
+ * returns the very same state object.
+ */
 const samePermissions = (a: string[] | undefined, b: string[]): boolean =>
   !!a && a.length === b.length && a.every((perm, i) => perm === b[i]);
 
-// Every field the app reads off the tenant belongs in this comparison. It used
-// to test slug and name only, which was harmless while those were the only
-// fields that existed - and stopped being harmless the moment `status` started
-// deciding what a school may open: a /me sync carrying the school's move from
-// PENDING to ACTIVE would have been dropped here as "the same tenant", leaving
-// the app locked against a school the server had already let in.
+/**
+ * Every field the app reads off the tenant belongs in this comparison. It used
+ * to test slug and name only, which was harmless while those were the only
+ * fields that existed - and stopped being harmless the moment `status` started
+ * deciding what a school may open: a /me sync carrying the school's move from
+ * PENDING to ACTIVE would have been dropped here as "the same tenant", leaving
+ * the app locked against a school the server had already let in.
+ */
 const sameTenant = (
   a: TenantInfo | null | undefined,
   b: TenantInfo | null
@@ -66,11 +70,13 @@ const sameSchool = (
   a === b ||
   (!!a && !!b && a.id === b.id && a.name === b.name && a.slug === b.slug && a.logo === b.logo);
 
-// Identity comparison for the same no-op reason as the guards above: `/me`
-// re-runs on mount, refresh and focus, and its `user` payload is a brand-new
-// object every time. `updated_at` moves whenever anything about the record
-// changes, so id + updated_at + the fields the shell renders is enough to know
-// the identity is unchanged without deep-comparing an FLS-variable object.
+/**
+ * Identity comparison for the same no-op reason as the guards above: `/me`
+ * re-runs on mount, refresh and focus, and its `user` payload is a brand-new
+ * object every time. `updated_at` moves whenever anything about the record
+ * changes, so id + updated_at + the fields the shell renders is enough to know
+ * the identity is unchanged without deep-comparing an FLS-variable object.
+ */
 const sameUser = (a: User | null | undefined, b: User | null): boolean =>
   a === b ||
   (!!a &&

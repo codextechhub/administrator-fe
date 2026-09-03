@@ -1,9 +1,11 @@
-// What the derivation must keep true, not what it happens to produce today.
-//
-// These tests do NOT pin the number of finance screens or the wording of any
-// one of them: @xvs/finance adding a screen or renaming one must not turn a
-// test red, because picking those up without an edit here is the entire reason
-// the actions are derived.
+/**
+ * What the derivation must keep true, not what it happens to produce today.
+ *
+ * These tests do NOT pin the number of finance screens or the wording of any
+ * one of them: @xvs/finance adding a screen or renaming one must not turn a
+ * test red, because picking those up without an edit here is the entire reason
+ * the actions are derived.
+ */
 
 import { describe, expect, it } from "vitest";
 import {
@@ -25,10 +27,12 @@ const NAV_URLS = [...schoolFinanceNav, ...schoolProcurementNav]
   .flatMap((group) => group.items)
   .map((item) => item.url);
 
-// The two halves are checked apart because they promise different things. A
-// view action exists for every screen; a create action exists only where the
-// screen has a drawer to open, and carries a different gate and a different
-// kind of label.
+/**
+ * The two halves are checked apart because they promise different things. A
+ * view action exists for every screen; a create action exists only where the
+ * screen has a drawer to open, and carries a different gate and a different
+ * kind of label.
+ */
 const VIEWS = CONSOLE_ACTIONS.filter((action) => action.kind === "view");
 const CREATES = CONSOLE_ACTIONS.filter((action) => action.kind === "do");
 const pathOf = (to: string) => to.split("?")[0];

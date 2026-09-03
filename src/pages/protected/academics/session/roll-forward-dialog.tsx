@@ -19,21 +19,21 @@ import {
 } from "@/redux/services/academics/academics-api";
 import type { AcademicSession } from "@/redux/services/academics/academics-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Starting a year from the one before it.
-//
-// Levels, classes and subjects belong to a year, which keeps last year honest -
-// and would be punishing on its own: a school that has just created 2027/2028
-// would face sixteen levels, eight classes and seven subjects to retype, all
-// identical to last year's. So a new year is seeded from an existing one and
-// the school edits the differences.
-//
-// What is copied is spelled out rather than summarised, because the two things
-// people expect to come with it - pupils, and last year's edits - are exactly
-// the two that do not. The server refuses a year that already has structure, so
-// the dangerous reading of this button (press it twice, get everything twice)
-// cannot happen.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Starting a year from the one before it.
+ *
+ * Levels, classes and subjects belong to a year, which keeps last year honest -
+ * and would be punishing on its own: a school that has just created 2027/2028
+ * would face sixteen levels, eight classes and seven subjects to retype, all
+ * identical to last year's. So a new year is seeded from an existing one and
+ * the school edits the differences.
+ *
+ * What is copied is spelled out rather than summarised, because the two things
+ * people expect to come with it - pupils, and last year's edits - are exactly
+ * the two that do not. The server refuses a year that already has structure, so
+ * the dangerous reading of this button (press it twice, get everything twice)
+ * cannot happen.
+ */
 
 export function RollForwardDialog({
   target,

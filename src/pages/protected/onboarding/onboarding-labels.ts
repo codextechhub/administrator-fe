@@ -4,10 +4,12 @@ import type {
   TaskStatus,
 } from "@/redux/services/onboarding/onboarding-types";
 
-// The onboarding status vocabulary in words, kept apart from the chips that
-// render it: a label is also needed where there is no chip - the ticket context
-// block, a toast, an aria-label - and reading it from the same table is what
-// stops the same state being called two different things.
+/**
+ * The onboarding status vocabulary in words, kept apart from the chips that
+ * render it: a label is also needed where there is no chip - the ticket context
+ * block, a toast, an aria-label - and reading it from the same table is what
+ * stops the same state being called two different things.
+ */
 
 export const TASK_STATUS_LABEL: Record<TaskStatus, string> = {
   NOT_STARTED: "Not started",

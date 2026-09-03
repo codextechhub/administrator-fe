@@ -5,16 +5,16 @@ import type {
   ProxyTarget,
 } from "./impersonation-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Proxy ("impersonation") session management.
-//
-// Every endpoint here is authorised as the ORIGINAL signed-in admin, never as
-// the proxied target - `api-endpoints.ts` keeps them out of the
-// X-Impersonation-Session header path, which is what prevents proxy chaining.
-//
-// Scope is the caller's OWN school: the backend pins the target pool to the
-// actor's tenant, so `?tenant=` (injected centrally) can never widen it.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Proxy ("impersonation") session management.
+ *
+ * Every endpoint here is authorised as the ORIGINAL signed-in admin, never as
+ * the proxied target - `api-endpoints.ts` keeps them out of the
+ * X-Impersonation-Session header path, which is what prevents proxy chaining.
+ *
+ * Scope is the caller's OWN school: the backend pins the target pool to the
+ * actor's tenant, so `?tenant=` (injected centrally) can never widen it.
+ */
 export const impersonationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Search active users in this school. The backend rejects queries shorter

@@ -7,20 +7,20 @@ import { useBrandFavicon } from "@/hooks/use-brand-favicon";
 import { currentSchoolSlug } from "@/utils/school-host";
 import { schoolLogoUrl } from "@/utils/school-brand";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Where the payment provider returns a payer once they are done.
-//
-// It deliberately does NOT say the payment succeeded. Landing here only means
-// the provider finished with the payer's browser; it is not proof that money
-// moved, and the browser is the one participant in a payment that can be closed,
-// refreshed or navigated away at any moment. The receipt is booked when the
-// provider's webhook confirms the collection, which may arrive before this page
-// renders or a minute after it. Telling somebody "payment successful" on the
-// strength of a redirect is how a failed card ends up believed.
-//
-// So it acknowledges, names the reference they can quote, and promises the
-// receipt by email - all three of which are true whatever the outcome.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Where the payment provider returns a payer once they are done.
+ *
+ * It deliberately does NOT say the payment succeeded. Landing here only means
+ * the provider finished with the payer's browser; it is not proof that money
+ * moved, and the browser is the one participant in a payment that can be closed,
+ * refreshed or navigated away at any moment. The receipt is booked when the
+ * provider's webhook confirms the collection, which may arrive before this page
+ * renders or a minute after it. Telling somebody "payment successful" on the
+ * strength of a redirect is how a failed card ends up believed.
+ *
+ * So it acknowledges, names the reference they can quote, and promises the
+ * receipt by email - all three of which are true whatever the outcome.
+ */
 export default function PaymentReturn() {
   const [params] = useSearchParams();
   // The gateway returns the payer to the host they paid from, so the school is

@@ -1,12 +1,14 @@
-// The palette's rules, with no React in them.
-//
-// AppSearch is the only consumer, but the rules live here rather than inside
-// the component for one reason: they are the part that can be wrong. Which
-// actions a pending school may see, which identity a gate is judged against,
-// and what beats what in the ordering are all decisions with a right answer,
-// and a decision with a right answer should be testable without mounting a
-// dialog. The engine in src/lib/action-palette does the scoring; this file
-// decides who is allowed to see what, and in what order it lands on screen.
+/**
+ * The palette's rules, with no React in them.
+ *
+ * AppSearch is the only consumer, but the rules live here rather than inside
+ * the component for one reason: they are the part that can be wrong. Which
+ * actions a pending school may see, which identity a gate is judged against,
+ * and what beats what in the ordering are all decisions with a right answer,
+ * and a decision with a right answer should be testable without mounting a
+ * dialog. The engine in src/lib/action-palette does the scoring; this file
+ * decides who is allowed to see what, and in what order it lands on screen.
+ */
 
 import {
   groupBySection,
@@ -34,34 +36,38 @@ export function requestActionPaletteOpen(): void {
 /** How many rows the collapsed list shows before the "show all" row appears. */
 export const COLLAPSED_COUNT = 5;
 
-// ── Readiness ────────────────────────────────────────────────────────────────
-//
-// Readiness is tenant state, not a capability, so the registry records it as
-// two id lists rather than as a gate (see the note at the foot of registry.ts).
-// The two lists are not symmetrical, and they should not be:
-//
-// - LIVE_ONLY is load-bearing. A pending school reaches onboarding and nothing
-//   else: DashboardLayout draws the "opens at go-live" wall over every other
-//   page and the server answers 403 behind it. Offering "View students" to a
-//   school still being set up sends the reader to that wall, so these are
-//   dropped while the tenant is pending.
-//
-// - PENDING_ONLY is tidiness. These screens keep working after go-live; the
-//   sidebar simply stops drawing them, and the palette follows the sidebar so
-//   a live school is not offered a setup checklist it has finished.
-//
-// ALWAYS_AVAILABLE is the exception the second rule needs. Get Help is a
-// support form, and a support form that disappears the moment a school goes
-// live is a defect rather than a rule: the head teacher at Brightfield whose
-// first live term-fee run comes out wrong would have no way left to say so,
-// because the header's Headset button only renders on onboarding routes. So it
-// stays reachable in both states.
+/**
+ * ── Readiness ────────────────────────────────────────────────────────────────
+ *
+ * Readiness is tenant state, not a capability, so the registry records it as
+ * two id lists rather than as a gate (see the note at the foot of registry.ts).
+ * The two lists are not symmetrical, and they should not be:
+ *
+ * - LIVE_ONLY is load-bearing. A pending school reaches onboarding and nothing
+ *   else: DashboardLayout draws the "opens at go-live" wall over every other
+ *   page and the server answers 403 behind it. Offering "View students" to a
+ *   school still being set up sends the reader to that wall, so these are
+ *   dropped while the tenant is pending.
+ *
+ * - PENDING_ONLY is tidiness. These screens keep working after go-live; the
+ *   sidebar simply stops drawing them, and the palette follows the sidebar so
+ *   a live school is not offered a setup checklist it has finished.
+ *
+ * ALWAYS_AVAILABLE is the exception the second rule needs. Get Help is a
+ * support form, and a support form that disappears the moment a school goes
+ * live is a defect rather than a rule: the head teacher at Brightfield whose
+ * first live term-fee run comes out wrong would have no way left to say so,
+ * because the header's Headset button only renders on onboarding routes. So it
+ * stays reachable in both states.
+ */
 const ALWAYS_AVAILABLE_ACTION_IDS: readonly string[] = ["get-help"];
 
-// Sets, not the arrays themselves. This runs once per action per render of the
-// dropdown, and LIVE_ONLY went from five entries to one per closed screen when
-// Finance and Procurement joined the registry - a linear scan of that, eighty
-// times, on every keystroke.
+/**
+ * Sets, not the arrays themselves. This runs once per action per render of the
+ * dropdown, and LIVE_ONLY went from five entries to one per closed screen when
+ * Finance and Procurement joined the registry - a linear scan of that, eighty
+ * times, on every keystroke.
+ */
 const ALWAYS_AVAILABLE = new Set(ALWAYS_AVAILABLE_ACTION_IDS);
 const LIVE_ONLY = new Set(LIVE_ONLY_ACTION_IDS);
 const PENDING_ONLY = new Set(PENDING_ONLY_ACTION_IDS);

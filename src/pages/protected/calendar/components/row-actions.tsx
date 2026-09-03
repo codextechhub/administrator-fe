@@ -7,24 +7,24 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The per-row menu in an Action column.
-//
-// One component for the four tables in this module, which had four copies of it
-// and two faults in every copy:
-//
-//   * the trigger was the character "⋮" in a ghost button - a glyph at text
-//     weight, which on a grey row is barely there. It is the same
-//     EllipsisVertical icon CustomTable uses for its own row menu now.
-//   * the cell was left-aligned under a centred header. CustomTable centres any
-//     column called "Action" in the header and leaves the body cell to the
-//     caller, so the two only line up if the caller centres too.
-//
-// CustomTable's built-in `dropDown` is not used, and the reason is per-row
-// labels: its list is static strings, and a room's middle item reads
-// "Deactivate" or "Activate" depending on the row it is on. A menu that cannot
-// say which of the two it will do is worse than one more component.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The per-row menu in an Action column.
+ *
+ * One component for the four tables in this module, which had four copies of it
+ * and two faults in every copy:
+ *
+ *   * the trigger was the character "⋮" in a ghost button - a glyph at text
+ *     weight, which on a grey row is barely there. It is the same
+ *     EllipsisVertical icon CustomTable uses for its own row menu now.
+ *   * the cell was left-aligned under a centred header. CustomTable centres any
+ *     column called "Action" in the header and leaves the body cell to the
+ *     caller, so the two only line up if the caller centres too.
+ *
+ * CustomTable's built-in `dropDown` is not used, and the reason is per-row
+ * labels: its list is static strings, and a room's middle item reads
+ * "Deactivate" or "Activate" depending on the row it is on. A menu that cannot
+ * say which of the two it will do is worse than one more component.
+ */
 
 export interface RowAction {
   label: string;

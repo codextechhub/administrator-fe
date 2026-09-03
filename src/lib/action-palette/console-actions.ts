@@ -1,37 +1,39 @@
-// Finance and Procurement palette actions, derived from their sidebars.
-//
-// ── Why derived rather than typed out ────────────────────────────────────────
-//
-// These two areas are fifty-odd screens, and none of them are this app's to
-// name: they ship inside @xvs/finance and move on a version bump. A typed copy
-// is a second list to keep in step with the first, and the drift is silent in
-// both directions. When the package renames "Customers / Payers" to "Payers"
-// and adds a Write-offs screen, a typed registry goes on offering a name that
-// no longer exists and never offers the one that does - and nobody finds out
-// until a bursar types "write off", gets nothing, and concludes the search box
-// does not know about finance.
-//
-// `schoolFinanceNav` / `schoolProcurementNav` are the right source rather than
-// the package's raw `financeNav` / `procurementNav`: they are already filtered
-// through the router's mounted paths (see console-nav-for-school.ts), so an
-// action cannot exist for a screen this app does not serve. That is the same
-// guarantee registry.test.ts checks by hand for the typed entries, except here
-// it holds by construction.
-//
-// ── What the nav does not carry ──────────────────────────────────────────────
-//
-// A nav item is read in place, under its group heading, by somebody who is
-// already looking at it. A palette row is read on its own, by somebody who
-// typed a guess and is deciding whether this is the thing they meant. So two
-// things are added on the way through:
-//
-//   - a verb in front of the title, because the matcher expands a leading verb
-//     through its synonym groups (VERB_GROUPS in match.ts). "View Payroll" is
-//     reached by "open payroll", "show payroll" and "list payroll"; a bare
-//     "Payroll" is reached by none of them.
-//   - aliases for the words a school types that the package's own title does
-//     not contain. Nobody at Corona Secondary types "goods receipt note" as
-//     "Goods Receipts", and half of them type "suppliers" for Vendors.
+/**
+ * Finance and Procurement palette actions, derived from their sidebars.
+ *
+ * ── Why derived rather than typed out ────────────────────────────────────────
+ *
+ * These two areas are fifty-odd screens, and none of them are this app's to
+ * name: they ship inside @xvs/finance and move on a version bump. A typed copy
+ * is a second list to keep in step with the first, and the drift is silent in
+ * both directions. When the package renames "Customers / Payers" to "Payers"
+ * and adds a Write-offs screen, a typed registry goes on offering a name that
+ * no longer exists and never offers the one that does - and nobody finds out
+ * until a bursar types "write off", gets nothing, and concludes the search box
+ * does not know about finance.
+ *
+ * `schoolFinanceNav` / `schoolProcurementNav` are the right source rather than
+ * the package's raw `financeNav` / `procurementNav`: they are already filtered
+ * through the router's mounted paths (see console-nav-for-school.ts), so an
+ * action cannot exist for a screen this app does not serve. That is the same
+ * guarantee registry.test.ts checks by hand for the typed entries, except here
+ * it holds by construction.
+ *
+ * ── What the nav does not carry ──────────────────────────────────────────────
+ *
+ * A nav item is read in place, under its group heading, by somebody who is
+ * already looking at it. A palette row is read on its own, by somebody who
+ * typed a guess and is deciding whether this is the thing they meant. So two
+ * things are added on the way through:
+ *
+ *   - a verb in front of the title, because the matcher expands a leading verb
+ *     through its synonym groups (VERB_GROUPS in match.ts). "View Payroll" is
+ *     reached by "open payroll", "show payroll" and "list payroll"; a bare
+ *     "Payroll" is reached by none of them.
+ *   - aliases for the words a school types that the package's own title does
+ *     not contain. Nobody at Corona Secondary types "goods receipt note" as
+ *     "Goods Receipts", and half of them type "suppliers" for Vendors.
+ */
 
 import { P } from "@/permissions";
 import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";

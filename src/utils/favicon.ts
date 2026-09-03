@@ -1,7 +1,9 @@
-// Single writer for the tab favicon. The auth layout resets to the XVS mark
-// (pre-login branding); the Authenticated middleware swaps in the signed-in
-// user's school logo, falling back to the default when the school has no
-// branding upload.
+/**
+ * Single writer for the tab favicon. The auth layout resets to the XVS mark
+ * (pre-login branding); the Authenticated middleware swaps in the signed-in
+ * user's school logo, falling back to the default when the school has no
+ * branding upload.
+ */
 
 /** The bundled XVS logo, served from /public. */
 export const DEFAULT_FAVICON = "/image/logo.png";

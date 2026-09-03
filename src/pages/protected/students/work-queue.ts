@@ -4,26 +4,26 @@ import type {
   StudentSummary,
 } from "@/redux/services/students/students-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// What needs a person today, ranked.
-//
-// This replaced a Nearest-capacity panel that listed the four fullest classes.
-// Three of those four rows said "4 free", "9 free", "1 free" - non-events - and
-// the one row that mattered, a class over its limit, sat among them at equal
-// weight. The bars carried nothing the numbers did not, because at 26/30 and
-// 31/40 every bar looks nearly full and the reader ends up reading the digits.
-//
-// The rule this panel is built on: **a row is a named record and a verb.** Not
-// a statistic. "1 Needs a class" tells a registrar a number; "Emeka Obi is
-// enrolled with no class" tells her who, and the button takes her there.
-//
-// **It is composed here rather than served.** Every row is derived from calls
-// the directory already makes - the summary, the unplaced list, and the class
-// seat counts - so this needs no new endpoint and no new permission. If it is
-// ever wanted on the Dashboard too, that is the moment it should move to the
-// server: two screens ranking the same queue by different rules is exactly the
-// drift this file exists to avoid.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * What needs a person today, ranked.
+ *
+ * This replaced a Nearest-capacity panel that listed the four fullest classes.
+ * Three of those four rows said "4 free", "9 free", "1 free" - non-events - and
+ * the one row that mattered, a class over its limit, sat among them at equal
+ * weight. The bars carried nothing the numbers did not, because at 26/30 and
+ * 31/40 every bar looks nearly full and the reader ends up reading the digits.
+ *
+ * The rule this panel is built on: **a row is a named record and a verb.** Not
+ * a statistic. "1 Needs a class" tells a registrar a number; "Emeka Obi is
+ * enrolled with no class" tells her who, and the button takes her there.
+ *
+ * **It is composed here rather than served.** Every row is derived from calls
+ * the directory already makes - the summary, the unplaced list, and the class
+ * seat counts - so this needs no new endpoint and no new permission. If it is
+ * ever wanted on the Dashboard too, that is the moment it should move to the
+ * server: two screens ranking the same queue by different rules is exactly the
+ * drift this file exists to avoid.
+ */
 
 export type QueueTone = "alert" | "count";
 

@@ -13,6 +13,7 @@ import type {
   ClassHistoryRow,
   GuardianDetail,
   GuardianRow,
+  GuardianSummary,
   HistoryEntry,
   StudentDetail,
   StudentDocumentRow,
@@ -153,6 +154,35 @@ export const studentsApi = baseApi.injectEndpoints({
         params: listParams(args as StudentListArgs | void),
       }),
       providesTags: ["Guardians"],
+    }),
+
+    /**
+     * Correct a guardian's OWN details.
+     *
+     * Not their link to a student - relationship and primary-contact live on
+     * that, one per child, and a guardian standing for three has three of them.
+     *
+     * Invalidates Students as well as Guardians: the directory row and the
+     * profile's guardian card both carry a guardian's name, so leaving them
+     * would show the old spelling until something else refetched.
+     */
+    updateGuardian: builder.mutation<
+      Envelope<GuardianSummary>,
+      { id: number } & Partial<{
+        full_name: string;
+        phone: string;
+        email: string;
+        occupation: string;
+        address: string;
+      }>
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/guardians/${id}/`,
+        method: "PATCH",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Guardians", "Students"],
     }),
 
     getGuardian: builder.query<Envelope<GuardianDetail>, number>({
@@ -505,6 +535,7 @@ export const {
   useGetGuardiansQuery,
   useSearchStudentsQuery,
   useGetGuardianQuery,
+  useUpdateGuardianMutation,
   useGetAdmissionPolicyQuery,
   useGetClassSeatsQuery,
   usePreviewPromotionMutation,

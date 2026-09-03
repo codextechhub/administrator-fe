@@ -4,28 +4,28 @@ import type { OnboardingState } from "@/redux/services/onboarding/onboarding-typ
 
 const R = routesPath.PROTECTED;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// What the school has to do something about.
-//
-// The console's overview opens with a worklist rather than with numbers, and
-// this is the school's version of it. The difference is where the items come
-// from: the console has a task table and an approvals queue, and a school has
-// neither. What a school has is a set of conditions the server already
-// detects and already writes sentences about, scattered across three screens
-// nobody visits until something has gone wrong.
-//
-// **Nothing here is computed from raw data.** Every sentence is the server's
-// own, rendered verbatim, for the reason the calendar module records: the
-// server knows which class has no timetable and which term overlaps which, and
-// a second implementation on the client is a second answer that will disagree
-// with the first one the day a rule changes.
-//
-// **Ordered by what it costs to be wrong, not by where it came from.** A school
-// that cannot go live is stuck; a timetable with a clash means two classes
-// expecting the same teacher on Monday; a class with no timetable at all means
-// nobody knows where to be. An event dated outside every term is untidy. They
-// are not the same size and the list must not present them as though they were.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * What the school has to do something about.
+ *
+ * The console's overview opens with a worklist rather than with numbers, and
+ * this is the school's version of it. The difference is where the items come
+ * from: the console has a task table and an approvals queue, and a school has
+ * neither. What a school has is a set of conditions the server already
+ * detects and already writes sentences about, scattered across three screens
+ * nobody visits until something has gone wrong.
+ *
+ * **Nothing here is computed from raw data.** Every sentence is the server's
+ * own, rendered verbatim, for the reason the calendar module records: the
+ * server knows which class has no timetable and which term overlaps which, and
+ * a second implementation on the client is a second answer that will disagree
+ * with the first one the day a rule changes.
+ *
+ * **Ordered by what it costs to be wrong, not by where it came from.** A school
+ * that cannot go live is stuck; a timetable with a clash means two classes
+ * expecting the same teacher on Monday; a class with no timetable at all means
+ * nobody knows where to be. An event dated outside every term is untidy. They
+ * are not the same size and the list must not present them as though they were.
+ */
 
 export type AttentionTone = "blocking" | "warning" | "info";
 

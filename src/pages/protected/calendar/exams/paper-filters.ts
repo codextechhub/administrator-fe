@@ -1,23 +1,23 @@
 import type { ClashWarning, ExamSlot } from "@/redux/services/calendar/calendar-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Narrowing an exam schedule.
-//
-// A school's exam period is one or two weeks of papers across every class it
-// runs, which is a hundred rows for a school of any size. The questions people
-// actually arrive with are narrow ones - "what is JSS1 A sitting", "who is in
-// the Main Hall on Thursday", "which of these still clash" - and a flat list
-// answers none of them without scrolling.
-//
-// **The options come from the papers, never from a catalogue.** Offering every
-// class in the school is offering filters that return nothing: a school of
-// forty classes may have entered papers for six of them so far. What is on the
-// list is what is in the schedule.
-//
-// **Filters compose, and each one is a set.** Picking two classes means either;
-// picking a class and a room means both. That is what a reader means by ticking
-// two boxes in one group and one box in two.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Narrowing an exam schedule.
+ *
+ * A school's exam period is one or two weeks of papers across every class it
+ * runs, which is a hundred rows for a school of any size. The questions people
+ * actually arrive with are narrow ones - "what is JSS1 A sitting", "who is in
+ * the Main Hall on Thursday", "which of these still clash" - and a flat list
+ * answers none of them without scrolling.
+ *
+ * **The options come from the papers, never from a catalogue.** Offering every
+ * class in the school is offering filters that return nothing: a school of
+ * forty classes may have entered papers for six of them so far. What is on the
+ * list is what is in the schedule.
+ *
+ * **Filters compose, and each one is a set.** Picking two classes means either;
+ * picking a class and a room means both. That is what a reader means by ticking
+ * two boxes in one group and one box in two.
+ */
 
 export interface PaperFilters {
   classes: number[];

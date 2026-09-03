@@ -53,13 +53,13 @@ import { useActionParam } from "@/hooks/use-action-param";
 /**
  * The school years this school has defined.
  *
- * The card is the one this screen already had - name, dates, status, term pills
- * with their tick and their "· ongoing" - with the real API behind it instead
- * of a local array. What changed is the footer: it used to read
- * "3 branches · 1,284 students · 16 classes", and two of those three numbers
- * have nothing behind them. There is no student model in the product yet, and a
- * class count is only true of the year that is RUNNING - printing this year's
- * classes under last year's name is a lie the old card told quietly.
+ * The card carries name, dates, status and term pills with their tick and
+ * their "· ongoing", from the API rather than a local array.
+ *
+ * The footer deliberately does not read "3 branches · 1,284 students · 16
+ * classes". There is no student model in the product, and a class count is only
+ * true of the year that is RUNNING, so printing this year's classes under last
+ * year's name is a quiet lie.
  *
  * So the footer states the session's own shape, which every card can answer
  * honestly: how many terms, and how many teaching weeks.

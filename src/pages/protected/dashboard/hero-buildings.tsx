@@ -1,20 +1,20 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// The school on the right of the greeting.
-//
-// Drawn here rather than fetched or imported: it is one shape at one size, and
-// an SVG in the markup inherits `currentColor`, so it takes the hero's white
-// without a second copy for a light and a dark panel.
-//
-// **It is a watermark, not a picture.** Everything is white at low opacity, so
-// it sits IN the gradient rather than on top of it - the greeting is the
-// content of that box and the drawing must never compete with it. That is also
-// why there is no colour: an illustration with its own palette inside a branded
-// panel reads as a sticker somebody applied.
-//
-// Institutional rather than cute. A portico with columns, a clock tower and two
-// wings is what a person recognises as a school in one glance, at any size,
-// without a single character of text.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The school on the right of the greeting.
+ *
+ * Drawn here rather than fetched or imported: it is one shape at one size, and
+ * an SVG in the markup inherits `currentColor`, so it takes the hero's white
+ * without a second copy for a light and a dark panel.
+ *
+ * **It is a watermark, not a picture.** Everything is white at low opacity, so
+ * it sits IN the gradient rather than on top of it - the greeting is the
+ * content of that box and the drawing must never compete with it. That is also
+ * why there is no colour: an illustration with its own palette inside a branded
+ * panel reads as a sticker somebody applied.
+ *
+ * Institutional rather than cute. A portico with columns, a clock tower and two
+ * wings is what a person recognises as a school in one glance, at any size,
+ * without a single character of text.
+ */
 
 /**
  * `full` is the three buildings; `centre` is the main block alone.

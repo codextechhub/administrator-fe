@@ -1,11 +1,13 @@
-// RTK Query endpoints for the Export Centre. Backend: apps/vs_exports, mounted
-// at /v1/exports/. Slice 1 covers the read-and-download half - runs, run detail,
-// files, the download itself and its log. The builder's catalogue/preview/
-// definitions endpoints land with slice 2.
-//
-// Polling follows the Queues page: 10 s on lists, 2 s on an open run detail,
-// paused while the tab is hidden. The pages pass those options; this module
-// only declares the endpoints.
+/**
+ * RTK Query endpoints for the Export Centre. Backend: apps/vs_exports, mounted
+ * at /v1/exports/. Slice 1 covers the read-and-download half - runs, run detail,
+ * files, the download itself and its log. The builder's catalogue/preview/
+ * definitions endpoints land with slice 2.
+ *
+ * Polling follows the Queues page: 10 s on lists, 2 s on an open run detail,
+ * paused while the tab is hidden. The pages pass those options; this module
+ * only declares the endpoints.
+ */
 
 import { generateQueryString } from "@/utils/helpers";
 import { baseApi } from "../base-api";

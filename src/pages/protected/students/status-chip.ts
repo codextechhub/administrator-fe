@@ -1,12 +1,14 @@
 import type { StudentStatus } from "@/redux/services/students/students-types";
 
-// One place decides what a status looks like.
-//
-// The directory, the cards, the profile header and the guardian's ward list all
-// show the same chip, and a status spelled green on one screen and grey on the
-// next reads as two different states rather than one. Keyed on the CODE, never
-// on the label, so a wording change on the backend cannot silently drop a
-// status into the fallback.
+/**
+ * One place decides what a status looks like.
+ *
+ * The directory, the cards, the profile header and the guardian's ward list all
+ * show the same chip, and a status spelled green on one screen and grey on the
+ * next reads as two different states rather than one. Keyed on the CODE, never
+ * on the label, so a wording change on the backend cannot silently drop a
+ * status into the fallback.
+ */
 const CHIP: Record<StudentStatus, string> = {
   APPLICANT: "bg-primary/10 text-primary",
   ENROLLED: "bg-lime-600/10 text-lime-700",

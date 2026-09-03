@@ -2,10 +2,12 @@ import Cookies from "js-cookie";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
-// Tokens must be JS-readable in this architecture, but the transport
-// attributes are free hardening: never sent cross-site, never over plain
-// http in production. `secure` follows the page protocol so local dev
-// (http://localhost) keeps working.
+/**
+ * Tokens must be JS-readable in this architecture, but the transport
+ * attributes are free hardening: never sent cross-site, never over plain
+ * http in production. `secure` follows the page protocol so local dev
+ * (http://localhost) keeps working.
+ */
 const COOKIE_ATTRS: Cookies.CookieAttributes = {
   sameSite: "strict",
   secure: window.location.protocol === "https:",
@@ -24,10 +26,12 @@ export type RefreshOutcome =
 
 let inFlight: Promise<RefreshOutcome> | null = null;
 
-// Once a session is torn down (logout / idle timeout / forced re-auth) a refresh
-// that was already in flight must not resurrect the auth cookies. Logout paths
-// flip this on; a fresh login flips it back for the same JS context (flows that
-// don't hard-reload, e.g. account activation).
+/**
+ * Once a session is torn down (logout / idle timeout / forced re-auth) a refresh
+ * that was already in flight must not resurrect the auth cookies. Logout paths
+ * flip this on; a fresh login flips it back for the same JS context (flows that
+ * don't hard-reload, e.g. account activation).
+ */
 let sessionInvalidated = false;
 
 export const markSessionInvalidated = (): void => {

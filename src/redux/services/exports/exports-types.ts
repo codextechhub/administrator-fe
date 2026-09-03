@@ -1,12 +1,12 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// The Export Centre, as a list screen uses it.
-//
-// Exporting "what this table is showing" is TWO calls, not one, and the split is
-// the point: `from-screen` translates the screen's own filters and reports what
-// it could not carry, and only then does `quick` run anything. A single call
-// would have to either refuse or guess, and guessing is how somebody asks for
-// one branch's classes and silently receives every branch's.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The Export Centre, as a list screen uses it.
+ *
+ * Exporting "what this table is showing" is TWO calls, not one, and the split is
+ * the point: `from-screen` translates the screen's own filters and reports what
+ * it could not carry, and only then does `quick` run anything. A single call
+ * would have to either refuse or guess, and guessing is how somebody asks for
+ * one branch's classes and silently receives every branch's.
+ */
 
 export interface ExportConfig {
   dataset_key: string;

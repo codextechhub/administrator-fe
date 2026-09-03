@@ -15,14 +15,16 @@ import { getAuthContextGateState } from "@/utils/auth-context-gate";
 
 const { LOGIN } = routesPath.AUTH;
 
-// Auto-recovery for a transient /me failure (network glitch, server blip).
-// Rather than stranding the user behind a manual button, we silently re-run the
-// context query on an escalating backoff. Full page reloads are deliberately
-// avoided - re-running the one failed query recovers just as well and stays
-// invisible when it succeeds, instead of flashing a white screen and tearing
-// down the store/cache. After MAX_AUTO_RETRIES failures the failure no longer
-// looks transient, so we fall back to the manual retry card (the honest exit
-// for a real outage rather than silent infinite retrying).
+/**
+ * Auto-recovery for a transient /me failure (network glitch, server blip).
+ * Rather than stranding the user behind a manual button, we silently re-run the
+ * context query on an escalating backoff. Full page reloads are deliberately
+ * avoided - re-running the one failed query recovers just as well and stays
+ * invisible when it succeeds, instead of flashing a white screen and tearing
+ * down the store/cache. After MAX_AUTO_RETRIES failures the failure no longer
+ * looks transient, so we fall back to the manual retry card (the honest exit
+ * for a real outage rather than silent infinite retrying).
+ */
 const MAX_AUTO_RETRIES = 4;
 const RETRY_BASE_DELAY_MS = 3000;
 const RETRY_MAX_DELAY_MS = 24000;

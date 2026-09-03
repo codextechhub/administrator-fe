@@ -26,24 +26,28 @@ const FinanceSettings = lazy(() => import("@/pages/protected/finance/settings"))
 
 const F = routesPath.PROTECTED.FINANCE;
 
-// A school gets a SUBSET of the console's finance area, and the difference is
-// deliberate rather than an oversight. Three setup sections are left unmounted
-// because a school can never be granted them (see the adaptation spec):
-//
-//   entities    - a school keeps one set of books, so there is nothing to list
-//   currencies  - it bills in naira
-//   dimensions  - analytical tagging it will not use
-//
-// A route that exists but can never be granted is dead surface: it ships in the
-// bundle and appears in route catalogues as though the product had a feature it
-// does not. Permission gating decides WHO sees a screen; it is the wrong tool
-// for deciding whether a screen belongs to this product at all.
+/**
+ * A school gets a SUBSET of the console's finance area, and the difference is
+ * deliberate rather than an oversight. Three setup sections are left unmounted
+ * because a school can never be granted them (see the adaptation spec):
+ *
+ *   entities    - a school keeps one set of books, so there is nothing to list
+ *   currencies  - it bills in naira
+ *   dimensions  - analytical tagging it will not use
+ *
+ * A route that exists but can never be granted is dead surface: it ships in the
+ * bundle and appears in route catalogues as though the product had a feature it
+ * does not. Permission gating decides WHO sees a screen; it is the wrong tool
+ * for deciding whether a screen belongs to this product at all.
+ */
 const SCHOOL_SETUP_SECTIONS = ["accounts", "periods", "tax-codes", "cost-centers"] as const;
 
-// The whole Payments area is unmounted for the same reason. Its sections are
-// payouts, batches, settlement, transactions and webhooks - the platform's own
-// gateway operations, not a school's. A school's money-in arrives through
-// Collections, which IS mounted.
+/**
+ * The whole Payments area is unmounted for the same reason. Its sections are
+ * payouts, batches, settlement, transactions and webhooks - the platform's own
+ * gateway operations, not a school's. A school's money-in arrives through
+ * Collections, which IS mounted.
+ */
 export const financeRoutes: RouteObject[] = [
   {
     handle: { sidebar: "finance", title: "Finance" } satisfies DashboardHandle,

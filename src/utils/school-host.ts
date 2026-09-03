@@ -1,22 +1,24 @@
-// Which school this page is for, read off the address it is served from.
-//
-// The app is served per school: the page at bright-star.xvs.codexng.com is
-// Bright Star's, and the slug in front of the base domain is what identifies
-// it. Wildcard DNS and a wildcard certificate cover `*.xvs.codexng.com`, so any
-// school's address reaches this same bundle and the bundle has to work out on
-// its own which school it is showing.
-//
-// It matters more than a label. One email address can now be an account at
-// several schools with no connection between them, so a sign-in has to name the
-// tenant it is addressed to or the backend cannot tell those accounts apart.
-// This module is where that name comes from.
-//
-// THE TRAP THIS EXISTS TO AVOID: `hostname.split(".")[0]` returns "xvs" on the
-// bare domain, which is not a school and must never be sent as one. Bare
-// xvs.codexng.com is the XVS product site rather than the app, and deliberately
-// not a school finder - listing the schools that use the product would disclose
-// Codex's customers to each other. "No school" is therefore a real answer this
-// function returns, not a failure to handle.
+/**
+ * Which school this page is for, read off the address it is served from.
+ *
+ * The app is served per school: the page at bright-star.xvs.codexng.com is
+ * Bright Star's, and the slug in front of the base domain is what identifies
+ * it. Wildcard DNS and a wildcard certificate cover `*.xvs.codexng.com`, so any
+ * school's address reaches this same bundle and the bundle has to work out on
+ * its own which school it is showing.
+ *
+ * It matters more than a label. One email address can now be an account at
+ * several schools with no connection between them, so a sign-in has to name the
+ * tenant it is addressed to or the backend cannot tell those accounts apart.
+ * This module is where that name comes from.
+ *
+ * THE TRAP THIS EXISTS TO AVOID: `hostname.split(".")[0]` returns "xvs" on the
+ * bare domain, which is not a school and must never be sent as one. Bare
+ * xvs.codexng.com is the XVS product site rather than the app, and deliberately
+ * not a school finder - listing the schools that use the product would disclose
+ * Codex's customers to each other. "No school" is therefore a real answer this
+ * function returns, not a failure to handle.
+ */
 
 /** The domain the app is served under. Overridable so staging can differ. */
 const BASE_DOMAIN = (import.meta.env.VITE_APP_BASE_DOMAIN || "xvs.codexng.com")

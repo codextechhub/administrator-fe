@@ -1,8 +1,10 @@
-// The date-picker's pure helpers.
-//
-// Split out of the component so a module that exports both a component and
-// functions does not break Fast Refresh for every screen importing the picker -
-// the same reason session-format.ts sits beside session-chips.tsx.
+/**
+ * The date-picker's pure helpers.
+ *
+ * Split out of the component so a module that exports both a component and
+ * functions does not break Fast Refresh for every screen importing the picker -
+ * the same reason session-format.ts sits beside session-chips.tsx.
+ */
 
 /** An ISO yyyy-mm-dd string as a Date, or undefined for anything else. */
 function parseDate(value: unknown): Date | undefined {

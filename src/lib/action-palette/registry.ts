@@ -1,25 +1,27 @@
-// The action registry: every action a school user can type into the palette.
-//
-// Derived from what this app actually serves, not from what it might one day
-// serve. Each entry was checked against three things and agrees with all three:
-//   1. src/routes/protected/*.tsx  - the route is registered, so `to` resolves.
-//   2. src/components/app-sidebar.tsx and the screen's own gate - the `gate`
-//      here is the same key the screen checks, so the palette never offers a
-//      door that answers 403 on arrival.
-//   3. src/components/layout/app-search.tsx - the destination list this replaces.
-//
-// Finance and Procurement are NOT typed out here. They are fifty-odd screens
-// that ship inside @xvs/finance and move on a version bump, so they are derived
-// from the two console sidebars instead - see console-actions.ts for why, and
-// for what the derivation adds on the way through. Everything below is this
-// app's own, where the sidebar is built here too and there is no second list to
-// drift from.
-//
-// Deliberately absent:
-// - /onboarding/welcome and /onboarding/not-live. One is the screen before you
-//   enter, the other is where a refusal lands. Neither is somewhere a person
-//   asks to go.
-// - /onboarding/import/:batchId/validation, /students/:id and
+/**
+ * The action registry: every action a school user can type into the palette.
+ *
+ * Derived from what this app actually serves, not from what it might one day
+ * serve. Each entry was checked against three things and agrees with all three:
+ *   1. src/routes/protected/*.tsx  - the route is registered, so `to` resolves.
+ *   2. src/components/app-sidebar.tsx and the screen's own gate - the `gate`
+ *      here is the same key the screen checks, so the palette never offers a
+ *      door that answers 403 on arrival.
+ *   3. src/components/layout/app-search.tsx - the destination list this replaces.
+ *
+ * Finance and Procurement are NOT typed out here. They are fifty-odd screens
+ * that ship inside @xvs/finance and move on a version bump, so they are derived
+ * from the two console sidebars instead - see console-actions.ts for why, and
+ * for what the derivation adds on the way through. Everything below is this
+ * app's own, where the sidebar is built here too and there is no second list to
+ * drift from.
+ *
+ * Deliberately absent:
+ * - /onboarding/welcome and /onboarding/not-live. One is the screen before you
+ *   enter, the other is where a refusal lands. Neither is somewhere a person
+ *   asks to go.
+ * - /onboarding/import/:batchId/validation, /students/:id and
+ */
 //   /students/guardians/:id. Each needs an id, and there is no id to name from
 //   a search box. The student search above the actions covers the profile.
 //
@@ -533,13 +535,15 @@ const SCHOOL_ACTIONS: ActionDef[] = [
   },
 ];
 
-// ── The two consoles ─────────────────────────────────────────────────────────
-//
-// `modulePrefix` mirrors the sidebar's own door test: app-sidebar.tsx draws the
-// Finance item on `hasModuleAccess("finance.")` rather than on a named code,
-// because the package's 145 codes gate individual ACTIONS and there is no "may
-// use finance" key to point at. The handful of nav items with no prefixes of
-// their own (both dashboards, and Approvals) inherit that same test.
+/**
+ * ── The two consoles ─────────────────────────────────────────────────────────
+ *
+ * `modulePrefix` mirrors the sidebar's own door test: app-sidebar.tsx draws the
+ * Finance item on `hasModuleAccess("finance.")` rather than on a named code,
+ * because the package's 145 codes gate individual ACTIONS and there is no "may
+ * use finance" key to point at. The handful of nav items with no prefixes of
+ * their own (both dashboards, and Approvals) inherit that same test.
+ */
 const CONSOLES = [
   {
     nav: schoolFinanceNav,
@@ -565,32 +569,34 @@ export const CONSOLE_ACTIONS: ActionDef[] = [
 
 export const ACTIONS: ActionDef[] = [...SCHOOL_ACTIONS, ...CONSOLE_ACTIONS];
 
-// ── Readiness, which is not a permission ─────────────────────────────────────
-//
-// ActionDef has no field for "only before go-live" / "only after", and that is
-// correct: readiness is tenant state, not a capability, and a gate that mixed
-// the two would be a gate nobody could reason about. The distinction still
-// exists in the app, so it is recorded here for the palette UI to apply.
-//
-// LIVE_ONLY_ACTION_IDS is the load-bearing half. A pending school reaches
-// onboarding and a short list of setup screens; DashboardLayout draws the
-// closed wall over everything else and the server answers 403 TENANT_NOT_LIVE
-// behind it. Offering "View students" to a school still being set up sends the
-// reader to that wall, so the palette UI MUST drop these while pending.
-//
-// It is DERIVED from the destination rather than typed out, because the router
-// already answers this per screen and the typed copy was already wrong. The
-// wall is `tenantIsPending && !onboardingRoute && !pendingSurface` (see
-// dashboard-layout.tsx), and `pendingSurface: true` sits on the handle of every
-// screen a school may use before go-live. The old list named Sessions & Terms,
-// Classes & Arms and the academic calendar as live-only. All three are pending
-// surfaces - building the academic structure is a REQUIRED go-live task - so
-// the palette hid three setup screens from precisely the schools that had to
-// finish them, while the sidebar went on offering all three.
-//
-// The prefixes below are those pending surfaces. registry.test.ts checks them
-// against the route tables, so mounting a new pre-live screen and forgetting
-// this list fails a test rather than quietly removing a door.
+/**
+ * ── Readiness, which is not a permission ─────────────────────────────────────
+ *
+ * ActionDef has no field for "only before go-live" / "only after", and that is
+ * correct: readiness is tenant state, not a capability, and a gate that mixed
+ * the two would be a gate nobody could reason about. The distinction still
+ * exists in the app, so it is recorded here for the palette UI to apply.
+ *
+ * LIVE_ONLY_ACTION_IDS is the load-bearing half. A pending school reaches
+ * onboarding and a short list of setup screens; DashboardLayout draws the
+ * closed wall over everything else and the server answers 403 TENANT_NOT_LIVE
+ * behind it. Offering "View students" to a school still being set up sends the
+ * reader to that wall, so the palette UI MUST drop these while pending.
+ *
+ * It is DERIVED from the destination rather than typed out, because the router
+ * already answers this per screen and the typed copy was already wrong. The
+ * wall is `tenantIsPending && !onboardingRoute && !pendingSurface` (see
+ * dashboard-layout.tsx), and `pendingSurface: true` sits on the handle of every
+ * screen a school may use before go-live. The old list named Sessions & Terms,
+ * Classes & Arms and the academic calendar as live-only. All three are pending
+ * surfaces - building the academic structure is a REQUIRED go-live task - so
+ * the palette hid three setup screens from precisely the schools that had to
+ * finish them, while the sidebar went on offering all three.
+ *
+ * The prefixes below are those pending surfaces. registry.test.ts checks them
+ * against the route tables, so mounting a new pre-live screen and forgetting
+ * this list fails a test rather than quietly removing a door.
+ */
 const PENDING_SURFACE_PREFIXES: readonly string[] = [
   "/onboarding",
   "/notifications",
@@ -619,12 +625,14 @@ export const LIVE_ONLY_ACTION_IDS: readonly string[] = ACTIONS.filter(
   (action) => !opensBeforeGoLive(action.run),
 ).map((action) => action.id);
 
-// PENDING_ONLY_ACTION_IDS is the softer half, and only tidiness. These screens
-// keep working after go-live (the control room becomes a read-only record of
-// the setup, and Get Help is a support form at any time), but the sidebar stops
-// drawing them, so a live school has no other route to them. Today's header
-// search hides them after go-live; whether the palette should is a judgement
-// call for the UI, not a fact about reachability.
+/**
+ * PENDING_ONLY_ACTION_IDS is the softer half, and only tidiness. These screens
+ * keep working after go-live (the control room becomes a read-only record of
+ * the setup, and Get Help is a support form at any time), but the sidebar stops
+ * drawing them, so a live school has no other route to them. Today's header
+ * search hides them after go-live; whether the palette should is a judgement
+ * call for the UI, not a fact about reachability.
+ */
 export const PENDING_ONLY_ACTION_IDS: readonly string[] = [
   "view-control-room",
   "view-school-profile",

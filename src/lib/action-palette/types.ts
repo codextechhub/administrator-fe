@@ -1,33 +1,37 @@
-// Action palette - the workspace search is an *action* launcher, not a page
-// finder. Every entry is a permission-gated action a user can type
-// ("view students", "enroll student"), and the registry that lists them lives
-// beside this file in registry.ts.
+/**
+ * Action palette - the workspace search is an *action* launcher, not a page
+ * finder. Every entry is a permission-gated action a user can type
+ * ("view students", "enroll student"), and the registry that lists them lives
+ * beside this file in registry.ts.
+ */
 
 import type { PermissionCode } from "@/permissions";
 
-// Which part of the workspace an action belongs to - drives the grouped headers
-// in the expanded results list.
-//
-// Why a closed union rather than a free string: the headers render in a FIXED
-// order (see SECTION_ORDER in index.ts), not in relevance order, because a
-// stable header order is far more scannable when a query lights up four
-// sections at once. A fixed order needs a known, finite set of names, and a
-// closed union makes a typo in the registry a compile error instead of a
-// silently-dropped group.
-//
-// The names deliberately mirror the sidebar group titles in
-// src/components/app-sidebar.tsx ("Overview", "People", "Academics",
-// "Finance"), so a result header reads the same as the nav the user already
-// knows. Two extras have no sidebar group of their own:
-// - "Settings"   - configuration screens the sidebar tucks under Finance.
-// - "Account"    - the header account menu (proxy, logout), which is not
-//                  navigation at all.
-// Add a name here (and to SECTION_ORDER) when the app grows a new area.
-//
-// Finance and Procurement are two sections rather than one because they are two
-// consoles: opening either replaces the school sidebar with that area's own, and
-// a bursar looking for a supplier payment is not in the same place as one
-// looking for a fee invoice.
+/**
+ * Which part of the workspace an action belongs to - drives the grouped headers
+ * in the expanded results list.
+ *
+ * Why a closed union rather than a free string: the headers render in a FIXED
+ * order (see SECTION_ORDER in index.ts), not in relevance order, because a
+ * stable header order is far more scannable when a query lights up four
+ * sections at once. A fixed order needs a known, finite set of names, and a
+ * closed union makes a typo in the registry a compile error instead of a
+ * silently-dropped group.
+ *
+ * The names deliberately mirror the sidebar group titles in
+ * src/components/app-sidebar.tsx ("Overview", "People", "Academics",
+ * "Finance"), so a result header reads the same as the nav the user already
+ * knows. Two extras have no sidebar group of their own:
+ * - "Settings"   - configuration screens the sidebar tucks under Finance.
+ * - "Account"    - the header account menu (proxy, logout), which is not
+ *                  navigation at all.
+ * Add a name here (and to SECTION_ORDER) when the app grows a new area.
+ *
+ * Finance and Procurement are two sections rather than one because they are two
+ * consoles: opening either replaces the school sidebar with that area's own, and
+ * a bursar looking for a supplier payment is not in the same place as one
+ * looking for a fee invoice.
+ */
 export type ActionSection =
   | "Overview"
   | "People"
@@ -38,13 +42,15 @@ export type ActionSection =
   | "Onboarding"
   | "Account";
 
-// A gate is evaluated against the user's raw permission keys. `null` = always
-// visible.
-// - perm:   holds this one capability
-// - any:    holds at least one of these capabilities
-// - all:    holds every one of these capabilities
-// - module: holds ANY backend key under one of these prefixes (e.g. "school.")
-//           - the one place raw keys are used, matching the sidebar.
+/**
+ * A gate is evaluated against the user's raw permission keys. `null` = always
+ * visible.
+ * - perm:   holds this one capability
+ * - any:    holds at least one of these capabilities
+ * - all:    holds every one of these capabilities
+ * - module: holds ANY backend key under one of these prefixes (e.g. "school.")
+ *           - the one place raw keys are used, matching the sidebar.
+ */
 export type ActionGate =
   | null
   | { perm: PermissionCode }
@@ -52,16 +58,18 @@ export type ActionGate =
   | { all: PermissionCode[] }
   | { module: string[] };
 
-// What running an action does. Most navigate; a couple invoke a header command
-// that only the header can carry out.
-//
-// The command list is exactly what the account menu in
-// src/components/layout/dashboard-layout.tsx can do from a cold start:
-// - "proxy"  opens the ProxyUserDialog ("view as another user")
-// - "logout" opens the logout confirmation
-// "Exit proxy" is deliberately NOT a command: the header only offers it while
-// an impersonation session is live, and that is runtime state, not a
-// permission, so a gate could not hide the action the rest of the time.
+/**
+ * What running an action does. Most navigate; a couple invoke a header command
+ * that only the header can carry out.
+ *
+ * The command list is exactly what the account menu in
+ * src/components/layout/dashboard-layout.tsx can do from a cold start:
+ * - "proxy"  opens the ProxyUserDialog ("view as another user")
+ * - "logout" opens the logout confirmation
+ * "Exit proxy" is deliberately NOT a command: the header only offers it while
+ * an impersonation session is live, and that is runtime state, not a
+ * permission, so a gate could not hide the action the rest of the time.
+ */
 export type ActionRun =
   | { to: string }
   | { command: "proxy" | "logout" | "help" };

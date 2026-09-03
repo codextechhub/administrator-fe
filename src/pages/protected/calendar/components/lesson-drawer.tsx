@@ -25,27 +25,27 @@ import { ClashPreview } from "./clash-preview";
 import { useClashPreview } from "./use-clash-preview";
 import { ProblemSummary } from "./problem-summary";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// One cell of one class's week.
-//
-// **A clash saves.** This is the rule the whole screen is shaped around, and it
-// is not a bug being tolerated: a school that discovers at Period 5 that Mrs
-// Adeyemi is already booked needs to save the grid, see both cells in red, and
-// resolve them when the head of department is back on Monday. The refusal
-// belongs at publication, which is the one moment the school asserts the grid
-// is finished. So a clash arrives here as a WARNING beside a row that was
-// written, the drawer closes, and the cell turns red.
-//
-// **The teacher list is every teacher of the school, never the branch's.** Mr
-// Eze teaches Physics at Lekki on Monday to Wednesday and at Ikeja on Thursday
-// and Friday; a picker filtered by the branch being edited would make him
-// unschedulable at the second. What makes the wide picker safe is that the
-// clash query is wide too.
-//
-// **The room list IS narrowed**, and for the opposite reason: a room is a
-// physical place, and a class cannot be scheduled into one at another branch.
-// The server refuses that outright, so offering it would be offering a refusal.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * One cell of one class's week.
+ *
+ * **A clash saves.** This is the rule the whole screen is shaped around, and it
+ * is not a bug being tolerated: a school that discovers at Period 5 that Mrs
+ * Adeyemi is already booked needs to save the grid, see both cells in red, and
+ * resolve them when the head of department is back on Monday. The refusal
+ * belongs at publication, which is the one moment the school asserts the grid
+ * is finished. So a clash arrives here as a WARNING beside a row that was
+ * written, the drawer closes, and the cell turns red.
+ *
+ * **The teacher list is every teacher of the school, never the branch's.** Mr
+ * Eze teaches Physics at Lekki on Monday to Wednesday and at Ikeja on Thursday
+ * and Friday; a picker filtered by the branch being edited would make him
+ * unschedulable at the second. What makes the wide picker safe is that the
+ * clash query is wide too.
+ *
+ * **The room list IS narrowed**, and for the opposite reason: a room is a
+ * physical place, and a class cannot be scheduled into one at another branch.
+ * The server refuses that outright, so offering it would be offering a refusal.
+ */
 
 export interface LessonTarget {
   /** Null when filling an empty cell. */

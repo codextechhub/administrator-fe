@@ -8,21 +8,21 @@ import {
 } from "@/redux/features/academics/lens-slice";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The branch lens, and the two rules that make it safe.
-//
-// **It recedes at a single-branch school.** One option is not a choice, it is
-// noise, and the API already drops every branch-shaped field for such a school.
-// `applies` is false there and the pill does not render at all - absent, not
-// disabled.
-//
-// **A branch-tied admin cannot widen it.** Someone whose account carries a
-// branch sees school-wide rows plus their own branch and nothing else. The
-// server enforces that (`scope_to_visible_branches`), so a widened lens would
-// not leak anything - it would just render a filter that quietly does nothing,
-// which is worse than not offering it. So the lens is pinned to their branch
-// and the menu is replaced by a plain label.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The branch lens, and the two rules that make it safe.
+ *
+ * **It recedes at a single-branch school.** One option is not a choice, it is
+ * noise, and the API already drops every branch-shaped field for such a school.
+ * `applies` is false there and the pill does not render at all - absent, not
+ * disabled.
+ *
+ * **A branch-tied admin cannot widen it.** Someone whose account carries a
+ * branch sees school-wide rows plus their own branch and nothing else. The
+ * server enforces that (`scope_to_visible_branches`), so a widened lens would
+ * not leak anything - it would just render a filter that quietly does nothing,
+ * which is worse than not offering it. So the lens is pinned to their branch
+ * and the menu is replaced by a plain label.
+ */
 
 export function useBranchLens() {
   const dispatch = useAppDispatch();

@@ -12,22 +12,22 @@ import type {
   TaskStatus,
 } from "./onboarding-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The onboarding control room: /v1/onboarding/.
-//
-// This is the ONLY surface a school that has not gone live can reach (plus its
-// own account, the notification inbox and filing one support ticket). Every
-// other endpoint answers 403 TENANT_NOT_LIVE for a PENDING tenant, which is why
-// the control room links out with an explanation rather than into a form that
-// would be refused.
-//
-// `extraOptions: { silent: true }` on every endpoint is deliberate. The base
-// query toasts 400/403/404/422 globally, and onboarding's refusals are not
-// generic failures - each one is a sentence the school has to keep reading
-// (TASK_CONDITION_NOT_MET renders inline under its card; ONBOARDING_NOT_
-// PROVISIONED is a whole empty state). The pages own that copy; see
-// @/utils/api-error for reading the code back off the rejection.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The onboarding control room: /v1/onboarding/.
+ *
+ * This is the ONLY surface a school that has not gone live can reach (plus its
+ * own account, the notification inbox and filing one support ticket). Every
+ * other endpoint answers 403 TENANT_NOT_LIVE for a PENDING tenant, which is why
+ * the control room links out with an explanation rather than into a form that
+ * would be refused.
+ *
+ * `extraOptions: { silent: true }` on every endpoint is deliberate. The base
+ * query toasts 400/403/404/422 globally, and onboarding's refusals are not
+ * generic failures - each one is a sentence the school has to keep reading
+ * (TASK_CONDITION_NOT_MET renders inline under its card; ONBOARDING_NOT_
+ * PROVISIONED is a whole empty state). The pages own that copy; see
+ * @/utils/api-error for reading the code back off the rejection.
+ */
 export const onboardingApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     /**

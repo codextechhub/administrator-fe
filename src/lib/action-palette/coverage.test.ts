@@ -1,35 +1,37 @@
-// Does the search box know about everything this app can do?
-//
-// ── Why these tests exist ────────────────────────────────────────────────────
-//
-// The palette went nineteen actions deep while the app had ninety screens, and
-// nobody noticed for months, because nothing anywhere said it was incomplete.
-// A screen shipped, the sidebar got its link, and the box simply never heard of
-// it. The same held for the jobs: screens grew create drawers reachable by
-// `?action=new` and the palette went on offering only the screen.
-//
-// So these are the tests that notice. Each one fails with the exact path or
-// file that nobody decided about, and there are only ever two right answers:
-//
-//   1. add the action (registry.ts for this app's screens, the create table in
-//      console-actions.ts for a finance or procurement job); or
-//   2. record it below as deliberately unreachable, with the reason.
-//
-// Neither answer is more correct than the other. What is NOT allowed is the
-// third thing that used to happen, which is nobody thinking about it at all.
-//
-// ── What is deliberately NOT checked ─────────────────────────────────────────
-//
-// Finance and Procurement VIEW actions. Those are derived from the two console
-// sidebars (see console-actions.ts), so they cannot fall behind by
-// construction - a screen in the sidebar has an action because the action is
-// made from the sidebar. Only their create half is hand-written, so only their
-// create half is audited here.
-//
-// Console section PARENTS either ("/finance/setup", "/finance/receivables").
-// The router mounts them so a bare address resolves, but they are not screens
-// anybody names - each redirects to its first section - and the sidebar does
-// not offer them either.
+/**
+ * Does the search box know about everything this app can do?
+ *
+ * ── Why these tests exist ────────────────────────────────────────────────────
+ *
+ * The palette went nineteen actions deep while the app had ninety screens, and
+ * nobody noticed for months, because nothing anywhere said it was incomplete.
+ * A screen shipped, the sidebar got its link, and the box simply never heard of
+ * it. The same held for the jobs: screens grew create drawers reachable by
+ * `?action=new` and the palette went on offering only the screen.
+ *
+ * So these are the tests that notice. Each one fails with the exact path or
+ * file that nobody decided about, and there are only ever two right answers:
+ *
+ *   1. add the action (registry.ts for this app's screens, the create table in
+ *      console-actions.ts for a finance or procurement job); or
+ *   2. record it below as deliberately unreachable, with the reason.
+ *
+ * Neither answer is more correct than the other. What is NOT allowed is the
+ * third thing that used to happen, which is nobody thinking about it at all.
+ *
+ * ── What is deliberately NOT checked ─────────────────────────────────────────
+ *
+ * Finance and Procurement VIEW actions. Those are derived from the two console
+ * sidebars (see console-actions.ts), so they cannot fall behind by
+ * construction - a screen in the sidebar has an action because the action is
+ * made from the sidebar. Only their create half is hand-written, so only their
+ * create half is audited here.
+ *
+ * Console section PARENTS either ("/finance/setup", "/finance/receivables").
+ * The router mounts them so a bare address resolves, but they are not screens
+ * anybody names - each redirects to its first section - and the sidebar does
+ * not offer them either.
+ */
 
 // Node types for this file alone. tsconfig.app.json limits `types` to
 // vite/client on purpose, so app code cannot reach for the filesystem; an audit
@@ -66,12 +68,12 @@ const NOT_A_DESTINATION: Record<string, string> = {
   "/classes": "legacy address, redirects to Classes & Arms",
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Every @xvs/finance screen that answers `?action=new`, and the address its
-// palette job points at. Hand-written, because the package publishes no such
-// list - but its COMPLETENESS is checked below, so a create flow added upstream
-// turns this file red with the name of the file that appeared.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Every @xvs/finance screen that answers `?action=new`, and the address its
+ * palette job points at. Hand-written, because the package publishes no such
+ * list - but its COMPLETENESS is checked below, so a create flow added upstream
+ * turns this file red with the name of the file that appeared.
+ */
 const PACKAGE_CREATE_SCREENS: Record<string, string> = {
   "finance/banking.tsx": "/finance/banking",
   "finance/budgets/assets-tab.tsx": "/finance/budgets/assets",

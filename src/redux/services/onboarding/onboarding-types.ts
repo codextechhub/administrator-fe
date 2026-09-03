@@ -1,11 +1,11 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Shapes returned by /v1/onboarding/ (backend: apps/schools/vs_onboarding).
-//
-// Every one of these is the SERVER's vocabulary, verbatim. The checklist is not
-// a constant on this side: which steps a school has, what they are called and
-// whether they are required all come down the wire, so a school that does not
-// have a step never sees a slot where it would have been.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Shapes returned by /v1/onboarding/ (backend: apps/schools/vs_onboarding).
+ *
+ * Every one of these is the SERVER's vocabulary, verbatim. The checklist is not
+ * a constant on this side: which steps a school has, what they are called and
+ * whether they are required all come down the wire, so a school that does not
+ * have a step never sees a slot where it would have been.
+ */
 
 /** Where the school stands against the go-live gate. */
 export type ReadinessState =

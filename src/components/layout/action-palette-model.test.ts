@@ -1,12 +1,14 @@
-// The palette's rules, tested where they can be wrong.
-//
-// Three things here are load-bearing and none of them is about wording:
-//   - a pending school must never be offered a screen that answers it the
-//     "opens at go-live" wall;
-//   - Get Help must survive go-live, because a support form that vanishes when
-//     a school starts trading is a defect, not a rule;
-//   - popularity must never promote a weak match over a strong one, which is
-//     the one guarantee that stops a learned palette from becoming unusable.
+/**
+ * The palette's rules, tested where they can be wrong.
+ *
+ * Three things here are load-bearing and none of them is about wording:
+ *   - a pending school must never be offered a screen that answers it the
+ *     "opens at go-live" wall;
+ *   - Get Help must survive go-live, because a support form that vanishes when
+ *     a school starts trading is a defect, not a rule;
+ *   - popularity must never promote a weak match over a strong one, which is
+ *     the one guarantee that stops a learned palette from becoming unusable.
+ */
 
 import { describe, expect, it } from "vitest";
 import { P, resolvePermissionKey } from "@/permissions";

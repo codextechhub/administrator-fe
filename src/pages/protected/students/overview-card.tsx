@@ -8,26 +8,26 @@ import type {
 
 import type { QueueRow } from "./work-queue";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The directory's header: what the school IS on the left, what needs a person
-// on the right.
-//
-// The right half used to be Nearest capacity - the four fullest classes, with a
-// bar each. Three of those four rows read "4 free", "9 free", "1 free", which
-// are non-events, and the one row that mattered sat among them at the same
-// weight. The bars added nothing: at 26/30 and 31/40 they all look nearly full,
-// so a reader ends up reading the digits anyway.
-//
-// It is now a queue of decisions, each one a named record and a verb. The three
-// mini-tiles that sat under a rule here - Active today, Awaiting enrolment,
-// Needs a class - are gone with it: the moment the queue names Emeka Obi, a
-// tile reading "1 Needs a class" is the same fact with the name taken out.
-// Removing them is what pays for the queue in vertical space.
-//
-// Capacity as a whole belongs to Classes & Transfers, which is in the nav with
-// a badge on it. What survives here is the one capacity fact that was doing
-// work: a class over its limit, shown as the thing blocking a placement.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The directory's header: what the school IS on the left, what needs a person
+ * on the right.
+ *
+ * The right half used to be Nearest capacity - the four fullest classes, with a
+ * bar each. Three of those four rows read "4 free", "9 free", "1 free", which
+ * are non-events, and the one row that mattered sat among them at the same
+ * weight. The bars added nothing: at 26/30 and 31/40 they all look nearly full,
+ * so a reader ends up reading the digits anyway.
+ *
+ * It is now a queue of decisions, each one a named record and a verb. The three
+ * mini-tiles that sat under a rule here - Active today, Awaiting enrolment,
+ * Needs a class - are gone with it: the moment the queue names Emeka Obi, a
+ * tile reading "1 Needs a class" is the same fact with the name taken out.
+ * Removing them is what pays for the queue in vertical space.
+ *
+ * Capacity as a whole belongs to Classes & Transfers, which is in the nav with
+ * a badge on it. What survives here is the one capacity fact that was doing
+ * work: a class over its limit, shown as the thing blocking a placement.
+ */
 
 const SEGMENT: Partial<Record<StudentStatus, string>> = {
   ACTIVE: "bg-green-700",

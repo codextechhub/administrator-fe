@@ -12,16 +12,16 @@ import type {
   SchoolClass,
 } from "@/redux/services/academics/academics-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// One class: a level, an arm, and a name built from the two.
-//
-// The shared entity drawer with two extra controls, and one rule of its own:
-// the name is composed from the level and the arm as they are chosen, until the
-// person types a name themselves - after which their text is left alone. The
-// same distinction the code field makes, for the same reason: a value WE
-// derived should keep following what it was derived from, and a value they
-// typed is an answer.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * One class: a level, an arm, and a name built from the two.
+ *
+ * The shared entity drawer with two extra controls, and one rule of its own:
+ * the name is composed from the level and the arm as they are chosen, until the
+ * person types a name themselves - after which their text is left alone. The
+ * same distinction the code field makes, for the same reason: a value WE
+ * derived should keep following what it was derived from, and a value they
+ * typed is an answer.
+ */
 
 export function ClassDrawer({
   open,

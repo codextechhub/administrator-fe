@@ -1,10 +1,12 @@
-// After a redeploy, an already-open tab (or a stale cached index.html) holds
-// asset hashes that no longer exist on the server, so a lazily-imported route
-// chunk 404s - "Failed to fetch dynamically imported module …/index-abc123.js".
-// The recovery is a full reload: the browser fetches the fresh index.html and
-// the current chunk hashes. We guard with a timestamp so a genuinely-missing
-// asset can't reload-loop forever (after the guard window it falls through to
-// the error screen instead).
+/**
+ * After a redeploy, an already-open tab (or a stale cached index.html) holds
+ * asset hashes that no longer exist on the server, so a lazily-imported route
+ * chunk 404s - "Failed to fetch dynamically imported module …/index-abc123.js".
+ * The recovery is a full reload: the browser fetches the fresh index.html and
+ * the current chunk hashes. We guard with a timestamp so a genuinely-missing
+ * asset can't reload-loop forever (after the guard window it falls through to
+ * the error screen instead).
+ */
 
 const KEY = "stale-chunk-reload-at";
 const WINDOW_MS = 10_000;

@@ -32,10 +32,12 @@ function revokeSessionOnBackend(tokens?: { access: string; refresh: string }): v
 export const IDLE_MS = 5 * 60 * 1000;       // 5 minutes idle before warning
 export const WARNING_MS = 10 * 60 * 1000;   // 10-minute countdown before expiry
 
-// NOTE: window "focus" is deliberately NOT an activity event. Returning to the
-// tab must first be judged against the wall clock (catchUp below) - treating
-// the regained focus itself as activity would stamp lastActivity = now and
-// silently erase a long absence before the idle check could run.
+/**
+ * NOTE: window "focus" is deliberately NOT an activity event. Returning to the
+ * tab must first be judged against the wall clock (catchUp below) - treating
+ * the regained focus itself as activity would stamp lastActivity = now and
+ * silently erase a long absence before the idle check could run.
+ */
 const ACTIVITY_EVENTS = [
   "mousemove",
   "keydown",

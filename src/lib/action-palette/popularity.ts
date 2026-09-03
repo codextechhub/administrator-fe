@@ -1,18 +1,22 @@
-// Learned, local ranking. Two signals, both per-user in localStorage, no
-// backend: (1) adaptive picks - which action a user chose for a given query, so
-// the palette adapts to "when I type s I mean View students"; (2) frecency - a
-// per-action counter with recency decay so frequent recent actions float up.
-// A weak match can't be promoted across match tiers (the caller enforces that);
-// popularity only reorders within a tier.
+/**
+ * Learned, local ranking. Two signals, both per-user in localStorage, no
+ * backend: (1) adaptive picks - which action a user chose for a given query, so
+ * the palette adapts to "when I type s I mean View students"; (2) frecency - a
+ * per-action counter with recency decay so frequent recent actions float up.
+ * A weak match can't be promoted across match tiers (the caller enforces that);
+ * popularity only reorders within a tier.
+ */
 
 const VERSION = "v1";
 const keyBase = (userId: string | undefined) => `action-palette:${VERSION}:${userId ?? "anon"}`;
 
-// ── storage helpers (fail-safe: any storage error degrades to no-memory) ─────
-// Safari private mode throws on setItem, and a hardened browser can make
-// localStorage itself throw on access. Popularity is a nicety, never a
-// requirement, so every path here swallows and carries on unlearned rather than
-// letting a storage failure break the palette.
+/**
+ * ── storage helpers (fail-safe: any storage error degrades to no-memory) ─────
+ * Safari private mode throws on setItem, and a hardened browser can make
+ * localStorage itself throw on access. Popularity is a nicety, never a
+ * requirement, so every path here swallows and carries on unlearned rather than
+ * letting a storage failure break the palette.
+ */
 function read<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);

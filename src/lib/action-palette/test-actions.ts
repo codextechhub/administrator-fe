@@ -1,10 +1,12 @@
-// Test-only fixture registry.
-//
-// The engine tests deliberately do NOT read the real ./registry: they check the
-// matching rules, not the vocabulary, and a test that fails because someone
-// reworded an action label is a test that will be deleted. These fixtures cover
-// the shapes the rules care about (multi-word labels, aliases, hyphenatable
-// initials, verb-led labels, command runs) and nothing else.
+/**
+ * Test-only fixture registry.
+ *
+ * The engine tests deliberately do NOT read the real ./registry: they check the
+ * matching rules, not the vocabulary, and a test that fails because someone
+ * reworded an action label is a test that will be deleted. These fixtures cover
+ * the shapes the rules care about (multi-word labels, aliases, hyphenatable
+ * initials, verb-led labels, command runs) and nothing else.
+ */
 
 import { P } from "@/permissions";
 import type { ActionDef } from "./types";

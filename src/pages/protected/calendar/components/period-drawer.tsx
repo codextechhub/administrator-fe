@@ -25,19 +25,19 @@ import type { PeriodDraft } from "./period-draft";
 import { problemsOf, useFormProblems } from "./form-problems";
 import { ProblemSummary } from "./problem-summary";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// One row of the school day.
-//
-// **There is no order field, and its absence is the point.** The server assigns
-// the position from the times, so a school cannot make the order disagree with
-// the clock. Offering a number here would be offering a way to break that.
-//
-// **"Applies on" REPLACES, it does not add.** Giving Friday its own periods
-// means Friday runs only those and the everyday schedule does not apply to it
-// at all. That is what a school with a short Friday means, and it is also the
-// single most surprising thing on this screen - so it is said in the form, at
-// the moment a day is chosen, rather than discovered afterwards.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * One row of the school day.
+ *
+ * **There is no order field, and its absence is the point.** The server assigns
+ * the position from the times, so a school cannot make the order disagree with
+ * the clock. Offering a number here would be offering a way to break that.
+ *
+ * **"Applies on" REPLACES, it does not add.** Giving Friday its own periods
+ * means Friday runs only those and the everyday schedule does not apply to it
+ * at all. That is what a school with a short Friday means, and it is also the
+ * single most surprising thing on this screen - so it is said in the form, at
+ * the moment a day is chosen, rather than discovered afterwards.
+ */
 
 const PERIOD_TYPES: { value: PeriodType; label: string }[] = [
   { value: "LESSON", label: "Lesson" },

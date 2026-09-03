@@ -29,22 +29,22 @@ import {
 import { cn } from "@/lib/utils";
 import { Link } from "react-router";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// One expandable nav group open at a time.
-//
-// Each Collapsible used to hold its own `defaultOpen`, so nothing coordinated
-// them: opening Timetables and then Academic Structure left both expanded, and
-// a sidebar with three groups open is one where the item you want is below the
-// fold. There is no upper bound - every group could be open at once.
-//
-// The state is shared ACROSS groups rather than within one, because the rule is
-// about the sidebar and not about a heading: Academics and Finance are rendered
-// by two different NavMain calls, and "one at a time" that let one of each be
-// open would be the same bug with a smaller number.
-//
-// Falls back to per-item state when no provider is present, so NavMain still
-// works anywhere it is dropped in.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * One expandable nav group open at a time.
+ *
+ * A Collapsible holding its own `defaultOpen` coordinates with nothing: open
+ * Timetables and then Academic Structure and both stay expanded, and a sidebar
+ * with three groups open is one where the item you want is below the fold.
+ * Nothing bounds it, so every group can be open at once.
+ *
+ * The state is shared ACROSS groups rather than within one, because the rule is
+ * about the sidebar and not about a heading: Academics and Finance are rendered
+ * by two different NavMain calls, and "one at a time" that let one of each be
+ * open would be the same bug with a smaller number.
+ *
+ * Falls back to per-item state when no provider is present, so NavMain still
+ * works anywhere it is dropped in.
+ */
 
 interface NavAccordion {
   openKey: string | null;

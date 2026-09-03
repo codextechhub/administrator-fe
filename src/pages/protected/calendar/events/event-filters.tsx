@@ -13,18 +13,18 @@ import type { TimelineTerm } from "@/redux/services/calendar/calendar-types";
 import { EVENT_KINDS } from "../components/event-kind";
 import { BLANK_FACETS, type EventFacets } from "./event-facets";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The three facets that do not fit on the toolbar: type, term and scope.
-//
-// A panel rather than three more dropdowns in the row, because the row already
-// carries a search box and an Add button, and on a phone four controls side by
-// side is four controls nobody can hit. The panel also lets the CHOSEN facets
-// come back out as chips, which is the part that matters: a reader who filtered
-// to Holidays in First Term three minutes ago has to be able to see why the
-// list is short.
-//
-// Scope is absent at a single-branch school, like every other branch control.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The three facets that do not fit on the toolbar: type, term and scope.
+ *
+ * A panel rather than three more dropdowns in the row, because the row already
+ * carries a search box and an Add button, and on a phone four controls side by
+ * side is four controls nobody can hit. The panel also lets the CHOSEN facets
+ * come back out as chips, which is the part that matters: a reader who filtered
+ * to Holidays in First Term three minutes ago has to be able to see why the
+ * list is short.
+ *
+ * Scope is absent at a single-branch school, like every other branch control.
+ */
 
 export function EventFilters({
   facets,

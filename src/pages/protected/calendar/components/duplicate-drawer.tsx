@@ -29,26 +29,26 @@ const DAY_NAMES: Record<number, string> = {
   7: "Sunday",
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Copy another class's week into this one.
-//
-// **The preview is the server's answer, not ours, and that is the whole reason
-// it is a round trip.** Two of its numbers cannot be computed here: which
-// source lessons sit in a period the TARGET class does not run - a class at a
-// branch with its own short Friday does not run the other branch's Friday
-// periods - and how many rows the copy would replace. Two clients would decide
-// the first differently, so neither decides it.
-//
-// **Preview writes nothing**, and it is a separate endpoint call from the real
-// one rather than a flag on it, so a mistyped flag cannot perform the write it
-// meant to describe.
-//
-// **Both toggles default ON, and both are worth turning off.** Copied teachers
-// may create clashes - the same person cannot teach two classes at once - and
-// two classes certainly cannot share a room at the same time, so keeping rooms
-// usually needs fixing afterwards. The form says so rather than letting the red
-// cells explain it later.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Copy another class's week into this one.
+ *
+ * **The preview is the server's answer, not ours, and that is the whole reason
+ * it is a round trip.** Two of its numbers cannot be computed here: which
+ * source lessons sit in a period the TARGET class does not run - a class at a
+ * branch with its own short Friday does not run the other branch's Friday
+ * periods - and how many rows the copy would replace. Two clients would decide
+ * the first differently, so neither decides it.
+ *
+ * **Preview writes nothing**, and it is a separate endpoint call from the real
+ * one rather than a flag on it, so a mistyped flag cannot perform the write it
+ * meant to describe.
+ *
+ * **Both toggles default ON, and both are worth turning off.** Copied teachers
+ * may create clashes - the same person cannot teach two classes at once - and
+ * two classes certainly cannot share a room at the same time, so keeping rooms
+ * usually needs fixing afterwards. The form says so rather than letting the red
+ * cells explain it later.
+ */
 
 export function DuplicateDrawer({
   open,

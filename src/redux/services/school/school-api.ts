@@ -28,16 +28,16 @@ const syncCachedLogo = async (
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The school's own profile.
-//
-// `/v1/i/me/profile/` takes no identifier: the school is the one the session's
-// tenant owns, so there is no id to change and no way to address anybody else's
-// record. It is open to a school that has not gone live, which is the point -
-// "Complete your school profile" is a required onboarding step, and the only
-// endpoint that could write those fields before this one was closed to exactly
-// the schools that needed it.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The school's own profile.
+ *
+ * `/v1/i/me/profile/` takes no identifier: the school is the one the session's
+ * tenant owns, so there is no id to change and no way to address anybody else's
+ * record. It is open to a school that has not gone live, which is the point -
+ * "Complete your school profile" is a required onboarding step, and the only
+ * endpoint that could write those fields before this one was closed to exactly
+ * the schools that needed it.
+ */
 export const schoolApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getSchoolProfile: builder.query<Envelope<SchoolProfile>, void>({

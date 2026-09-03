@@ -44,24 +44,24 @@ import type {
 //   /academics/calendar/    events, and the three reads behind the hub
 //   /academics/timetable/   rooms, the bell schedule, class and teacher grids
 //   /academics/exams/       exam periods and their papers
-//
-// **Both lenses are applied here, not at the call sites.** Every row in this
-// module belongs to exactly one branch scope AND exactly one school year, and a
-// lens each screen remembers to pass is a lens one screen will forget. The
-// screen that forgets shows another branch's rooms, or last year's bell
-// schedule, with nothing on screen to say so. Same rule, and the same single
-// `params` helper, as academics-api.ts.
-//
-// The school is the session's - `?tenant=` is injected centrally by base-api -
-// so nothing here takes a school identifier and no caller can reach another
-// school's calendar by changing an argument.
-//
-// **A clash is not an error.** Several writes here succeed and still have
-// something to say, and it arrives in `data.warnings` beside the row that WAS
-// written. Nothing in this file treats a warning as a failure, and no screen
-// should either: the grid saves with clashes in it, and only publishing is
-// blocked while one stands.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * **Both lenses are applied here, not at the call sites.** Every row in this
+ * module belongs to exactly one branch scope AND exactly one school year, and a
+ * lens each screen remembers to pass is a lens one screen will forget. The
+ * screen that forgets shows another branch's rooms, or last year's bell
+ * schedule, with nothing on screen to say so. Same rule, and the same single
+ * `params` helper, as academics-api.ts.
+ *
+ * The school is the session's - `?tenant=` is injected centrally by base-api -
+ * so nothing here takes a school identifier and no caller can reach another
+ * school's calendar by changing an argument.
+ *
+ * **A clash is not an error.** Several writes here succeed and still have
+ * something to say, and it arrives in `data.warnings` beside the row that WAS
+ * written. Nothing in this file treats a warning as a failure, and no screen
+ * should either: the grid saves with clashes in it, and only publishing is
+ * blocked while one stands.
+ */
 
 export const calendarApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({

@@ -1,9 +1,11 @@
-// The rule for what the sidebar mark writes on its back face.
-//
-// Split from the component for the reason the repo splits every draft type out
-// of its drawer: a rule worth arguing about should be testable without pulling
-// a component tree in, and react-refresh only works when a file exports
-// components alone.
+/**
+ * The rule for what the sidebar mark writes on its back face.
+ *
+ * Split from the component for the reason the repo splits every draft type out
+ * of its drawer: a rule worth arguing about should be testable without pulling
+ * a component tree in, and react-refresh only works when a file exports
+ * components alone.
+ */
 
 /**
  * The longest name that still reads at 11px across two lines in the box.

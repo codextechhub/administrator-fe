@@ -5,25 +5,25 @@ import type { ExamSlot } from "@/redux/services/calendar/calendar-types";
 import { formatDate } from "../components/dates";
 import { board } from "./paper-filters";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The schedule the way a school posts it.
-//
-// A flat table is the DATA. It is not the artefact: nobody has ever pinned a
-// seven-column table of one row per paper to a notice board, because the
-// question a reader arrives with is "what is happening on Thursday morning"
-// and a table makes them assemble that answer themselves from rows scattered
-// down the page.
-//
-// So this is a row per day and a column per sitting, which is the shape every
-// printed exam timetable has. Days DOWN rather than across, because an exam
-// period is one or two weeks and there are only ever two or three sittings:
-// days across would be a dozen columns and a horizontal scroll to read
-// something that fits comfortably down a page.
-//
-// The list is still there behind a toggle, and still what prints. This answers
-// "when is what"; the list answers "show me every field of every row", and a
-// school checking an invigilator column against a staff rota wants the second.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The schedule the way a school posts it.
+ *
+ * A flat table is the DATA. It is not the artefact: nobody has ever pinned a
+ * seven-column table of one row per paper to a notice board, because the
+ * question a reader arrives with is "what is happening on Thursday morning"
+ * and a table makes them assemble that answer themselves from rows scattered
+ * down the page.
+ *
+ * So this is a row per day and a column per sitting, which is the shape every
+ * printed exam timetable has. Days DOWN rather than across, because an exam
+ * period is one or two weeks and there are only ever two or three sittings:
+ * days across would be a dozen columns and a horizontal scroll to read
+ * something that fits comfortably down a page.
+ *
+ * The list is still there behind a toggle, and still what prints. This answers
+ * "when is what"; the list answers "show me every field of every row", and a
+ * school checking an invigilator column against a staff rota wants the second.
+ */
 
 export function PaperBoard({
   slots,

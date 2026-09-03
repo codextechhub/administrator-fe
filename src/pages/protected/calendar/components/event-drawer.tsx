@@ -34,41 +34,41 @@ import type { EventDraft } from "./event-draft";
 import { problemsOf, useFormProblems } from "./form-problems";
 import { ProblemSummary } from "./problem-summary";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The event drawer: read one, or write one.
-//
-// Its own file rather than a sixth caller of the academics EntityDrawer. That
-// one's spine is name + code + description + scope, and an event has no code at
-// all while having four fields that one has never heard of. Bending it would
-// have meant a `hideCode` flag, which is how a shared form becomes five forms
-// wearing one name.
-//
-// What IS borrowed is that drawer's hard-won rules, because they were learned
-// the expensive way:
-//
-//   * **Touched, not blurred.** Focus opens in the name box, so a
-//     blur-marks-touched rule scolds a reader for a field they never typed in -
-//     and the inserted message pushes the controls below down by a line WHILE
-//     they are clicking one.
-//   * **A refusal lands under the field it names**, never in a toast that
-//     appears where the reader is not looking and leaves before they look up.
-//   * **Re-seeded during render, not in an effect**, or the previous event's
-//     values paint for a frame first.
-//   * **Scope is stated, not offered, when it is not a choice.** A branch-tied
-//     account cannot create a school-wide event, and the server would refuse
-//     it, so a radio there would be a control that lies.
-//
-// Two rules are this drawer's own:
-//
-// **A warning is not a refusal.** Creating an event outside every term, or
-// overlapping another, SUCCEEDS and returns `warnings`. They are handed to the
-// caller to toast, and the drawer closes, because the write happened.
-//
-// **Changing the branch clears the audience.** A class that was in scope stops
-// being in scope the moment the event moves branch, and the server refuses the
-// whole write for one out-of-scope id. Clearing is the honest reset; carrying
-// the picks would build a request that cannot succeed.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The event drawer: read one, or write one.
+ *
+ * Its own file rather than a sixth caller of the academics EntityDrawer. That
+ * one's spine is name + code + description + scope, and an event has no code at
+ * all while having four fields that one has never heard of. Bending it would
+ * have meant a `hideCode` flag, which is how a shared form becomes five forms
+ * wearing one name.
+ *
+ * What IS borrowed is that drawer's hard-won rules, because they were learned
+ * the expensive way:
+ *
+ *   * **Touched, not blurred.** Focus opens in the name box, so a
+ *     blur-marks-touched rule scolds a reader for a field they never typed in -
+ *     and the inserted message pushes the controls below down by a line WHILE
+ *     they are clicking one.
+ *   * **A refusal lands under the field it names**, never in a toast that
+ *     appears where the reader is not looking and leaves before they look up.
+ *   * **Re-seeded during render, not in an effect**, or the previous event's
+ *     values paint for a frame first.
+ *   * **Scope is stated, not offered, when it is not a choice.** A branch-tied
+ *     account cannot create a school-wide event, and the server would refuse
+ *     it, so a radio there would be a control that lies.
+ *
+ * Two rules are this drawer's own:
+ *
+ * **A warning is not a refusal.** Creating an event outside every term, or
+ * overlapping another, SUCCEEDS and returns `warnings`. They are handed to the
+ * caller to toast, and the drawer closes, because the write happened.
+ *
+ * **Changing the branch clears the audience.** A class that was in scope stops
+ * being in scope the moment the event moves branch, and the server refuses the
+ * whole write for one out-of-scope id. Clearing is the honest reset; carrying
+ * the picks would build a request that cannot succeed.
+ */
 
 export function EventDrawer({
   open,

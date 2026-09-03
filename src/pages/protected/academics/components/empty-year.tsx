@@ -7,21 +7,21 @@ import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The empty list, and the one question it has to answer: empty because of the
-// filters, empty because the school has not started, or empty because THIS
-// YEAR has not been started.
-//
-// The third is new and is the one a plain "No classes yet" gets wrong. A school
-// running 2026/2027 with sixteen levels switches the pill to the 2027/2028 it
-// drafted last week and sees an empty screen; "No classes yet" reads as data
-// loss. It has to name the year and offer the way out, which is copying the
-// year before it rather than typing sixteen levels again.
-//
-// Offered only when there IS another year to copy from and the reader may write
-// structure - otherwise it is a button that answers 403, or one with nothing to
-// pick.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The empty list, and the one question it has to answer: empty because of the
+ * filters, empty because the school has not started, or empty because THIS
+ * YEAR has not been started.
+ *
+ * The third is new and is the one a plain "No classes yet" gets wrong. A school
+ * running 2026/2027 with sixteen levels switches the pill to the 2027/2028 it
+ * drafted last week and sees an empty screen; "No classes yet" reads as data
+ * loss. It has to name the year and offer the way out, which is copying the
+ * year before it rather than typing sixteen levels again.
+ *
+ * Offered only when there IS another year to copy from and the reader may write
+ * structure - otherwise it is a button that answers 403, or one with nothing to
+ * pick.
+ */
 
 export function EmptyYear({
   icon,

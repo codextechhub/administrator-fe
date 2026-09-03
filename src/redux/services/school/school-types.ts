@@ -1,8 +1,10 @@
-// The school's own profile, as `/v1/i/me/profile/` returns it.
-//
-// Distinct from the platform's view of a school: this is what a school admin
-// may read and change about their own school, and it takes no identifier - the
-// school is whichever one the session's tenant owns.
+/**
+ * The school's own profile, as `/v1/i/me/profile/` returns it.
+ *
+ * Distinct from the platform's view of a school: this is what a school admin
+ * may read and change about their own school, and it takes no identifier - the
+ * school is whichever one the session's tenant owns.
+ */
 
 /** One `{value, label}` pair for a select. */
 export interface ChoiceOption {

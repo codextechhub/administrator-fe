@@ -1,20 +1,20 @@
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The view switch: Cards / Table, List / Tree.
-//
-// The highlight SLIDES to what you pressed rather than blinking out of one
-// option and into another. That is not decoration: the block behind the label
-// is what says "you are here", and a thing that teleports has to be re-found
-// every time, while a thing that travels carries the eye with it. Pressing
-// Table and watching the marker move from Cards is the screen answering.
-//
-// One component, because there were five copies of this toggle across the
-// academics screens and a sixth was about to be written. A shared marker is
-// also the only way the movement can be consistent - five hand-rolled ones
-// would drift in duration and easing until each screen felt slightly different.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The view switch: Cards / Table, List / Tree.
+ *
+ * The highlight SLIDES to what you pressed rather than blinking out of one
+ * option and into another. That is not decoration: the block behind the label
+ * is what says "you are here", and a thing that teleports has to be re-found
+ * every time, while a thing that travels carries the eye with it. Pressing
+ * Table and watching the marker move from Cards is the screen answering.
+ *
+ * One component, because there were five copies of this toggle across the
+ * academics screens and a sixth was about to be written. A shared marker is
+ * also the only way the movement can be consistent - five hand-rolled ones
+ * would drift in duration and easing until each screen felt slightly different.
+ */
 
 export interface SegmentedOption<T extends string> {
   value: T;

@@ -32,17 +32,17 @@ export function promotionBody(value: Promotion) {
   return { next_level: null, is_terminal: value.kind === "terminal" };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Where a level's pupils go at the end of the year.
-//
-// One control for three answers, because the third one used to be invisible: a
-// level with no target was either the end of the school or a level nobody had
-// wired, and the two were the same empty value. A school that wires half its
-// chain and is interrupted then graduates every unwired year group at once.
-//
-// So "Not set yet" is an option a reader can see sitting there, rather than the
-// absence of one.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Where a level's pupils go at the end of the year.
+ *
+ * One control for three answers, so that the third one is visible. Left as a
+ * single empty value, a level with no target is either the end of the school or
+ * a level nobody has wired, and a school that wires half its chain and is
+ * interrupted then graduates every unwired year group at once.
+ *
+ * So "Not set yet" is an option a reader can see sitting there, rather than the
+ * absence of one.
+ */
 
 export function PromotionPicker({
   value,

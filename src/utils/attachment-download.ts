@@ -2,18 +2,20 @@ import Cookies from "js-cookie";
 import { appendTenantQuery } from "./tenant-context";
 import { apiErrorMessage } from "./api-errors";
 
-// Two things make an attachment URL not directly openable in an <a href>:
-//
-// 1. `core.views.MediaView` authenticates the caller, so a plain navigation arrives
-//    with no Authorization header and gets a 401. We have to fetch it ourselves and
-//    hand the browser a blob.
-// 2. The API base ends in /v1, but MEDIA_URL is mounted at the host root, so the
-//    stored `/media/<name>` path must be resolved against the origin rather than
-//    appended to the API prefix.
-//
-// The stored name is a capability URL: unguessable, and only ever handed to a caller
-// already allowed to read the owning document. That is what authorises the read; the
-// media endpoint itself can only tell that you are logged in.
+/**
+ * Two things make an attachment URL not directly openable in an <a href>:
+ *
+ * 1. `core.views.MediaView` authenticates the caller, so a plain navigation arrives
+ *    with no Authorization header and gets a 401. We have to fetch it ourselves and
+ *    hand the browser a blob.
+ * 2. The API base ends in /v1, but MEDIA_URL is mounted at the host root, so the
+ *    stored `/media/<name>` path must be resolved against the origin rather than
+ *    appended to the API prefix.
+ *
+ * The stored name is a capability URL: unguessable, and only ever handed to a caller
+ * already allowed to read the owning document. That is what authorises the read; the
+ * media endpoint itself can only tell that you are logged in.
+ */
 
 const apiBase = import.meta.env.VITE_BACKEND_URL || "";
 

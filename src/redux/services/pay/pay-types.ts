@@ -1,7 +1,9 @@
-// Shapes returned by the public invoice pay routes. Deliberately narrow: the
-// payer holds no account, so the backend sends only what somebody deciding
-// whether to pay actually needs. There is no customer email, phone or address
-// here, and there should never be.
+/**
+ * Shapes returned by the public invoice pay routes. Deliberately narrow: the
+ * payer holds no account, so the backend sends only what somebody deciding
+ * whether to pay actually needs. There is no customer email, phone or address
+ * here, and there should never be.
+ */
 
 /** What the pay page shows before the payer commits to anything. */
 export interface InvoicePaySummary {

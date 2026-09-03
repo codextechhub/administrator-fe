@@ -3,12 +3,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { Field } from "./drawer-shell";
 
-// A wrapping <label> looks equivalent to htmlFor and is not. The accessible
-// name is computed from the label's text, and a control embedded inside it
-// contributes its own content - so a <select> wrapped in a label announced as
-// "Gender Select a gender Female Male", reading the whole option list back as
-// the name of the field. It also made the form untestable by label, which is
-// how it was noticed.
+/**
+ * A wrapping <label> looks equivalent to htmlFor and is not. The accessible
+ * name is computed from the label's text, and a control embedded inside it
+ * contributes its own content - so a <select> wrapped in a label announced as
+ * "Gender Select a gender Female Male", reading the whole option list back as
+ * the name of the field. It also made the form untestable by label, which is
+ * how it was noticed.
+ */
 function parse(markup: string) {
   return new DOMParser().parseFromString(markup, "text/html");
 }

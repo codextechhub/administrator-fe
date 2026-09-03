@@ -1,17 +1,17 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Shapes returned by /v1/academics/.
-//
-// Two rules from the backend's own serializers run through all of them, and the
-// types say so rather than leaving a reader to discover it:
-//
-//   1. The branch dimension RECEDES at a single-branch school. `branch`,
-//      `branch_name` and `scope_label` are dropped from the payload entirely -
-//      not nulled - so every one of them is optional here. A screen must treat
-//      "absent" as "this school has one branch", never as "no branch set".
-//
-//   2. A null `branch` on a row that HAS the field is a first-class value
-//      meaning school-wide. It is never "nobody filled this in".
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Shapes returned by /v1/academics/.
+ *
+ * Two rules from the backend's own serializers run through all of them, and the
+ * types say so rather than leaving a reader to discover it:
+ *
+ *   1. The branch dimension RECEDES at a single-branch school. `branch`,
+ *      `branch_name` and `scope_label` are dropped from the payload entirely -
+ *      not nulled - so every one of them is optional here. A screen must treat
+ *      "absent" as "this school has one branch", never as "no branch set".
+ *
+ *   2. A null `branch` on a row that HAS the field is a first-class value
+ *      meaning school-wide. It is never "nobody filled this in".
+ */
 
 /** Present on every catalogue row at a multi-branch school; absent otherwise. */
 export interface Scoped {

@@ -25,18 +25,18 @@ import type {
   TermWrite,
 } from "@/redux/services/academics/academics-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Create or edit a school year, with its terms and its branches, in ONE save.
-//
-// One drawer for both, because the list and the detail screen both open it and
-// two drawers over the same object drift: one of them gains a field, and which
-// one you get depends on which button you pressed.
-//
-// One request too. The API takes the terms and the branch set nested inside the
-// session for the same reason this form has one Save button - a year created by
-// one call and its terms by three leaves a half-built year on screen the moment
-// the second one fails.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Create or edit a school year, with its terms and its branches, in ONE save.
+ *
+ * One drawer for both, because the list and the detail screen both open it and
+ * two drawers over the same object drift: one of them gains a field, and which
+ * one you get depends on which button you pressed.
+ *
+ * One request too. The API takes the terms and the branch set nested inside the
+ * session for the same reason this form has one Save button - a year created by
+ * one call and its terms by three leaves a half-built year on screen the moment
+ * the second one fails.
+ */
 
 interface Draft {
   name: string;

@@ -1,12 +1,14 @@
-// Shape-aware loading ghosts. A loading screen should preview the layout of
-// the data that is about to arrive - ghost table rows, ghost cards, ghost stat
-// tiles - instead of a spinner that tells the user nothing about what is
-// coming. Built on the <Skeleton> primitive so the pulse/reduced-motion policy
-// lives in exactly one place.
-//
-// Everything here is decorative: each ghost is aria-hidden, and the surface
-// that renders them announces itself ONCE via <SkeletonLoadingLabel>. A screen
-// reader must hear "Loading…" a single time, never once per ghost row.
+/**
+ * Shape-aware loading ghosts. A loading screen should preview the layout of
+ * the data that is about to arrive - ghost table rows, ghost cards, ghost stat
+ * tiles - instead of a spinner that tells the user nothing about what is
+ * coming. Built on the <Skeleton> primitive so the pulse/reduced-motion policy
+ * lives in exactly one place.
+ *
+ * Everything here is decorative: each ghost is aria-hidden, and the surface
+ * that renders them announces itself ONCE via <SkeletonLoadingLabel>. A screen
+ * reader must hear "Loading…" a single time, never once per ghost row.
+ */
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { TableCell, TableRow } from "@/components/ui/table";

@@ -7,26 +7,26 @@ import type {
   ImportValidationResult,
 } from "./import-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Loading a school's own data, at /v1/import/.
-//
-// The endpoints are the platform's, not a school-scoped `/me/` surface like the
-// staff list - the import engine was built for CodeX operations and later
-// opened to schools. What makes that safe is server-side and worth knowing
-// about here, because it decides what this client can and cannot show:
-//
-// A school is only ever offered ITS OWN datasets. CodeX's provisioning
-// templates (`schools`, `cx_users`) are withheld from the list, and a request
-// naming one is refused - see backend vs_import_data/datasets.py, which exists
-// because a school administrator was briefly able to provision a tenant. So
-// this client never filters the template list itself: whatever comes back is
-// what this school may load, and hard-coding a list here would drift.
-//
-// `silent: true` throughout. Every refusal on this screen is a sentence the
-// reader has to act on - a wrong file format, a row that clashes with a branch
-// they already have - and belongs beside the thing that caused it rather than
-// in a global toast.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Loading a school's own data, at /v1/import/.
+ *
+ * The endpoints are the platform's, not a school-scoped `/me/` surface like the
+ * staff list - the import engine was built for CodeX operations and later
+ * opened to schools. What makes that safe is server-side and worth knowing
+ * about here, because it decides what this client can and cannot show:
+ *
+ * A school is only ever offered ITS OWN datasets. CodeX's provisioning
+ * templates (`schools`, `cx_users`) are withheld from the list, and a request
+ * naming one is refused - see backend vs_import_data/datasets.py, which exists
+ * because a school administrator was briefly able to provision a tenant. So
+ * this client never filters the template list itself: whatever comes back is
+ * what this school may load, and hard-coding a list here would drift.
+ *
+ * `silent: true` throughout. Every refusal on this screen is a sentence the
+ * reader has to act on - a wrong file format, a row that clashes with a branch
+ * they already have - and belongs beside the thing that caused it rather than
+ * in a global toast.
+ */
 export const importApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     /** The datasets this school may load. Server-narrowed; do not filter here. */

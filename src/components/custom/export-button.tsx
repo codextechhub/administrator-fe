@@ -14,43 +14,43 @@ import {
 } from "@/redux/services/exports/exports-api";
 import type { FromScreen } from "@/redux/services/exports/exports-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// "Export what this table is showing", on any list screen that has a binding.
-//
-// Shared rather than academics-only: calendar and classes already imported it
-// from that folder, and the student directory makes seven callers across four
-// modules. Nothing in it is module-specific - it takes a binding key and the
-// screen's own params.
-//
-// Two calls, and the gap between them is the whole feature. `from-screen`
-// translates the filters currently on the screen and names the ones it could
-// not carry; only then is anything run. A one-click download would have to
-// guess, and the guess that matters is the branch lens: a school asks for one
-// branch's classes, receives every branch's, and has nothing on screen to say
-// so.
-//
-// So when a filter cannot be carried, this stops and says which - in the
-// school's own words rather than the parameter's - and lets the person decide.
-// When everything IS carried it does not interrupt: a confirmation nobody needs
-// is a confirmation nobody reads.
-//
-// **Absent while the school is still being set up.** Academic structure is open
-// to a PENDING tenant because building it is a required onboarding task; the
-// Export Centre is not, and declares no `pending_tenant_surface`, so it refuses
-// every call. Rendering the button anyway would put a control on the screen
-// that answers "this school is still being set up" - a door drawn on a wall,
-// which is the same rule the sidebar follows for surfaces a pending school
-// cannot reach. (Student Management is closed to a pending school outright, so
-// there the question never arises.)
-//
-// **And absent until a school actually holds the export keys.** The Export
-// Centre is granted to PLATFORM roles only today - seed_exports_permissions
-// attaches its keys to the codex tenant's roles and to no school role - so a
-// school admin pressing this would be refused by RBAC, not by anything they
-// could act on. Gated rather than removed, so the day a school is granted
-// `exports.catalogue.view` and `exports.run.create` these six buttons appear
-// with no further work.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * "Export what this table is showing", on any list screen that has a binding.
+ *
+ * Shared rather than academics-only: calendar and classes already imported it
+ * from that folder, and the student directory makes seven callers across four
+ * modules. Nothing in it is module-specific - it takes a binding key and the
+ * screen's own params.
+ *
+ * Two calls, and the gap between them is the whole feature. `from-screen`
+ * translates the filters currently on the screen and names the ones it could
+ * not carry; only then is anything run. A one-click download would have to
+ * guess, and the guess that matters is the branch lens: a school asks for one
+ * branch's classes, receives every branch's, and has nothing on screen to say
+ * so.
+ *
+ * So when a filter cannot be carried, this stops and says which - in the
+ * school's own words rather than the parameter's - and lets the person decide.
+ * When everything IS carried it does not interrupt: a confirmation nobody needs
+ * is a confirmation nobody reads.
+ *
+ * **Absent while the school is still being set up.** Academic structure is open
+ * to a PENDING tenant because building it is a required onboarding task; the
+ * Export Centre is not, and declares no `pending_tenant_surface`, so it refuses
+ * every call. Rendering the button anyway would put a control on the screen
+ * that answers "this school is still being set up" - a door drawn on a wall,
+ * which is the same rule the sidebar follows for surfaces a pending school
+ * cannot reach. (Student Management is closed to a pending school outright, so
+ * there the question never arises.)
+ *
+ * **And absent until a school actually holds the export keys.** The Export
+ * Centre is granted to PLATFORM roles only today - seed_exports_permissions
+ * attaches its keys to the codex tenant's roles and to no school role - so a
+ * school admin pressing this would be refused by RBAC, not by anything they
+ * could act on. Gated rather than removed, so the day a school is granted
+ * `exports.catalogue.view` and `exports.run.create` these six buttons appear
+ * with no further work.
+ */
 
 export function ExportButton({
   screen,

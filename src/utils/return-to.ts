@@ -1,10 +1,12 @@
-// Preserve the page a user was trying to reach when an involuntary redirect to
-// login happens (idle/expired session, unrecoverable 401). After they log back
-// in we send them there instead of the default landing page.
-//
-// Stored in sessionStorage so it is scoped to the tab and survives the
-// full-page reload our auth redirects perform. NOTE: endSession() calls
-// sessionStorage.clear(), so always capture AFTER endSession at the call site.
+/**
+ * Preserve the page a user was trying to reach when an involuntary redirect to
+ * login happens (idle/expired session, unrecoverable 401). After they log back
+ * in we send them there instead of the default landing page.
+ *
+ * Stored in sessionStorage so it is scoped to the tab and survives the
+ * full-page reload our auth redirects perform. NOTE: endSession() calls
+ * sessionStorage.clear(), so always capture AFTER endSession at the call site.
+ */
 
 const KEY = "_auth_return_to";
 

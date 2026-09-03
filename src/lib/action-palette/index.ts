@@ -1,7 +1,9 @@
-// Barrel for the action palette engine. The engine is pure: no React, no
-// imports from components, so every rule in here is unit testable on its own.
-//
-// The registry of actions lives in ./registry.
+/**
+ * Barrel for the action palette engine. The engine is pure: no React, no
+ * imports from components, so every rule in here is unit testable on its own.
+ *
+ * The registry of actions lives in ./registry.
+ */
 export { ACTIONS, LIVE_ONLY_ACTION_IDS, PENDING_ONLY_ACTION_IDS } from "./registry";
 export { consoleActions, consoleActionId } from "./console-actions";
 export type { ConsoleSource } from "./console-actions";

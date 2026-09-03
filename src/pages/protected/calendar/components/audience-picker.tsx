@@ -5,35 +5,35 @@ import type {
 } from "@/redux/services/academics/academics-types";
 import type { AudiencePick } from "./audience";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Who an event covers, when it covers only some of the school.
-//
-// **Not in the Claude prototype, and its absence was the sharpest defect in
-// it.** The server has narrowed events from the start; the design's drawer
-// offered branch scope and nothing else, so a narrowed closure would have
-// rendered as covering the whole branch:
-//
-//     Lekki Branch holds Speech Day on Friday 21 November for the primary
-//     school only. As drawn, the row says "Lekki Branch" and the drawer says
-//     "School closed: Yes". Mrs Adeyemi teaches JSS1 A, reads that Friday as
-//     closed, and does not come in. Thirty JSS1 pupils sit in Block A Room 1 on
-//     their own.
-//
-// **Nothing picked means everybody**, which is the default and six events out
-// of seven. It is not "nobody": an empty selection sends no audience at all and
-// the event covers the whole of its branch scope. The counter says so in words
-// rather than showing "0 selected", because a zero here reads as the opposite
-// of what it means.
-//
-// **A level covers every class under it**, which is what a school means by "the
-// whole of JSS1" and saves it naming three arms one at a time. So levels are
-// offered first and classes are the finer cut below them.
-//
-// Only what is visible in the current branch is offered. The server resolves
-// these ids through the same scoping and refuses one the caller cannot see,
-// failing the WHOLE write - so offering an invisible level would build a
-// request that cannot succeed.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Who an event covers, when it covers only some of the school.
+ *
+ * **Not in the Claude prototype, and its absence was the sharpest defect in
+ * it.** The server has narrowed events from the start; the design's drawer
+ * offered branch scope and nothing else, so a narrowed closure would have
+ * rendered as covering the whole branch:
+ *
+ *     Lekki Branch holds Speech Day on Friday 21 November for the primary
+ *     school only. As drawn, the row says "Lekki Branch" and the drawer says
+ *     "School closed: Yes". Mrs Adeyemi teaches JSS1 A, reads that Friday as
+ *     closed, and does not come in. Thirty JSS1 pupils sit in Block A Room 1 on
+ *     their own.
+ *
+ * **Nothing picked means everybody**, which is the default and six events out
+ * of seven. It is not "nobody": an empty selection sends no audience at all and
+ * the event covers the whole of its branch scope. The counter says so in words
+ * rather than showing "0 selected", because a zero here reads as the opposite
+ * of what it means.
+ *
+ * **A level covers every class under it**, which is what a school means by "the
+ * whole of JSS1" and saves it naming three arms one at a time. So levels are
+ * offered first and classes are the finer cut below them.
+ *
+ * Only what is visible in the current branch is offered. The server resolves
+ * these ids through the same scoping and refuses one the caller cannot see,
+ * failing the WHOLE write - so offering an invisible level would build a
+ * request that cannot succeed.
+ */
 
 const has = (picks: AudiencePick[], type: "level" | "class", id: number) =>
   picks.some((p) => p.type === type && p.id === id);

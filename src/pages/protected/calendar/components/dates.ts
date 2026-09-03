@@ -1,13 +1,13 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Reading and writing the dates this module deals in.
-//
-// **Everything here is a plain calendar date, never an instant.** The API sends
-// and takes `YYYY-MM-DD`, and a school holiday on 21 November is on 21 November
-// wherever the reader happens to be. `new Date("2025-11-21")` parses as
-// midnight UTC, so a reader west of Greenwich renders it as the 20th - which is
-// how a one-day holiday moves to the wrong day for half the world. Every
-// function below splits the string instead of letting Date parse it.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Reading and writing the dates this module deals in.
+ *
+ * **Everything here is a plain calendar date, never an instant.** The API sends
+ * and takes `YYYY-MM-DD`, and a school holiday on 21 November is on 21 November
+ * wherever the reader happens to be. `new Date("2025-11-21")` parses as
+ * midnight UTC, so a reader west of Greenwich renders it as the 20th - which is
+ * how a one-day holiday moves to the wrong day for half the world. Every
+ * function below splits the string instead of letting Date parse it.
+ */
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",

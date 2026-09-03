@@ -1,13 +1,14 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// vs_workflow - TypeScript contract.
-//
-// Mirrors apps/vs_workflow serializers + constants exactly.
-//
-// Envelope notes (verified against backend):
-//   • List endpoints (templates / instances / delegations) are paginated by
-//     core.pagination.XVSPagination → { success, message, pagination, data }.
-//   • Detail + action endpoints return the PLAIN serializer dict (no wrapper).
-//   • Dashboard endpoints: /pending/ → { results, count }; /submitted/ and
+/**
+ * vs_workflow - TypeScript contract.
+ *
+ * Mirrors apps/vs_workflow serializers + constants exactly.
+ *
+ * Envelope notes (verified against backend):
+ *   • List endpoints (templates / instances / delegations) are paginated by
+ *     core.pagination.XVSPagination → { success, message, pagination, data }.
+ *   • Detail + action endpoints return the PLAIN serializer dict (no wrapper).
+ *   • Dashboard endpoints: /pending/ → { results, count }; /submitted/ and
+ */
 //     /team-load/ return a plain array.
 // ─────────────────────────────────────────────────────────────────────────────
 

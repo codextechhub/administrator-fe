@@ -16,19 +16,19 @@ import type { AppDispatch } from "@/redux/store";
 import { routesPath } from "@/routes/routesPath";
 import { runWithIdentitySwap } from "@/utils/identity-swap";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Proxy session orchestration.
-//
-// Entering and leaving a proxy is the same three-part manoeuvre in both
-// directions - swap the stored identity, re-hydrate it from `/me`, then reset
-// the RTK Query cache - and getting the ORDER wrong is what produces
-// half-switched clients. It lives here, once, rather than in each component
-// that offers the affordance (start dialog, exit banner, account menu), so
-// there is a single place where the sequence can be reviewed and fixed.
-//
-// The invariant every path upholds: the client is never left believing it is
-// one user while the backend believes it is another.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Proxy session orchestration.
+ *
+ * Entering and leaving a proxy is the same three-part manoeuvre in both
+ * directions - swap the stored identity, re-hydrate it from `/me`, then reset
+ * the RTK Query cache - and getting the ORDER wrong is what produces
+ * half-switched clients. It lives here, once, rather than in each component
+ * that offers the affordance (start dialog, exit banner, account menu), so
+ * there is a single place where the sequence can be reviewed and fixed.
+ *
+ * The invariant every path upholds: the client is never left believing it is
+ * one user while the backend believes it is another.
+ */
 
 type Navigate = (path: string) => void | Promise<unknown>;
 

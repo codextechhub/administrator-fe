@@ -1,12 +1,13 @@
-// This app's implementation of @xvs/finance's host contract.
-//
-// The package declares HostContract and asserts against it, so if anything
-// here drifts - a missing member, a renamed field - the build fails rather
-// than a bursar meeting an empty branch dropdown. See the package's host.ts.
-//
-// Each member is a thing both products have but reach differently: the console
-// asks its tenant-admin services, this app asks its own.
-//
+/**
+ * This app's implementation of @xvs/finance's host contract.
+ *
+ * The package declares HostContract and asserts against it, so if anything
+ * here drifts - a missing member, a renamed field - the build fails rather
+ * than a bursar meeting an empty branch dropdown. See the package's host.ts.
+ *
+ * Each member is a thing both products have but reach differently: the console
+ * asks its tenant-admin services, this app asks its own.
+ */
 
 import { type ComponentType } from "react";
 // The REAL contract types, from the package. Previously copied locally,
@@ -80,17 +81,19 @@ export const AppLogo: ComponentType<{ animate?: boolean; className?: string }> =
  *  requires it, and a no-op is the honest implementation.
  */
 
-// The school app has its own export affordance already, and it is the right one
-// to use: it reads THIS app's permission codes (BROWSE_EXPORT_CATALOGUE and
-// RUN_EXPORT) and refuses while the tenant is still pending. The console's
-// version reads console codes that do not exist here.
-//
-// Adapted rather than widened. ExportButton requires `params` and takes no
-// booleans; the contract makes params optional and allows them. The gap is
-// closed here, in the host, which is what the host module is for. The props the
-// school button has no concept of - entity, variant, disabledReason - are
-// dropped deliberately: a school runs one set of books, so `entity` is
-// meaningless, and the rest are console styling.
+/**
+ * The school app has its own export affordance already, and it is the right one
+ * to use: it reads THIS app's permission codes (BROWSE_EXPORT_CATALOGUE and
+ * RUN_EXPORT) and refuses while the tenant is still pending. The console's
+ * version reads console codes that do not exist here.
+ *
+ * Adapted rather than widened. ExportButton requires `params` and takes no
+ * booleans; the contract makes params optional and allows them. The gap is
+ * closed here, in the host, which is what the host module is for. The props the
+ * school button has no concept of - entity, variant, disabledReason - are
+ * dropped deliberately: a school runs one set of books, so `entity` is
+ * meaningless, and the rest are console styling.
+ */
 export function QuickExportButton({ screen, params, label }: HostExportProps) {
   const scalars: Record<string, string | number | undefined> = {};
   for (const [k, v] of Object.entries(params ?? {})) {
@@ -117,11 +120,13 @@ export function UserAvatar({ name, className }: HostAvatarProps) {
   );
 }
 
-// A school runs one set of books and cannot see another school's, so there is
-// no roll-call to show. Rendering nothing is the whole answer, and it is
-// declared rather than omitted because the contract requires the member: the
-// package places this section on Setup -> Entities, which this app does not
-// even mount.
+/**
+ * A school runs one set of books and cannot see another school's, so there is
+ * no roll-call to show. Rendering nothing is the whole answer, and it is
+ * declared rather than omitted because the contract requires the member: the
+ * package places this section on Setup -> Entities, which this app does not
+ * even mount.
+ */
 export function PlatformLedgerInventory() {
   return null;
 }

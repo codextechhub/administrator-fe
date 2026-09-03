@@ -33,28 +33,28 @@ import type {
   Subject,
 } from "@/redux/services/academics/academics-types";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// One paper: which class sits which subject, when, where, supervised by whom.
-//
-// **The refusal and the warnings are the opposite way round from the class
-// timetable, and a school meets both in one afternoon.** On a lesson grid a
-// double-booked teacher WARNS and the write succeeds. Here:
-//
-//   * A class sitting two papers in one sitting is REFUSED. It is physically
-//     impossible and no school ever means it.
-//   * A room used twice, and an invigilator in two rooms, both WARN. Two
-//     classes really do sit in the Main Hall together, and one person really
-//     does float between adjacent rooms - and nothing records how many
-//     candidates a paper has or how many rooms one person can supervise, so
-//     refusing either would be refusing on a guess.
-//
-// The form says which is which rather than letting a school discover it by
-// being stopped once and not the other time.
-//
-// **Times are optional and stay that way.** A school that publishes exact times
-// has them; one that publishes only morning and afternoon does not, and is not
-// made to invent them.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * One paper: which class sits which subject, when, where, supervised by whom.
+ *
+ * **The refusal and the warnings are the opposite way round from the class
+ * timetable, and a school meets both in one afternoon.** On a lesson grid a
+ * double-booked teacher WARNS and the write succeeds. Here:
+ *
+ *   * A class sitting two papers in one sitting is REFUSED. It is physically
+ *     impossible and no school ever means it.
+ *   * A room used twice, and an invigilator in two rooms, both WARN. Two
+ *     classes really do sit in the Main Hall together, and one person really
+ *     does float between adjacent rooms - and nothing records how many
+ *     candidates a paper has or how many rooms one person can supervise, so
+ *     refusing either would be refusing on a guess.
+ *
+ * The form says which is which rather than letting a school discover it by
+ * being stopped once and not the other time.
+ *
+ * **Times are optional and stay that way.** A school that publishes exact times
+ * has them; one that publishes only morning and afternoon does not, and is not
+ * made to invent them.
+ */
 
 const SITTINGS: { value: Sitting; label: string }[] = [
   { value: "MORNING", label: "Morning" },

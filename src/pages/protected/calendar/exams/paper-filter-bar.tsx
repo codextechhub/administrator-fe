@@ -18,18 +18,18 @@ import {
   type PaperFilters,
 } from "./paper-filters";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Narrowing the schedule.
-//
-// **Every option is drawn from the papers, with the count it would keep.** A
-// school of forty classes may have entered papers for six; offering the other
-// thirty-four is offering filters that return nothing, and the count beside
-// each one is what stops a reader ticking a box to find out.
-//
-// The chips outside the popover are the point of it. A filter that is only
-// visible inside the thing you opened to set it is a filter a reader forgets
-// they applied, and then reports the schedule as missing papers.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Narrowing the schedule.
+ *
+ * **Every option is drawn from the papers, with the count it would keep.** A
+ * school of forty classes may have entered papers for six; offering the other
+ * thirty-four is offering filters that return nothing, and the count beside
+ * each one is what stops a reader ticking a box to find out.
+ *
+ * The chips outside the popover are the point of it. A filter that is only
+ * visible inside the thing you opened to set it is a filter a reader forgets
+ * they applied, and then reports the schedule as missing papers.
+ */
 
 function Group({
   title,

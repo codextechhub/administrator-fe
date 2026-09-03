@@ -28,27 +28,27 @@ function useLensHandle(): { lenses?: LensChoice } {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The two lenses: which branch you are looking at, and which year.
-//
-// They live PINNED TO THE BOTTOM OF THE SIDEBAR, with the nav scrolling above
-// them, which is where the design puts them and it earns the place: a lens is
-// not a page control, it is the state the whole workspace is being read in, so
-// it belongs with the workspace's own furniture rather than with the page's.
-// Being pinned also means it stays put while the nav scrolls, which is the
-// point of a lens you can check at a glance.
-//
-// The menus open UPWARD for the same reason - there is nothing below them.
-//
-// Both RECEDE rather than grey out, and the rule is the same for each: a picker
-// with one option is not a choice. One branch, no branch pill. One session, no
-// session pill. The screens still know which year they are in; they just do not
-// ask a question with a single answer.
-//
-// Both RECEDE rather than grey out. A single-branch school gets no branch pill;
-// a school with no year yet gets no session pill. A control with one option, or
-// with none, is a question the reader cannot answer and should not be asked.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The two lenses: which branch you are looking at, and which year.
+ *
+ * They live PINNED TO THE BOTTOM OF THE SIDEBAR, with the nav scrolling above
+ * them, which is where the design puts them and it earns the place: a lens is
+ * not a page control, it is the state the whole workspace is being read in, so
+ * it belongs with the workspace's own furniture rather than with the page's.
+ * Being pinned also means it stays put while the nav scrolls, which is the
+ * point of a lens you can check at a glance.
+ *
+ * The menus open UPWARD for the same reason - there is nothing below them.
+ *
+ * Both RECEDE rather than grey out, and the rule is the same for each: a picker
+ * with one option is not a choice. One branch, no branch pill. One session, no
+ * session pill. The screens still know which year they are in; they just do not
+ * ask a question with a single answer.
+ *
+ * Both RECEDE rather than grey out. A single-branch school gets no branch pill;
+ * a school with no year yet gets no session pill. A control with one option, or
+ * with none, is a question the reader cannot answer and should not be asked.
+ */
 
 const pill =
   "flex h-9.5 w-full items-center gap-2.5 rounded-lg border border-white-02 " +

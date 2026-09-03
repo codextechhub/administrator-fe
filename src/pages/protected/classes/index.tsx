@@ -59,7 +59,7 @@ import { useActionParam } from "@/hooks/use-action-param";
  * other two slots - the facts a class card is actually for.
  *
  * There is no Delete, and its absence is a promise rather than an omission:
- * M11's enrolment points at SchoolClass with on_delete=PROTECT, which is safe
+ * student enrolment points at SchoolClass with on_delete=PROTECT, which is safe
  * precisely because no route can reach that refusal. Archive is the lifecycle.
  */
 export default function Classes() {

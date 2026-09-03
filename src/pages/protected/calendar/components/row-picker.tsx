@@ -9,19 +9,19 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Which class's week, or whose week, is on screen.
-//
-// One control for both, because they ARE one control: a searchable list of
-// names, each carrying the facts somebody opens the list to compare, and a mark
-// on the ones that have a clash. Only the subtitle differs - a class reports
-// its publish state and branch, a teacher reports their load - so that arrives
-// as a function rather than as a second file that drifts.
-//
-// Not a native select. A school with twenty classes cannot see from a dropdown
-// which ones still need work, and the whole reason to open this list is to find
-// out.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Which class's week, or whose week, is on screen.
+ *
+ * One control for both, because they ARE one control: a searchable list of
+ * names, each carrying the facts somebody opens the list to compare, and a mark
+ * on the ones that have a clash. Only the subtitle differs - a class reports
+ * its publish state and branch, a teacher reports their load - so that arrives
+ * as a function rather than as a second file that drifts.
+ *
+ * Not a native select. A school with twenty classes cannot see from a dropdown
+ * which ones still need work, and the whole reason to open this list is to find
+ * out.
+ */
 
 export interface PickerRow {
   id: number;
