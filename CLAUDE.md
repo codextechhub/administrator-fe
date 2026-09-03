@@ -252,6 +252,39 @@ This applies to every comment written anywhere in the codebase, tests included,
 and to every comment already sitting beside code being changed: bring it up to
 this standard rather than leaving it as found.
 
+## A new screen is not finished until the search box can reach it
+
+The header search box is the action palette, and it is the fastest route to
+anything in the app. It is also the one that goes stale silently: a screen ships,
+the sidebar gets its link, and the box never hears of it. That is how it ended up
+offering nineteen actions for an app of ninety screens.
+
+So treat it as part of building the screen, not as a follow-up:
+
+- **Mounted a route?** Add an action in `src/lib/action-palette/registry.ts`.
+  Label leads with a verb (`View subjects`), because the matcher expands the
+  leading verb through its synonym groups - "open subjects" and "list subjects"
+  come free, a bare noun matches none of them. Gate it on the **same permission
+  key the screen itself checks**, never a looser one.
+- **Added a create drawer?** Wire `useActionParam("new", <the gate>, open)` on the
+  screen and add a `kind: "do"` action pointing at `<path>?action=new`. The gate
+  argument is required, and it must be the same expression that wraps the Add
+  button - including any read-only-year check. A query param is typed as easily
+  as it is clicked, so a drawer that opens on sight of the address is a way round
+  the screen's own rules.
+- **Genuinely not a destination?** Say so, in `NOT_A_DESTINATION` in
+  `src/lib/action-palette/coverage.test.ts`, with the reason. A redirect or a
+  screen a refusal lands on is a fine answer. "Nobody thought about it" is not.
+
+`coverage.test.ts` enforces all three and names the exact path or file when it
+fails, so you do not have to remember any of this - but reading it here is
+cheaper than discovering it from a red suite.
+
+Two things are exempt and stay that way. Finance and Procurement **view** actions
+are derived from those consoles' own sidebars, so they cannot fall behind. And
+screens whose address needs an id (`/students/:id`) are nobody's palette
+destination, because there is no id to name from a search box.
+
 ## Writing punctuation
 
 Do not use em dashes (Unicode U+2014) anywhere in source code, comments,
