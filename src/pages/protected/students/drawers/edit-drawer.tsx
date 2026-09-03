@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
-import { apiDetailMessage } from "@/utils/api-error";
+import { writeErrorMessage } from "@/utils/api-error";
 import { useUpdateStudentMutation } from "@/redux/services/students/students-api";
 import type {
   StudentDetail,
@@ -133,7 +133,7 @@ export function EditDrawer({
       setDraft({});
       onClose();
     } catch (error) {
-      toast.error(apiDetailMessage(error, "We could not save those changes."));
+      toast.error(writeErrorMessage(error, "We could not save those changes."));
     }
   }
 

@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
 import { useStudentsLens } from "@/hooks/use-students-lens";
-import { apiDetailMessage } from "@/utils/api-error";
+import { writeErrorMessage } from "@/utils/api-error";
 import {
   useConfirmApplicantMutation,
   useGetAdmissionPolicyQuery,
@@ -322,7 +322,7 @@ function ConfirmEnrolment({
       toast.success(`${student.full_name} is now enrolled.`);
       onClose();
     } catch (error) {
-      toast.error(apiDetailMessage(error, "We could not enrol that applicant."));
+      toast.error(writeErrorMessage(error, "We could not enrol that applicant."));
     }
   }
 
@@ -384,7 +384,7 @@ function CloseApplication({
       onClose();
     } catch (error) {
       setConfirming(false);
-      toast.error(apiDetailMessage(error, "We could not close that application."));
+      toast.error(writeErrorMessage(error, "We could not close that application."));
     }
   }
 

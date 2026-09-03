@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { NativeSelect } from "@/components/ui/native-select";
-import { apiDetailMessage } from "@/utils/api-error";
+import { writeErrorMessage } from "@/utils/api-error";
 import {
   useLinkGuardianMutation,
   useSearchStudentsQuery,
@@ -76,7 +76,7 @@ export function LinkChildDrawer({
       onClose();
     } catch (error) {
       toast.error(
-        apiDetailMessage(error, "We could not link that student."),
+        writeErrorMessage(error, "We could not link that student."),
       );
     }
   }

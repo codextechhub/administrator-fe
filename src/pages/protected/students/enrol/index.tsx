@@ -10,7 +10,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { cn } from "@/lib/utils";
-import { apiDetailMessage, fieldErrors, parseApiError } from "@/utils/api-error";
+import { writeErrorMessage, fieldErrors, parseApiError } from "@/utils/api-error";
 import {
   useEnrolStudentMutation,
   useGetAdmissionPolicyQuery,
@@ -437,7 +437,7 @@ export default function EnrolStudent() {
       );
     } catch (error) {
       const { code } = parseApiError(error);
-      const message = apiDetailMessage(error, "We could not save that student.");
+      const message = writeErrorMessage(error, "We could not save that student.");
       // Two refusals are questions rather than faults, and each gets asked
       // rather than being pre-answered on the registrar's behalf.
       if (code === "DUPLICATE_STUDENT" || /already on the roll/i.test(message)) {

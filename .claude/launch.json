@@ -4,15 +4,16 @@
     {
       "name": "school-fe",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev",
-        "--",
-        "--port",
-        "5174",
-        "--strictPort"
-      ],
-      "port": 5174
+      "runtimeArgs": ["run", "dev"],
+      "autoPort": true
+    },
+    {
+      "//": "A second server for verification while another session holds 5174.",
+      "//why": "vite.config.ts pins port 5174 with strictPort, and an explicit config port beats the PORT env var autoPort injects - so only a CLI --port flag can move it.",
+      "name": "school-fe-alt",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5180", "--strictPort"],
+      "port": 5180
     }
   ]
 }

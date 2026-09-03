@@ -13,7 +13,7 @@ import { EmptyRing } from "../empty-ring";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
 import { cn } from "@/lib/utils";
-import { apiDetailMessage } from "@/utils/api-error";
+import { writeErrorMessage } from "@/utils/api-error";
 import {
   useBulkAssignClassMutation,
   useGetClassSeatsQuery,
@@ -131,7 +131,7 @@ export default function ClassesAndTransfers() {
         toast.warning(result.message);
       }
     } catch (error) {
-      const message = apiDetailMessage(error, "We could not assign those students.");
+      const message = writeErrorMessage(error, "We could not assign those students.");
       // Capacity is a question, not a fault: the server refuses once for the
       // whole selection, and the registrar decides whether to overfill.
       if (/capacit/i.test(message) && !allowOver) {

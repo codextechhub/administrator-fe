@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { NativeSelect } from "@/components/ui/native-select";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { cn } from "@/lib/utils";
-import { apiDetailMessage } from "@/utils/api-error";
+import { writeErrorMessage } from "@/utils/api-error";
 import {
   useGetGuardiansQuery,
   useGetStudentGuardiansQuery,
@@ -99,7 +99,7 @@ export function LinkGuardianDrawer({
       reset();
       onClose();
     } catch (error) {
-      toast.error(apiDetailMessage(error, "We could not link that guardian."));
+      toast.error(writeErrorMessage(error, "We could not link that guardian."));
     }
   }
 

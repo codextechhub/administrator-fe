@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { apiDetailMessage, fieldErrors } from "@/utils/api-error";
+import { writeErrorMessage, fieldErrors } from "@/utils/api-error";
 import { useUpdateGuardianMutation } from "@/redux/services/students/students-api";
 import type { GuardianDetail } from "@/redux/services/students/students-types";
 
@@ -76,7 +76,7 @@ export function EditGuardianDrawer({
       // them - which is only useful beside the box you would retype.
       const named = fieldErrors(error);
       if (Object.keys(named).length) setErrors(named);
-      else toast.error(apiDetailMessage(error, "We could not save that."));
+      else toast.error(writeErrorMessage(error, "We could not save that."));
     }
   }
 

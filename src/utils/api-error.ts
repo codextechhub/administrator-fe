@@ -96,6 +96,34 @@ export function apiDetailMessage(error: unknown, fallback: string): string {
   return apiErrorMessage(error, fallback);
 }
 
+/**
+ * The sentence for a WRITE that failed, which has two cases the read path does
+ * not care about.
+ *
+ * **An expired session is not a rejected edit.** A 401 on a save produced
+ * "We could not save that." - which reads as "the server refused your change"
+ * and sends somebody retyping a correction that was never the problem. It
+ * happened for real: a guardian edit failed with that message while the PATCH
+ * and the refetch behind it were both answering 401 because the token had
+ * aged out.
+ *
+ * **A 403 is not a fault either.** It means this account may not do this, and
+ * saying so beats a generic failure the reader will retry.
+ *
+ * Everything else falls through to the field detail, the server's own message,
+ * and then the caller's fallback, exactly as before.
+ */
+export function writeErrorMessage(error: unknown, fallback: string): string {
+  const { status } = parseApiError(error);
+  if (status === 401) {
+    return "Your session has expired. Sign in again, then retry - nothing was saved.";
+  }
+  if (status === 403) {
+    return "You do not have permission to make that change.";
+  }
+  return apiDetailMessage(error, fallback);
+}
+
 export function fieldErrors(error: unknown): Record<string, string> {
   const { detail } = parseApiError(error);
   const out: Record<string, string> = {};

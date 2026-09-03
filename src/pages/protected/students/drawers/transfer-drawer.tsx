@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { NativeSelect } from "@/components/ui/native-select";
-import { apiDetailMessage } from "@/utils/api-error";
+import { writeErrorMessage } from "@/utils/api-error";
 import {
   useAssignClassMutation,
   useGetClassSeatsQuery,
@@ -111,7 +111,7 @@ export function TransferDrawer({
       reset();
       onClose();
     } catch (error) {
-      const message = apiDetailMessage(error, "We could not move that student.");
+      const message = writeErrorMessage(error, "We could not move that student.");
       // The server refuses an over-capacity placement until it is acknowledged.
       // Rather than translating its refusal into our own guess, offer the
       // acknowledgement and let the next attempt carry it.

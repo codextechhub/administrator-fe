@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
 import { cn } from "@/lib/utils";
-import { apiDetailMessage } from "@/utils/api-error";
+import { writeErrorMessage } from "@/utils/api-error";
 import { useGetSessionsQuery } from "@/redux/services/academics/academics-api";
 import {
   usePreviewPromotionMutation,
@@ -85,7 +85,7 @@ export default function Promotion() {
       setPlan(result.data);
       return result.data;
     } catch (error) {
-      toast.error(apiDetailMessage(error, "We could not preview that promotion."));
+      toast.error(writeErrorMessage(error, "We could not preview that promotion."));
       return null;
     }
   }
@@ -130,7 +130,7 @@ export default function Promotion() {
       setStep(3);
       toast.success(result.message);
     } catch (error) {
-      toast.error(apiDetailMessage(error, "We could not run that promotion."));
+      toast.error(writeErrorMessage(error, "We could not run that promotion."));
     }
   }
 
