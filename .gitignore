@@ -26,3 +26,7 @@ dist-ssr
 # Local agent tooling. Skills are per-machine, and the backend repo ignores
 # all of .claude/ - keeping these untracked stops the two repos disagreeing.
 .claude/skills/
+
+# Machine-specific: launch.json holds absolute paths to one developer's
+# checkout, so it works nowhere but the machine that wrote it.
+.claude/launch.json
