@@ -1,0 +1,106 @@
+import { useRef } from "react";
+import { Camera, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+import PermissionGate from "@/components/custom/permission-gate";
+import { P } from "@/permissions";
+import { cn } from "@/lib/utils";
+import { writeErrorMessage } from "@/utils/api-error";
+
+import { PersonAvatar } from "./person-avatar";
+
+/**
+ * A person's face, with the control that puts one there.
+ *
+ * **The picker is on the picture.** Somebody looking for where a photograph
+ * goes looks at the empty circle where the face should be, not at a tab two
+ * clicks away, so the circle carries the button. One component for students
+ * and guardians because they are the same gesture on the same shape, and two
+ * copies would drift.
+ *
+ * A photograph is optional on both. Nothing in the module gates on one being
+ * set, and neither record is marked incomplete without it: a school
+ * photographs its intake on a day it chooses, not at the desk while a parent
+ * waits.
+ *
+ * The picker offers images only. The bytes are rendered in an `<img>` on every
+ * list, and a refusal after the upload is a worse way to learn that than a
+ * dialog that never shows the PDF.
+ */
+export function PhotoPicker({
+  name,
+  photoUrl,
+  onPick,
+  saving,
+  size = "size-18",
+  textClassName = "text-2xl",
+}: {
+  name: string;
+  /** "" when none is held, which is the ordinary case. */
+  photoUrl?: string;
+  /** Sends the file. Throws on refusal, which this reports. */
+  onPick: (file: File) => Promise<unknown>;
+  saving: boolean;
+  /** The circle's size class. The profile is 18, a guardian one step down. */
+  size?: string;
+  textClassName?: string;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+
+  async function choose(file: File | undefined) {
+    if (!file) return;
+    try {
+      await onPick(file);
+      toast.success("Photograph saved.");
+    } catch (error) {
+      toast.error(writeErrorMessage(error, "We could not save that photograph."));
+    }
+  }
+
+  return (
+    <div className="relative shrink-0">
+      <PersonAvatar
+        name={name}
+        photoUrl={photoUrl}
+        className={size}
+        textClassName={textClassName}
+      />
+      <PermissionGate permission={P.MODIFY_STUDENT}>
+        <input
+          ref={input}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            void choose(e.target.files?.[0]);
+            // Cleared so picking the SAME file again still fires a change,
+            // which is exactly what retrying a failed upload looks like.
+            e.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => input.current?.click()}
+          aria-label={
+            photoUrl
+              ? `Replace ${name}'s photograph`
+              : `Add a photograph for ${name}`
+          }
+          title={photoUrl ? "Replace photograph" : "Add a photograph"}
+          className={cn(
+            "absolute -right-0.5 -bottom-0.5 grid size-7 place-items-center",
+            "rounded-full border border-white-02 bg-white text-gray-06 shadow-sm",
+            "transition-colors hover:text-primary disabled:opacity-60",
+          )}
+        >
+          {saving ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Camera className="size-3.5" />
+          )}
+        </button>
+      </PermissionGate>
+    </div>
+  );
+}

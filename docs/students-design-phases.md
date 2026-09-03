@@ -825,12 +825,31 @@ The upload sits in two places that write the same document: each checklist row,
 and a camera button on the avatar itself - because the empty circle is where
 somebody looks for it, not a tab two clicks away.
 
-### Still open, and it needs a decision
+### A guardian has a photograph too, and neither is ever required
 
-**A guardian has no photograph anywhere in the data model.** `Guardian` carries
-name, phone, email, occupation and address, and no file field at all - so
-"upload a passport for this contact" cannot be built without a schema change.
-Nothing is broken; the feature does not exist.
+`Guardian` carried name, phone, email, occupation and address and no file field
+at all, so the gate staff opening a contact card to check who is collecting a
+child saw a phone number where a face should be. It now has one, written
+through `POST /v1/guardians/<id>/photo/` and read the same way a student's is.
+
+Two things made it more than a column:
+
+- **The read policy could not be a branch check.** A guardian carries no branch
+  on purpose, because one household serves siblings at two branches, so there
+  is no column to compare against a caller's binding. The policy asks the
+  question the record itself answers - which of this person's children does
+  this caller see - written against `wards_queryset`, the same call the page
+  uses. A caller who reaches none of them is refused the face.
+- **A model with a `FileField` and no registered policy serves nothing.** That
+  is `core.media`'s deliberate default and it is why the first upload came back
+  404 with everything else working.
+
+**A photograph is required nowhere, on either record.** `PASSPORT_PHOTO` has
+left `REQUIRED_DOCUMENTS`; only the birth certificate remains. A school
+photographs its intake on a day it chooses, not at the desk while a parent
+waits, so marking every new child incomplete for a missing picture teaches
+everybody to ignore the mark - including on the row genuinely missing a birth
+certificate. This narrows FR-015 rule 4's list, and the FRD should say so.
 
 ### Dev-data notes
 

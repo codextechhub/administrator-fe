@@ -161,6 +161,8 @@ export interface GuardianSummary {
   address: string;
   /** Whether the guardian has a login of their own. */
   has_account: boolean;
+  /** "" when the school holds none, which is the ordinary case. */
+  photo_url: string;
 }
 
 /** One guardian as they relate to ONE student. */
@@ -250,6 +252,8 @@ export interface GuardianRow {
   ward_names: string[];
   /** More than one child at this school, so the row stands for a household. */
   is_sibling_household: boolean;
+  /** "" when the school holds none, which is the ordinary case. */
+  photo_url: string;
 }
 
 export interface GuardianDetail extends GuardianSummary {

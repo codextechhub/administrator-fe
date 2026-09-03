@@ -230,6 +230,35 @@ export const studentsApi = baseApi.injectEndpoints({
       invalidatesTags: ["Guardians", "Students"],
     }),
 
+    /**
+     * A guardian's photograph. Optional, and a gate on nothing.
+     *
+     * **The guardian record had no photograph at all** - not an empty column, a
+     * missing one - so a contact card showed a phone number where a face should
+     * be and there was nowhere in the product that could have put one there.
+     *
+     * FormData, as with a student's: fetchBaseQuery leaves it alone and lets
+     * the browser set the multipart boundary.
+     */
+    uploadGuardianPhoto: builder.mutation<
+      Envelope<GuardianSummary>,
+      { id: number; file: File }
+    >({
+      query: ({ id, file }) => {
+        const body = new FormData();
+        body.append("photo", file);
+        return { url: `/guardians/${id}/photo/`, method: "POST", body };
+      },
+      extraOptions: { silent: true },
+      invalidatesTags: ["Guardians", "Students"],
+    }),
+
+    deleteGuardianPhoto: builder.mutation<Envelope<GuardianSummary>, number>({
+      query: (id) => ({ url: `/guardians/${id}/photo/`, method: "DELETE" }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Guardians", "Students"],
+    }),
+
     getGuardian: builder.query<Envelope<GuardianDetail>, number>({
       query: (id) => ({ url: `/guardians/${id}/`, method: "GET" }),
       providesTags: ["Guardians"],
@@ -583,6 +612,8 @@ export const {
   useSearchStudentsQuery,
   useGetGuardianQuery,
   useUpdateGuardianMutation,
+  useUploadGuardianPhotoMutation,
+  useDeleteGuardianPhotoMutation,
   useGetAdmissionPolicyQuery,
   useGetClassSeatsQuery,
   usePreviewPromotionMutation,

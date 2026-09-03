@@ -114,6 +114,7 @@ export default function Guardians() {
               <PersonCard
                 key={g.id}
                 name={g.full_name}
+                photoUrl={g.photo_url}
                 sub={g.phone || g.email || "No contact recorded"}
                 chip={g.is_sibling_household ? <SiblingsPill /> : undefined}
                 footerLead={

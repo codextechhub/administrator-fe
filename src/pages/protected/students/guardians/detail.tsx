@@ -10,15 +10,20 @@ import { PageShell } from "@/components/layout/page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
-import { useGetGuardianQuery } from "@/redux/services/students/students-api";
+import {
+  useGetGuardianQuery,
+  useUploadGuardianPhotoMutation,
+} from "@/redux/services/students/students-api";
 import { RELATIONSHIPS } from "@/redux/services/students/students-types";
+// Aliased: the default export of this file is a COMPONENT of the same name.
+import type { GuardianDetail as GuardianRecord } from "@/redux/services/students/students-types";
 
 import { StudentStatusBadge } from "../status-badge";
 import { EmptyRing } from "../empty-ring";
 import { LinkChildDrawer } from "../drawers/link-child-drawer";
 import { EditGuardianDrawer } from "./edit-guardian-drawer";
 import { Dot, FooterLead, PersonCard, SiblingsPill } from "./person-card";
-import { personInitials } from "../person-name";
+import { PhotoPicker } from "../photo-picker";
 
 function relationshipLabel(code: string) {
   return RELATIONSHIPS.find((r) => r.value === code)?.label ?? code;
@@ -82,16 +87,11 @@ export default function GuardianDetail() {
           </div>
         ) : (
           <div className="flex flex-wrap items-start gap-4.5">
-            {/* Same avatar the profile uses, one size down. A guardian is a
+            {/* Same picker the profile uses, one size down. A guardian is a
                 person's record too, and giving one a face while the other
                 opens with a line of text makes them read as different kinds
                 of thing. */}
-            <span
-              aria-hidden
-              className="grid size-16 shrink-0 place-content-center rounded-full bg-white-03 text-[21px] font-semibold text-primary"
-            >
-              {personInitials(guardian.full_name)}
-            </span>
+            <GuardianPhoto guardian={guardian} />
 
             <div className="min-w-55 flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -218,5 +218,30 @@ export default function GuardianDetail() {
         />
       )}
     </PageShell>
+  );
+}
+
+/**
+ * A guardian's face, and the control that puts one there.
+ *
+ * **This is the record that had no photograph at all.** Not an empty column, a
+ * missing one - so the gate staff opening a contact card to check who is
+ * collecting a child saw a name and a phone number and nothing else, and there
+ * was nowhere in the product that could have changed that.
+ *
+ * Optional, and it gates nothing: a school holds guardians it has never met.
+ */
+function GuardianPhoto({ guardian }: { guardian: GuardianRecord }) {
+  const [upload, { isLoading }] = useUploadGuardianPhotoMutation();
+
+  return (
+    <PhotoPicker
+      name={guardian.full_name}
+      photoUrl={guardian.photo_url}
+      saving={isLoading}
+      size="size-16"
+      textClassName="text-[21px]"
+      onPick={(file) => upload({ id: guardian.id, file }).unwrap()}
+    />
   );
 }

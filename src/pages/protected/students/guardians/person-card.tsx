@@ -57,9 +57,9 @@ export function PersonCard({
   /** Under the name: a phone number, or an admission number. */
   sub: string;
   /**
-   * A student ward's photograph. Guardians hold none - they are contacts
-   * rather than records with a file behind them - so this is absent on the
-   * directory and present on the ward cards.
+   * The person's photograph, on either side of the card's two uses. Optional
+   * on both, and usually absent: a school photographs its intake on a day it
+   * chooses, and holds guardians it has never met.
    */
   photoUrl?: string;
   /** Top-right: the SIBLINGS pill, or a status chip. */

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { Camera, Loader2, UserRound } from "lucide-react";
+import { UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
@@ -36,7 +36,7 @@ import { P } from "@/permissions";
 import { useStudentsLens } from "@/hooks/use-students-lens";
 import { Panel as Surface } from "@/components/custom/surface";
 
-import { PersonAvatar } from "../person-avatar";
+import { PhotoPicker } from "../photo-picker";
 import { StudentStatusBadge } from "../status-badge";
 import { Dot } from "../guardians/person-card";
 import { Lifecycle } from "./lifecycle";
@@ -514,71 +514,25 @@ function MedicalTab({
  * A profile that opens with a line of text reads like a row that happened to
  * fill the page; the avatar is what makes it a person's record.
  *
- * **The picker is on the picture.** Somebody looking for where a passport
- * photograph goes looks at the empty circle where the face should be, not at a
- * Documents tab two clicks away - so the circle is the control. It still writes
- * the same PASSPORT_PHOTO document the checklist lists, so there is one
- * photograph and not two, and replacing it from either place changes the other.
+ * Writing the PASSPORT_PHOTO document rather than a field of its own is what
+ * keeps there being ONE photograph: replacing it from the Documents checklist
+ * changes what this shows, and replacing it here changes what the checklist
+ * lists.
  */
 function StudentPhoto({ student }: { student: StudentDetail }) {
-  const input = useRef<HTMLInputElement>(null);
   const [upload, { isLoading }] = useUploadStudentDocumentMutation();
 
-  async function choose(file: File | undefined) {
-    if (!file) return;
-    try {
-      await upload({
-        id: student.id, documentType: "PASSPORT_PHOTO", file,
-      }).unwrap();
-      toast.success("Photograph saved.");
-    } catch (error) {
-      toast.error(writeErrorMessage(error, "We could not save that photograph."));
-    }
-  }
-
   return (
-    <div className="relative shrink-0">
-      <PersonAvatar
-        name={student.full_name}
-        photoUrl={student.photo_url}
-        className="size-18"
-        textClassName="text-2xl"
-      />
-      <PermissionGate permission={P.MODIFY_STUDENT}>
-        <input
-          ref={input}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            void choose(e.target.files?.[0]);
-            e.target.value = "";
-          }}
-        />
-        <button
-          type="button"
-          disabled={isLoading}
-          onClick={() => input.current?.click()}
-          aria-label={
-            student.photo_url
-              ? `Replace ${student.full_name}'s photograph`
-              : `Add a photograph for ${student.full_name}`
-          }
-          title={student.photo_url ? "Replace photograph" : "Add a photograph"}
-          className={cn(
-            "absolute -right-0.5 -bottom-0.5 grid size-7 place-items-center",
-            "rounded-full border border-white-02 bg-white text-gray-06 shadow-sm",
-            "transition-colors hover:text-primary disabled:opacity-60",
-          )}
-        >
-          {isLoading ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <Camera className="size-3.5" />
-          )}
-        </button>
-      </PermissionGate>
-    </div>
+    <PhotoPicker
+      name={student.full_name}
+      photoUrl={student.photo_url}
+      saving={isLoading}
+      onPick={(file) =>
+        upload({
+          id: student.id, documentType: "PASSPORT_PHOTO", file,
+        }).unwrap()
+      }
+    />
   );
 }
 
