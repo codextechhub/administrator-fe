@@ -798,6 +798,40 @@ of a user.
   no failure, which is why it shipped. Split into `0010` schema and `0011`
   data. This affected every page with the notification bell, not this module.
 
+### The passport photograph, and why nobody could find where it goes
+
+One root cause with three defects stacked on it, all of which had to be fixed
+before a face could appear on a screen (`eef4b01` here, plus the backend).
+
+- **`Student.photo` is written by nothing.** It is serialised as `photo_url`
+  and no route, serializer or service anywhere in the codebase sets it. The
+  photograph a school actually uploads is the `PASSPORT_PHOTO` document, which
+  has been a REQUIRED document since FR-015 and was read by nothing but the
+  checklist. `photo_url` now resolves to that one document.
+- **No screen could upload any document.** The route has existed since the
+  module shipped and the Documents tab was a read-only list, so both required
+  rows read "Not on file" for ever with nothing to press.
+- **The media urls were relative.** `signed_url` without `absolute_for` returns
+  a bare `/media/...` path, which a browser resolves against the FRONTEND's
+  origin. Every "View" link opened the single-page app's own index.html.
+  Every other module in the platform already passed `absolute_for`.
+- **The signature is a second factor, not the first.** MediaView still requires
+  the JWT, which no `<img>` sends, so a plain `src` answered 401. Photographs
+  and documents now go through `useFetchAuthMedia`, the same route as the
+  school crest. The comment in `person-avatar.tsx` that claimed otherwise was
+  wrong and has been corrected.
+
+The upload sits in two places that write the same document: each checklist row,
+and a camera button on the avatar itself - because the empty circle is where
+somebody looks for it, not a tab two clicks away.
+
+### Still open, and it needs a decision
+
+**A guardian has no photograph anywhere in the data model.** `Guardian` carries
+name, phone, email, occupation and address, and no file field at all - so
+"upload a passport for this contact" cannot be built without a schema change.
+Nothing is broken; the feature does not exist.
+
 ### Dev-data notes
 
 The verification runs left residue in the local database: two `Testimport`
