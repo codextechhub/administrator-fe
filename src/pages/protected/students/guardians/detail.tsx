@@ -14,6 +14,7 @@ import { RELATIONSHIPS } from "@/redux/services/students/students-types";
 import { statusChipClass } from "../status-chip";
 import { EmptyRing } from "../empty-ring";
 import { LinkChildDrawer } from "../drawers/link-child-drawer";
+import { EditGuardianDrawer } from "./edit-guardian-drawer";
 import { Dot, FooterLead, PersonCard, SiblingsPill } from "./person-card";
 import { personInitials } from "../person-name";
 
@@ -29,15 +30,24 @@ function relationshipLabel(code: string) {
  * reach", and at a school where one parent has three children that is the whole
  * answer to a question no other screen asks.
  *
- * Editing a guardian's own details is not here. That belongs with the record
- * they were created from, and putting it in two places is how a phone number
- * ends up correct on one screen and stale on the other.
+ * **Editing is here, and until recently it was nowhere.** An earlier version of
+ * this comment claimed a guardian's details "belong with the record they were
+ * created from" - which was not true and never had been: the create path was
+ * the only writer, so a number mistyped while enrolling a child was permanent.
+ * The comment rationalised a missing endpoint as a design decision, which is
+ * worse than the gap, because it reads as settled.
+ *
+ * What is genuinely not here is the RELATIONSHIP and the primary-contact
+ * marker. Those belong to a link, one per student, so a guardian standing for
+ * three children has three of them - and a single control on this page would
+ * be a question with three answers. They stay on each student's Guardians tab.
  */
 export default function GuardianDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
   const guardianId = Number(id);
   const [linking, setLinking] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const { data, isLoading, isError, refetch } = useGetGuardianQuery(guardianId, {
     skip: !Number.isFinite(guardianId),
@@ -115,9 +125,12 @@ export default function GuardianDetail() {
               )}
             </div>
 
-            <Button className="shrink-0" onClick={() => setLinking(true)}>
-              Link another child
-            </Button>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setEditing(true)}>
+                Edit details
+              </Button>
+              <Button onClick={() => setLinking(true)}>Link another child</Button>
+            </div>
           </div>
         )}
       </Panel>
@@ -170,6 +183,17 @@ export default function GuardianDetail() {
             />
           ))}
         </div>
+      )}
+
+      {guardian && editing && (
+        <EditGuardianDrawer
+          // Keyed on the record so the drawer's draft starts from the values
+          // on screen; without it a second open would show the first open's.
+          key={`${guardian.id}-${guardian.full_name}-${guardian.phone}`}
+          guardian={guardian}
+          open={editing}
+          onClose={() => setEditing(false)}
+        />
       )}
 
       {guardian && (
