@@ -33,8 +33,9 @@
 //     not contain. Nobody at Corona Secondary types "goods receipt note" as
 //     "Goods Receipts", and half of them type "suppliers" for Vendors.
 
+import { P } from "@/permissions";
 import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
-import type { ActionDef, ActionSection } from "./types";
+import type { ActionDef, ActionGate, ActionSection } from "./types";
 
 export interface ConsoleSource {
   /** Already narrowed to what this app mounts. */
@@ -114,6 +115,241 @@ export const EXTRA_ALIASES: Record<string, string[]> = {
   "/procurement/analytics/spend": ["what we spend", "spend analysis"],
   "/procurement/analytics/performance": ["supplier performance", "vendor scorecard"],
 };
+
+/**
+ * The jobs, as opposed to the screens: every console list that answers
+ * `?action=new` by opening its create drawer.
+ *
+ * Typed out rather than derived, and the reason is that there is nothing to
+ * derive from. The nav publishes screens; nothing published says which of them
+ * can create, what the job is called in plain words, or which key permits it -
+ * that lives in a `<Can>` wrapped round a button inside a lazy-loaded page.
+ *
+ * Three things could not be borrowed from the view action and so are written
+ * here:
+ *
+ *   - the LABEL. "Add Receipts & Allocation" is not a thing anybody does;
+ *     "Record a payment" is, and it is the phrase on the button.
+ *   - the GATE. Reading invoices and raising one are different keys, and the
+ *     view action's gate is the read prefix. Offering "Raise an invoice" to
+ *     somebody who may only read them puts a form in front of a person the
+ *     product decided should not have it. Each gate below is the same
+ *     expression that wraps that screen's own Add button - including the two
+ *     compound ones, payment plans (both keys) and refunds (any of three).
+ *   - whether the screen can create AT ALL. Most can; Bank Reconciliation,
+ *     Dunning and every report cannot.
+ *
+ * The codes are @xvs/finance's own, which this app's permission registry
+ * spreads into `P` (see src/permissions/index.ts), so they resolve here exactly
+ * as they do inside the package.
+ */
+export const CONSOLE_CREATE_ACTIONS: {
+  url: string;
+  label: string;
+  aliases: string[];
+  gate: ActionGate;
+}[] = [
+  // ── Finance ────────────────────────────────────────────────────────────────
+  {
+    url: "/finance/receivables/invoices",
+    label: "Raise an invoice",
+    aliases: ["bill a parent", "new invoice", "charge fees"],
+    gate: { perm: P.FIN_CREATE_INVOICE },
+  },
+  {
+    url: "/finance/receivables/receipts",
+    label: "Record a payment",
+    aliases: ["receipt a payment", "money came in", "allocate a receipt"],
+    gate: { perm: P.FIN_RECORD_PAYMENT },
+  },
+  {
+    url: "/finance/receivables/customers",
+    label: "Add a payer",
+    aliases: ["new customer", "add a parent to billing"],
+    gate: { perm: P.FIN_CREATE_CUSTOMER },
+  },
+  {
+    url: "/finance/receivables/credit-notes",
+    label: "Issue a credit note",
+    aliases: ["debit note", "credit a parent"],
+    gate: { perm: P.FIN_CREATE_CREDIT_NOTE },
+  },
+  {
+    url: "/finance/receivables/refunds",
+    label: "Start a refund or write-off",
+    // Any of three, exactly as the button's own condition reads.
+    aliases: ["refund a parent", "write off a debt"],
+    gate: {
+      any: [P.FIN_CREATE_REFUND, P.FIN_CREATE_WRITE_OFF, P.FIN_WRITE_OFF_INVOICE],
+    },
+  },
+  {
+    url: "/finance/receivables/payment-plans",
+    label: "Set up a payment plan",
+    aliases: ["instalments", "let a parent pay in parts"],
+    // Both keys: the button is `mode="all"`, because a plan nobody may activate
+    // is a draft that cannot become anything.
+    gate: { all: [P.FIN_CREATE_PAYMENT_PLAN, P.FIN_ACTIVATE_PAYMENT_PLAN] },
+  },
+  {
+    url: "/finance/receivables/concessions",
+    label: "Grant a concession",
+    aliases: ["give a discount", "scholarship", "fee waiver"],
+    gate: { perm: P.FIN_CREATE_CONCESSION },
+  },
+  {
+    url: "/finance/ledger",
+    label: "Post a journal entry",
+    aliases: ["manual journal", "double entry", "new journal"],
+    gate: { perm: P.FIN_POST_DIRECT_ENTRY },
+  },
+  {
+    url: "/finance/setup/accounts",
+    label: "Add a ledger account",
+    aliases: ["new account code", "chart of accounts entry"],
+    gate: { perm: P.FIN_CREATE_ACCOUNT },
+  },
+  {
+    url: "/finance/setup/cost-centers",
+    label: "Add a cost centre",
+    aliases: ["new cost centre"],
+    gate: { perm: P.FIN_CREATE_COST_CENTER },
+  },
+  {
+    url: "/finance/setup/tax-codes",
+    label: "Add a tax code",
+    aliases: ["vat rate", "wht rate"],
+    gate: { perm: P.FIN_CREATE_TAX_CODE },
+  },
+  {
+    url: "/finance/banking",
+    label: "Add a bank account",
+    aliases: ["new bank account", "school account"],
+    gate: { perm: P.FIN_CREATE_BANK_ACCOUNT },
+  },
+  {
+    url: "/finance/expenses/claims",
+    label: "Make an expense claim",
+    aliases: ["reimbursement", "staff expense", "claim money back"],
+    gate: { perm: P.FIN_CREATE_EXPENSE_CLAIM },
+  },
+  {
+    url: "/finance/payroll",
+    label: "Start a payroll run",
+    aliases: ["pay staff", "run salaries", "new payroll"],
+    gate: { perm: P.FIN_CREATE_PAYROLL },
+  },
+  {
+    url: "/finance/budgets/budgets",
+    label: "Create a budget",
+    aliases: ["new budget", "plan spending"],
+    gate: { perm: P.FIN_CREATE_BUDGET },
+  },
+  {
+    url: "/finance/budgets/assets",
+    label: "Add a fixed asset",
+    aliases: ["new asset", "equipment register entry"],
+    gate: { perm: P.FIN_CREATE_FIXED_ASSET },
+  },
+  {
+    url: "/finance/collections",
+    label: "Create a checkout",
+    aliases: ["payment link", "collect online"],
+    gate: { perm: P.PAY_CREATE_COLLECTION },
+  },
+  {
+    url: "/finance/collections/virtual-accounts",
+    label: "Create a virtual account",
+    aliases: ["dedicated account", "transfer account"],
+    gate: { perm: P.PAY_CREATE_VIRTUAL_ACCOUNT },
+  },
+
+  // ── Procurement ────────────────────────────────────────────────────────────
+  {
+    url: "/procurement/requisitions",
+    label: "Raise a requisition",
+    aliases: ["ask to buy something", "purchase request", "new requisition"],
+    gate: { perm: P.PROC_CREATE_REQUISITION },
+  },
+  {
+    url: "/procurement/purchase-orders",
+    label: "Raise a purchase order",
+    aliases: ["new po", "order from a supplier"],
+    gate: { perm: P.PROC_CREATE_PURCHASE_ORDER },
+  },
+  {
+    url: "/procurement/goods-receipts",
+    label: "Record a delivery",
+    aliases: ["goods received", "new grn", "book in a delivery"],
+    gate: { perm: P.PROC_CREATE_GOODS_RECEIPT },
+  },
+  {
+    url: "/procurement/vendor-invoices",
+    label: "Record a supplier invoice",
+    aliases: ["supplier bill", "new vendor invoice"],
+    gate: { perm: P.PROC_CREATE_VENDOR_INVOICE },
+  },
+  {
+    url: "/procurement/vendor-payments",
+    label: "Pay a supplier",
+    aliases: ["new vendor payment", "settle a supplier"],
+    gate: { perm: P.PROC_CREATE_VENDOR_PAYMENT },
+  },
+  {
+    url: "/procurement/vendors/vendors",
+    label: "Add a supplier",
+    aliases: ["new vendor", "register a supplier"],
+    gate: { perm: P.PROC_CREATE_VENDOR },
+  },
+  {
+    url: "/procurement/vendors/categories",
+    label: "Add a supplier category",
+    aliases: ["new vendor category"],
+    gate: { perm: P.PROC_CREATE_CATEGORY },
+  },
+  {
+    url: "/procurement/vendors/catalog",
+    label: "Add a catalogue item",
+    aliases: ["new price list entry"],
+    gate: { perm: P.PROC_CREATE_CATALOG_ITEM },
+  },
+  {
+    url: "/procurement/sourcing/rfqs",
+    label: "Send an RFQ",
+    aliases: ["request a quote", "go to tender", "new rfq"],
+    gate: { perm: P.PROC_CREATE_RFQ },
+  },
+  {
+    url: "/procurement/sourcing/quotations",
+    label: "Record a quotation",
+    aliases: ["supplier quote", "new bid"],
+    gate: { perm: P.PROC_CREATE_QUOTATION },
+  },
+  {
+    url: "/procurement/contracts",
+    label: "Add a contract",
+    aliases: ["new agreement", "supplier contract"],
+    gate: { perm: P.PROC_CREATE_CONTRACT },
+  },
+  {
+    url: "/procurement/inventory/items",
+    label: "Add a stock item",
+    aliases: ["new store item", "add supplies"],
+    gate: { perm: P.PROC_MANAGE_STOCK },
+  },
+  {
+    url: "/procurement/inventory/locations",
+    label: "Add a store location",
+    aliases: ["new store", "new warehouse"],
+    gate: { perm: P.PROC_MANAGE_STOCK },
+  },
+  {
+    url: "/procurement/analytics/performance",
+    label: "Record a supplier assessment",
+    aliases: ["score a supplier", "vendor scorecard entry"],
+    gate: { perm: P.PROC_CREATE_VENDOR_ASSESSMENT },
+  },
+];
 
 /**
  * A url as a palette id: "/finance/receivables/invoices" ->
@@ -202,5 +438,38 @@ export function consoleActions(sources: ConsoleSource[]): ActionDef[] {
       },
       run: { to: item.url },
     } satisfies ActionDef;
+  });
+}
+
+/**
+ * The create actions for whichever of those screens these consoles offer.
+ *
+ * Filtered through the same nav the view actions come from, so a job cannot be
+ * offered for a screen this app does not mount - if Collections is unmounted
+ * for a school, "Create a checkout" goes with it, without a second list saying
+ * so. The section and group are taken from that screen's own nav entry, so a
+ * create row files itself under the same heading as the screen it opens.
+ */
+export function consoleCreateActions(sources: ConsoleSource[]): ActionDef[] {
+  const byUrl = new Map(flatten(sources).map((item) => [item.url, item]));
+
+  return CONSOLE_CREATE_ACTIONS.flatMap((entry) => {
+    const item = byUrl.get(entry.url);
+    if (!item) return [];
+    return [
+      {
+        id: `create-${consoleActionId(entry.url)}`,
+        label: entry.label,
+        aliases: entry.aliases,
+        section: item.source.section,
+        group: item.group,
+        kind: "do",
+        gate: entry.gate,
+        // The screen answers this on arrival - see useActionParam in
+        // @xvs/finance, which re-checks the same key rather than trusting the
+        // address.
+        run: { to: `${entry.url}?action=new` },
+      } satisfies ActionDef,
+    ];
   });
 }

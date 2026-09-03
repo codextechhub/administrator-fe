@@ -37,7 +37,11 @@ import {
   schoolFinanceNav,
   schoolProcurementNav,
 } from "@/components/layout/console-nav-for-school";
-import { consoleActions } from "./console-actions";
+import {
+  consoleActions,
+  consoleCreateActions,
+  type ConsoleSource,
+} from "./console-actions";
 import type { ActionDef, ActionRun } from "./types";
 
 const R = routesPath.PROTECTED;
@@ -536,7 +540,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
 // because the package's 145 codes gate individual ACTIONS and there is no "may
 // use finance" key to point at. The handful of nav items with no prefixes of
 // their own (both dashboards, and Approvals) inherit that same test.
-export const CONSOLE_ACTIONS: ActionDef[] = consoleActions([
+const CONSOLES = [
   {
     nav: schoolFinanceNav,
     section: "Finance",
@@ -549,7 +553,15 @@ export const CONSOLE_ACTIONS: ActionDef[] = consoleActions([
     name: "Procurement",
     modulePrefix: "procurement.",
   },
-]);
+] satisfies ConsoleSource[];
+
+export const CONSOLE_ACTIONS: ActionDef[] = [
+  ...consoleActions(CONSOLES),
+  // The jobs. Gated on the create key rather than the screen's read prefix:
+  // reading invoices and raising one are different capabilities, and the row
+  // has to agree with the button.
+  ...consoleCreateActions(CONSOLES),
+];
 
 export const ACTIONS: ActionDef[] = [...SCHOOL_ACTIONS, ...CONSOLE_ACTIONS];
 

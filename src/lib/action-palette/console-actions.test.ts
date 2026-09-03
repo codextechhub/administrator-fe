@@ -12,7 +12,12 @@ import {
 } from "@/components/layout/console-nav-for-school";
 import { FINANCE_MOUNTED_PATHS } from "@/routes/protected/finance-routes";
 import { PROCUREMENT_MOUNTED_PATHS } from "@/routes/protected/procurement-routes";
-import { consoleActions, consoleActionId, EXTRA_ALIASES } from "./console-actions";
+import {
+  consoleActions,
+  consoleActionId,
+  CONSOLE_CREATE_ACTIONS,
+  EXTRA_ALIASES,
+} from "./console-actions";
 import { CONSOLE_ACTIONS } from "./registry";
 import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
 
@@ -20,11 +25,19 @@ const NAV_URLS = [...schoolFinanceNav, ...schoolProcurementNav]
   .flatMap((group) => group.items)
   .map((item) => item.url);
 
+// The two halves are checked apart because they promise different things. A
+// view action exists for every screen; a create action exists only where the
+// screen has a drawer to open, and carries a different gate and a different
+// kind of label.
+const VIEWS = CONSOLE_ACTIONS.filter((action) => action.kind === "view");
+const CREATES = CONSOLE_ACTIONS.filter((action) => action.kind === "do");
+const pathOf = (to: string) => to.split("?")[0];
+
 describe("actions derived from a console nav", () => {
   it("offers every screen the sidebar offers, and no others", () => {
     // The whole point: one list, two readers. A screen in the sidebar that the
     // search box has never heard of is the state this replaced.
-    const destinations = CONSOLE_ACTIONS.map((action) =>
+    const destinations = VIEWS.map((action) =>
       "to" in action.run ? action.run.to : "",
     );
     expect(destinations.sort()).toEqual([...NAV_URLS].sort());
@@ -33,9 +46,9 @@ describe("actions derived from a console nav", () => {
   it("can only reach screens the router mounts", () => {
     for (const action of CONSOLE_ACTIONS) {
       if (!("to" in action.run)) continue;
+      const path = pathOf(action.run.to);
       const mounted =
-        FINANCE_MOUNTED_PATHS.has(action.run.to) ||
-        PROCUREMENT_MOUNTED_PATHS.has(action.run.to);
+        FINANCE_MOUNTED_PATHS.has(path) || PROCUREMENT_MOUNTED_PATHS.has(path);
       expect(mounted, action.run.to).toBe(true);
     }
   });
@@ -43,7 +56,7 @@ describe("actions derived from a console nav", () => {
   it("leads every label with a verb the matcher expands", () => {
     // A bare "Payroll" is reached by typing "payroll" and nothing else. With the
     // verb in front, "open payroll", "show payroll" and "list payroll" all land.
-    for (const action of CONSOLE_ACTIONS) {
+    for (const action of VIEWS) {
       expect(action.label, action.id).toMatch(/^View /);
     }
   });
@@ -51,7 +64,7 @@ describe("actions derived from a console nav", () => {
   it("gates every action on a backend key prefix", () => {
     // A console action with no gate would offer the finance dashboard to a
     // class teacher who holds not one finance key.
-    for (const action of CONSOLE_ACTIONS) {
+    for (const action of VIEWS) {
       expect(action.gate, action.id).toHaveProperty("module");
     }
   });
@@ -70,6 +83,60 @@ describe("actions derived from a console nav", () => {
       "finance-receivables-invoices",
     );
     expect(consoleActionId("/procurement")).toBe("procurement");
+  });
+});
+
+describe("the create actions", () => {
+  it("offers a job only where the console offers the screen", () => {
+    // Collections is unmounted for some schools. "Create a checkout" has to go
+    // with it rather than sit in the box pointing at a 404.
+    const offered = new Set(NAV_URLS);
+    for (const entry of CONSOLE_CREATE_ACTIONS) {
+      expect(offered.has(entry.url), entry.url).toBe(true);
+    }
+    expect(CREATES.length).toBe(CONSOLE_CREATE_ACTIONS.length);
+  });
+
+  it("asks the screen to create, not merely to open", () => {
+    for (const action of CREATES) {
+      if (!("to" in action.run)) continue;
+      expect(action.run.to, action.id).toMatch(/\?action=new$/);
+    }
+  });
+
+  it("gates on a create key, never on the screen's read prefix", () => {
+    // The failure this stops: "Raise an invoice" offered to a bursar who may
+    // only read invoices, because the view action's gate was reused. A module
+    // prefix gate is what the VIEW actions carry, so seeing one here means
+    // exactly that mistake.
+    for (const action of CREATES) {
+      expect(action.gate, action.id).not.toHaveProperty("module");
+      expect(action.gate, action.id).not.toBeNull();
+    }
+  });
+
+  it("files each job under the heading of the screen it opens", () => {
+    const viewOf = new Map(
+      VIEWS.map((action) => [
+        "to" in action.run ? action.run.to : "",
+        action,
+      ]),
+    );
+    for (const action of CREATES) {
+      if (!("to" in action.run)) continue;
+      const view = viewOf.get(pathOf(action.run.to));
+      expect(view, action.id).toBeDefined();
+      expect(action.section, action.id).toBe(view?.section);
+      expect(action.group, action.id).toBe(view?.group);
+    }
+  });
+
+  it("says what the job is, not what the screen is called", () => {
+    // "Add Receipts & Allocation" is not a thing anybody does.
+    for (const action of CREATES) {
+      expect(action.label, action.id).not.toMatch(/^View /);
+      expect(action.label.trim(), action.id).not.toBe("");
+    }
   });
 });
 
