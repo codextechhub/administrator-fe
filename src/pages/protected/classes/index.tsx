@@ -115,11 +115,9 @@ export default function Classes() {
   const canManage = hasPermission(P.MANAGE_CLASSES) && !readOnlyYear;
 
   // "Add a class" from the search box, on the Add button's own gate.
-  useActionParam("new", () => {
-    if (hasPermission(P.CREATE_CLASS) && !readOnlyYear) {
-      setEditing(null);
-      setDrawerOpen(true);
-    }
+  useActionParam("new", hasPermission(P.CREATE_CLASS) && !readOnlyYear, () => {
+    setEditing(null);
+    setDrawerOpen(true);
   });
   const filtered = !!search || status !== "true" || levelFilter !== "all";
 

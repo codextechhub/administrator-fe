@@ -95,11 +95,10 @@ export default function Departments() {
     setEditing(null);
     setDrawerOpen(true);
   };
-  // "Add a department" from the search box. Gated on the same key the Add
-  // button is wrapped in: a query param is typed as easily as it is clicked.
-  useActionParam("new", () => {
-    if (hasPermission(P.CREATE_STRUCTURE)) openNew();
-  });
+  // "Add a department" from the search box, on the same key the Add button is
+  // wrapped in. The hook takes the gate as an argument rather than trusting the
+  // callback to check: a query param is typed as easily as it is clicked.
+  useActionParam("new", hasPermission(P.CREATE_STRUCTURE), openNew);
   // One list, running or not: the counts already say which.
   const renderList = (rows: Department[]) =>
     view === "cards" ? (

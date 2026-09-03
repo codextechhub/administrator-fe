@@ -123,9 +123,7 @@ export default function CalendarEvents() {
   };
 
   // "Add an event" from the search box - the one people ask for by name.
-  useActionParam("new", () => {
-    if (canCreate) openForm(null);
-  });
+  useActionParam("new", canCreate, () => openForm(null));
 
   const save = async (body: CalendarEventWrite) => {
     const result = editing

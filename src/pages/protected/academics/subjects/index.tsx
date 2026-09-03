@@ -126,9 +126,9 @@ export default function Subjects() {
 
   // "Add a subject" from the search box. Both halves of the button's gate: the
   // permission, and the read-only year that disables it for a closed session.
-  useActionParam("new", () => {
-    if (hasPermission(P.CREATE_SUBJECT) && !readOnlyYear) open(null);
-  });
+  useActionParam("new", hasPermission(P.CREATE_SUBJECT) && !readOnlyYear, () =>
+    open(null),
+  );
 
   const save = async (body: SubjectWrite) => {
     const result = editing

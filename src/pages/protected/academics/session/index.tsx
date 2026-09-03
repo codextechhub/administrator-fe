@@ -104,9 +104,7 @@ export default function AcademicSessions() {
     setDrawerOpen(true);
   };
   // "Add a session" from the search box, on the Add button's own key.
-  useActionParam("new", () => {
-    if (hasPermission(P.CREATE_SESSION)) openNew();
-  });
+  useActionParam("new", hasPermission(P.CREATE_SESSION), openNew);
   const openEdit = (session: AcademicSession) => {
     setDrawerFor(session);
     setDrawerOpen(true);

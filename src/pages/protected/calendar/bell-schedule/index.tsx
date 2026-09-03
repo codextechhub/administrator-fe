@@ -117,9 +117,7 @@ export default function BellSchedule() {
   };
 
   // "Add a period" from the search box, on the Add button's own gate.
-  useActionParam("new", () => {
-    if (canCreate) open(null);
-  });
+  useActionParam("new", canCreate, () => open(null));
 
   const save = async (body: PeriodWrite) => {
     const result = editing

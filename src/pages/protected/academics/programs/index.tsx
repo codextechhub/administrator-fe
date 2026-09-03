@@ -135,9 +135,7 @@ export default function Programs() {
 
   // "Add a programme" from the search box. `canCreate` is CREATE_STRUCTURE and
   // the read-only year, which is exactly what wraps the Add button.
-  useActionParam("new", () => {
-    if (canCreate) setProgramDrawer("new");
-  });
+  useActionParam("new", canCreate, () => setProgramDrawer("new"));
 
   // One place the row's wiring is written, so the two lists below cannot
   // drift apart in what a row can do.

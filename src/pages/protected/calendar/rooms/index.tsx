@@ -102,9 +102,7 @@ export default function Rooms() {
   };
 
   // "Add a room" from the search box, on the Add button's own gate.
-  useActionParam("new", () => {
-    if (canCreate) open(null);
-  });
+  useActionParam("new", canCreate, () => open(null));
 
   const save = async (body: RoomWrite) => {
     const result = editing
