@@ -33,6 +33,7 @@ function seat(over: Partial<ClassSeats> & { id: number; name: string }): ClassSe
     branch_name: null,
     level: 1,
     level_name: "JSS1",
+    level_order: [1, 1],
     capacity: 30,
     used: 10,
     remaining: 20,

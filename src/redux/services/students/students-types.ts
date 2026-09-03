@@ -364,6 +364,14 @@ export interface ClassSeats {
   branch_name: string | null;
   level: number | null;
   level_name: string;
+  /**
+   * Where the level sits on the ladder, as [programme, level].
+   *
+   * A tuple because each programme numbers its own levels from 1 - JSS1 and
+   * SSS1 are both 1 - so the programme has to break the tie or the two ladders
+   * interleave into JSS1, SSS1, JSS2, SSS2.
+   */
+  level_order: [number, number] | null;
   /** Null means no limit recorded, which is not the same as full. */
   capacity: number | null;
   used: number;

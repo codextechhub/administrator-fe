@@ -169,7 +169,15 @@ export default function EnrolStudent() {
     branchLens.applies && branchLens.branch !== "all"
       ? String(branchLens.branch)
       : "";
-  const branchValue = form.branch || lensBranch;
+  // A PINNED lens decides the branch outright rather than merely suggesting it.
+  //
+  // Somebody working through the Annex enrols into the Annex; letting the form
+  // keep a different branch than the workspace they are reading means the
+  // classes on the next field belong to a site they are not looking at. When
+  // the lens reads "All branches" it has not answered the question, so the
+  // field becomes a real choice.
+  const branchPinned = lensBranch !== "";
+  const branchValue = branchPinned ? lensBranch : form.branch;
 
   const [step, setStep] = useState<StepKey>("student");
   // How far they have got. Every step up to here stays clickable, so the rail
@@ -203,13 +211,39 @@ export default function EnrolStudent() {
   // reappeared would be arguing with them.
   const admissionNumber = numberOwned ? form.student_number : (policy?.suggestion ?? "");
 
+  // The classes this student could actually join.
+  //
+  // A class belongs to a branch or is school-wide, and the server REFUSES a
+  // placement that crosses them - so offering every class and letting the save
+  // fail is offering a seat that does not exist. Same rule the assign screen
+  // already applies. Until a branch is picked there is no answer, so the field
+  // below stays shut rather than listing classes the choice may remove.
+  const branchClasses = useMemo(() => {
+    if (!branchLens.applies) return classes;
+    if (!branchValue) return [];
+    return classes.filter(
+      (c) => c.branch == null || String(c.branch) === branchValue,
+    );
+  }, [classes, branchLens.applies, branchValue]);
+
   // Levels come from the classes the school runs, so an applicant can never be
-  // recorded against a level the school does not teach.
+  // recorded against a level the school does not teach - and they come out in
+  // LADDER order, because the picker read JSS1, SSS1, JSS2, SSS2 when it was
+  // built from a Map in whatever order the class list arrived.
   const levels = useMemo(() => {
-    const seen = new Map<number, string>();
-    for (const c of classes) if (c.level && c.level_name) seen.set(c.level, c.level_name);
-    return [...seen].map(([id, name]) => ({ id, name }));
-  }, [classes]);
+    const seen = new Map<number, { name: string; order: [number, number] }>();
+    for (const c of branchClasses) {
+      if (c.level && c.level_name && !seen.has(c.level)) {
+        seen.set(c.level, {
+          name: c.level_name,
+          order: c.level_order ?? [999, 0],
+        });
+      }
+    }
+    return [...seen]
+      .map(([id, v]) => ({ id, name: v.name, order: v.order }))
+      .sort((a, b) => a.order[0] - b.order[0] || a.order[1] - b.order[1]);
+  }, [branchClasses]);
 
   const set = (key: keyof typeof form, value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -612,9 +646,17 @@ export default function EnrolStudent() {
             <Field
               label="Branch"
               error={err("branch")}
-              hint="Where this student attends. It cannot be changed here later."
+              hint={
+                branchPinned
+                  ? `Set by the branch you are working in. Switch it in the sidebar to enrol elsewhere.`
+                  : "Where this student attends. It cannot be changed here later."
+              }
             >
               <NativeSelect
+                // Read-only while the workspace is pinned to one branch: the
+                // choice has already been made, one level up, and two controls
+                // answering the same question can disagree.
+                disabled={branchPinned}
                 value={branchValue}
                 onChange={(e) => {
                   set("branch", e.target.value);
@@ -633,8 +675,18 @@ export default function EnrolStudent() {
           )}
 
           {asApplicant ? (
-            <Field label="Level applied for" error={err("applied_for")} required>
+            <Field
+              label="Level applied for"
+              error={err("applied_for")}
+              required
+              hint={
+                branchLens.applies && !branchValue
+                  ? "Pick a branch first - levels are read from its classes."
+                  : undefined
+              }
+            >
               <NativeSelect
+                disabled={branchLens.applies && !branchValue}
                 value={form.applied_for}
                 onChange={(e) => {
                   set("applied_for", e.target.value);
@@ -656,9 +708,17 @@ export default function EnrolStudent() {
                 label="Entry class"
                 required
                 error={err("school_class")}
-                hint="Classes come from Academic Structure."
+                hint={
+                  branchLens.applies && !branchValue
+                    ? "Pick a branch first - a class belongs to one."
+                    : "Classes come from Academic Structure."
+                }
               >
                 <NativeSelect
+                  // Shut until a branch is chosen, because the branch decides
+                  // which classes exist. Open, it would list every class and
+                  // then quietly drop the one just chosen.
+                  disabled={branchLens.applies && !branchValue}
                   value={form.school_class}
                   onChange={(e) => {
                     set("school_class", e.target.value);
@@ -668,7 +728,7 @@ export default function EnrolStudent() {
                   className="h-9"
                 >
                   <option value="">Select a class</option>
-                  {classes.map((c) => (
+                  {branchClasses.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                       {c.capacity == null
