@@ -190,6 +190,68 @@ editors, multi-row forms) stays desktop-first: on a phone it must be *usable*
 optimizing it or redesigning it phone-first, and never degrade the desktop
 experience to make it fit.
 
+## Comments: short inline, the story in the doc block
+
+An inline comment is a label, not an explanation. Keep it to one short line that
+names what the next line or block does. If the point takes more than that to
+make, it does not belong inline: move it into the JSDoc block (`/** ... */`)
+above the component, hook, function, type or slice it concerns, or into a block
+at the top of the file when it describes the file as a whole.
+
+The doc block is where the reasoning lives. Write it there once, properly, and
+let the code below stay clean.
+
+### Write for a stranger reading it years from now
+
+Every comment and doc block is permanent documentation. It has to read the same
+way to somebody who has never seen this branch, this milestone or this
+conversation. Describe the code as it is, in the present tense, and let it
+stand on its own.
+
+That rules out:
+
+- milestone, sprint, wave and ticket names - `M16`, `wave 3`, `the RBAC sprint`;
+- change narration - "added", "changed", "moved here", "now returns", "used to";
+- notes aimed at a reviewer - "note that", "as discussed", "for now",
+  "temporary until we", "so you can see it working";
+- time references - "recently", "since the redesign", "will be removed later".
+
+Not this:
+
+```tsx
+// M16 flag added here so the preview tab shows up for Corona
+const canPreview = useFeatureFlag("notification_preview");
+```
+
+This:
+
+```tsx
+/**
+ * Template preview panel.
+ *
+ * Branding and locale resolve from the active tenant rather than from the
+ * signed-in user, so an admin checking a template sees what the recipient
+ * will see.
+ */
+export function TemplatePreview({ template }: TemplatePreviewProps) {
+  const canPreview = useFeatureFlag("notification_preview");
+```
+
+The second version says more, and it stays true and useful long after the
+milestone that prompted it is forgotten.
+
+### What a doc block should carry
+
+Say what the thing is for, and what a caller needs to know that the signature
+and prop types do not already tell them: the invariant it keeps, the scope it
+applies to, the condition that makes it render or behave differently, the reason
+behind a choice that looks odd. Do not restate the props in prose, and do not
+turn the doc block into a history of the file.
+
+This applies to every comment written anywhere in the codebase, tests included,
+and to every comment already sitting beside code being changed: bring it up to
+this standard rather than leaving it as found.
+
 ## Writing punctuation
 
 Do not use em dashes (Unicode U+2014) anywhere in source code, comments,
