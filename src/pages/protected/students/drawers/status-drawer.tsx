@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { cn } from "@/lib/utils";
 import { apiDetailMessage } from "@/utils/api-error";
 import { useChangeStudentStatusMutation } from "@/redux/services/students/students-api";
@@ -161,8 +162,7 @@ export function StatusDrawer({
             </Field>
 
             <Field label="Effective from">
-              <input
-                type="date"
+              <DatePickerInput
                 value={effective}
                 onChange={(e) => setEffective(e.target.value)}
                 className={inputClass}

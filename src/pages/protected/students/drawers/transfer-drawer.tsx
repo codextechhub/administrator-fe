@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiDetailMessage } from "@/utils/api-error";
 import {
@@ -194,8 +195,7 @@ export function TransferDrawer({
         </Field>
 
         <Field label="Effective from">
-          <input
-            type="date"
+          <DatePickerInput
             value={effective}
             onChange={(e) => setEffective(e.target.value)}
             className={inputClass}

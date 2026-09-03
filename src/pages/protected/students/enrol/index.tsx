@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Panel } from "@/components/custom/surface";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { PageShell } from "@/components/layout/page-shell";
 import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
@@ -589,8 +590,7 @@ export default function EnrolStudent() {
                 : undefined
             }
           >
-            <input
-              type="date"
+            <DatePickerInput
               value={form.date_of_birth}
               onChange={(e) => set("date_of_birth", e.target.value)}
               onBlur={() => touch("date_of_birth")}
@@ -739,8 +739,7 @@ export default function EnrolStudent() {
                 </NativeSelect>
               </Field>
               <Field label="Admission date">
-                <input
-                  type="date"
+                <DatePickerInput
                   value={form.enrolment_date}
                   onChange={(e) => set("enrolment_date", e.target.value)}
                   className={inputClass}
