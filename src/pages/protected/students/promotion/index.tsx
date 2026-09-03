@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { Check, GraduationCap } from "lucide-react";
 
 import KpiCard from "@/components/custom/kpi-card";
+import PermissionGate from "@/components/custom/permission-gate";
+import { P } from "@/permissions";
 import { useStudentsLens } from "@/hooks/use-students-lens";
 import { Panel } from "@/components/custom/surface";
 
@@ -415,13 +417,28 @@ export default function Promotion() {
               {previewing ? "Recalculating…" : "Preview and confirm"}
             </Button>
           )}
+          {/* The run needs BOTH keys, because it writes placements and placing
+              is academics' power - the same pair the backend asserts. mode
+              "all" rather than the default any: either key alone must not
+              open it. */}
           {step === 2 && (
+            <PermissionGate
+              permission={[P.MANAGE_STUDENTS, P.ASSIGN_CLASS]}
+              mode="all"
+              fallback={
+                <p className="text-xs text-gray-05">
+                  You can preview a promotion but not run one. That needs the
+                  student-lifecycle and class-assignment permissions.
+                </p>
+              }
+            >
             <Button
               onClick={() => setConfirming(true)}
               disabled={running || counts?.candidates === 0}
             >
               Run promotion
             </Button>
+            </PermissionGate>
           )}
         </div>
       )}

@@ -6,8 +6,10 @@ import { Users } from "lucide-react";
 import CustomTable from "@/components/custom/custom-table";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
+import PermissionGate from "@/components/custom/permission-gate";
 import Tabs from "@/components/custom/tab";
 import { useStudentsLens } from "@/hooks/use-students-lens";
+import { P } from "@/permissions";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyRing } from "../empty-ring";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
@@ -294,17 +296,23 @@ export default function ClassesAndTransfers() {
                       );
                     })}
                   </NativeSelect>
-                  <Button
-                    size="sm"
-                    disabled={!target || assigning}
-                    onClick={() => assign(acknowledged)}
-                  >
-                    {assigning
-                      ? "Assigning…"
-                      : acknowledged
-                        ? "Assign anyway"
-                        : "Assign"}
-                  </Button>
+                  {/* The screen reads a register as well as filling one, so
+                      the SCREEN stays open on `view` and only the write is
+                      gated. The nav item already hides it from somebody
+                      without the key, but a URL still reaches it. */}
+                  <PermissionGate permission={P.ASSIGN_CLASS}>
+                    <Button
+                      size="sm"
+                      disabled={!target || assigning}
+                      onClick={() => assign(acknowledged)}
+                    >
+                      {assigning
+                        ? "Assigning…"
+                        : acknowledged
+                          ? "Assign anyway"
+                          : "Assign"}
+                    </Button>
+                  </PermissionGate>
                   <Button
                     size="sm"
                     variant="ghost"

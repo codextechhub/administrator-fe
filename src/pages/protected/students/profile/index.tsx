@@ -23,12 +23,15 @@ import type {
 
 import { StudentDrawers, type DrawerRequest } from "../drawers";
 import { formatDate, formatDateTime, titleCaseCode } from "../format";
+import PermissionGate from "@/components/custom/permission-gate";
 import Tabs from "@/components/custom/tab";
+import { P } from "@/permissions";
+import { useStudentsLens } from "@/hooks/use-students-lens";
 import { Panel as Surface } from "@/components/custom/surface";
 
+import { PersonAvatar } from "../person-avatar";
 import { statusChipClass } from "../status-chip";
 import { Dot } from "../guardians/person-card";
-import { personInitials } from "../person-name";
 import { Lifecycle } from "./lifecycle";
 import { EmptyRing } from "../empty-ring";
 import { Rows, type Row } from "./rows";
@@ -62,6 +65,7 @@ export default function StudentProfile() {
   // a child's Guardians tab rather than "open him and click the third one".
   // Tabs owns the writing; this only reads.
   const [params] = useSearchParams();
+  const { pastYear } = useStudentsLens();
   const tab = (params.get("tab") as TabKey) ?? "overview";
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
 
@@ -98,12 +102,12 @@ export default function StudentProfile() {
               {/* The face of the record. A profile that opens with a line of
                   text reads like a row that happened to fill the page; the
                   avatar is what makes it a person's record. */}
-              <span
-                aria-hidden
-                className="grid size-18 shrink-0 place-content-center rounded-full bg-white-03 text-2xl font-semibold text-primary"
-              >
-                {personInitials(student.full_name)}
-              </span>
+              <PersonAvatar
+                name={student.full_name}
+                photoUrl={student.photo_url}
+                className="size-18 shrink-0"
+                textClassName="text-2xl"
+              />
 
               <div className="min-w-55 flex-1">
                 <div className="flex flex-wrap items-center gap-2.5">
@@ -164,36 +168,55 @@ export default function StudentProfile() {
             <Lifecycle status={student.status} />
 
             {/* Wraps rather than scrolls: four actions on a phone belong on two
-                rows, not behind a sideways drag. */}
+                rows, not behind a sideways drag.
+                
+                Each is gated on the key the BACKEND checks for it, so a reader
+                who cannot do the thing is not shown the button. All four were
+                open: somebody holding only school.students.view saw every one,
+                pressed it, filled in a drawer and was refused at Save. The
+                app's own action-palette comment names that failure as the one
+                to avoid, and PermissionGate has sixteen users elsewhere. */}
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setDrawer({ kind: "edit", studentId: student.id })}
-              >
-                Edit record
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setDrawer({ kind: "status", studentId: student.id })}
-              >
-                Change status
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setDrawer({ kind: "transfer", studentId: student.id })}
-              >
-                {student.class_name ? "Transfer class" : "Assign a class"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setDrawer({ kind: "guardian", studentId: student.id })}
-              >
-                Link a guardian
-              </Button>
+              <PermissionGate permission={P.MODIFY_STUDENT}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDrawer({ kind: "edit", studentId: student.id })}
+                >
+                  Edit record
+                </Button>
+              </PermissionGate>
+              <PermissionGate permission={P.MANAGE_STUDENTS}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDrawer({ kind: "status", studentId: student.id })}
+                >
+                  Change status
+                </Button>
+              </PermissionGate>
+              {/* Placement is academics' power, not students': the same key the
+                  assign screen needs. And withheld under a past year whatever
+                  the caller holds - the server refuses a placement into a year
+                  that has closed, so the button could only ever fail. */}
+              <PermissionGate permission={P.ASSIGN_CLASS} disabled={pastYear}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDrawer({ kind: "transfer", studentId: student.id })}
+                >
+                  {student.class_name ? "Transfer class" : "Assign a class"}
+                </Button>
+              </PermissionGate>
+              <PermissionGate permission={P.MODIFY_STUDENT}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDrawer({ kind: "guardian", studentId: student.id })}
+                >
+                  Link a guardian
+                </Button>
+              </PermissionGate>
             </div>
           </>
         )}

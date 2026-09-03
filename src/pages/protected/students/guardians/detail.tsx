@@ -3,7 +3,9 @@ import { useNavigate, useParams } from "react-router";
 import { UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import PermissionGate from "@/components/custom/permission-gate";
 import { Panel } from "@/components/custom/surface";
+import { P } from "@/permissions";
 import { PageShell } from "@/components/layout/page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
@@ -125,12 +127,18 @@ export default function GuardianDetail() {
               )}
             </div>
 
-            <div className="flex shrink-0 flex-wrap gap-2">
-              <Button variant="outline" onClick={() => setEditing(true)}>
-                Edit details
-              </Button>
-              <Button onClick={() => setLinking(true)}>Link another child</Button>
-            </div>
+            {/* Both write, so both are gated on the key the backend checks -
+                school.students.update, the same one that edits a student. */}
+            <PermissionGate permission={P.MODIFY_STUDENT}>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <Button variant="outline" onClick={() => setEditing(true)}>
+                  Edit details
+                </Button>
+                <Button onClick={() => setLinking(true)}>
+                  Link another child
+                </Button>
+              </div>
+            </PermissionGate>
           </div>
         )}
       </Panel>

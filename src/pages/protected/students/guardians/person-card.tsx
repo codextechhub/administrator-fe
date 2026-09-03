@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-import { personInitials } from "../person-name";
+import { PersonAvatar } from "../person-avatar";
 
 /**
  * The 3px separator between facts in a record header.
@@ -47,6 +47,7 @@ export function SiblingsPill() {
 export function PersonCard({
   name,
   sub,
+  photoUrl,
   chip,
   footerLead,
   footerRest,
@@ -55,6 +56,12 @@ export function PersonCard({
   name: string;
   /** Under the name: a phone number, or an admission number. */
   sub: string;
+  /**
+   * A student ward's photograph. Guardians hold none - they are contacts
+   * rather than records with a file behind them - so this is absent on the
+   * directory and present on the ward cards.
+   */
+  photoUrl?: string;
   /** Top-right: the SIBLINGS pill, or a status chip. */
   chip?: React.ReactNode;
   /** Below the rule, in the accent colour: the ward count, or the class. */
@@ -75,12 +82,7 @@ export function PersonCard({
       className="min-w-0 rounded-[10px] border border-border bg-white px-5 py-4.5 text-left transition-colors hover:border-primary/40"
     >
       <span className="flex items-start gap-3">
-        <span
-          aria-hidden
-          className="grid size-9.5 shrink-0 place-content-center rounded-full bg-white-03 text-[13px] font-semibold text-primary"
-        >
-          {personInitials(name)}
-        </span>
+        <PersonAvatar name={name} photoUrl={photoUrl} className="size-9.5 shrink-0" />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[14.5px] font-semibold text-black-01">
             {name}

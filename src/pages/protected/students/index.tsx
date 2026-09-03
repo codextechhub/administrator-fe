@@ -29,6 +29,7 @@ import { FiltersPopover } from "./filters-popover";
 import { OverviewCard } from "./overview-card";
 import { buildWorkQueue, type QueueRow } from "./work-queue";
 import { StudentCards } from "./student-cards";
+import { PersonAvatar } from "./person-avatar";
 import { statusChipClass } from "./status-chip";
 
 /**
@@ -412,12 +413,12 @@ export default function StudentDirectory() {
             // the guardian off the fold on a laptop.
             Student: (
               <span className="flex min-w-0 items-center gap-2.5">
-                <span
-                  aria-hidden
-                  className="grid size-8.5 shrink-0 place-content-center rounded-full bg-white-03 text-xs font-semibold text-primary"
-                >
-                  {initials(s.full_name)}
-                </span>
+                <PersonAvatar
+                  name={s.full_name}
+                  photoUrl={s.photo_url}
+                  className="size-8.5 shrink-0"
+                  textClassName="text-xs"
+                />
                 <span className="min-w-0">
                   <span className="block truncate text-sm text-black-01">
                     {s.full_name}
@@ -501,12 +502,4 @@ export default function StudentDirectory() {
   );
 }
 
-/** Two letters from the name, for the row avatar. */
-function initials(fullName: string) {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  const first = parts[0][0] ?? "";
-  const last = parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "";
-  return (first + last).toUpperCase();
-}
 
