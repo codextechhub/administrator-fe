@@ -10,6 +10,8 @@ import {
 import { RELATIONSHIPS } from "@/redux/services/students/students-types";
 import { cn } from "@/lib/utils";
 
+import { Checkbox } from "@/components/ui/checkbox";
+
 import { DrawerShell, Field } from "./drawer-shell";
 
 /**
@@ -182,11 +184,10 @@ export function LinkChildDrawer({
         </Field>
 
         <label className="flex items-start gap-2.5 text-sm text-black-01">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={primary}
-            onChange={(e) => setPrimary(e.target.checked)}
-            className="mt-0.5 size-4"
+            onCheckedChange={(next) => setPrimary(next === true)}
+            className="mt-0.5"
           />
           <span>
             Primary contact for this student

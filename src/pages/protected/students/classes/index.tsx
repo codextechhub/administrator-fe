@@ -26,6 +26,7 @@ import type { BulkResultRow, StudentRow } from "@/redux/services/students/studen
 
 import { StudentStatusBadge } from "../status-badge";
 import { TransferDrawer } from "../drawers/transfer-drawer";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Tab = "unplaced" | "roster";
 
@@ -231,20 +232,21 @@ export default function ClassesAndTransfers() {
                 defaultBodyList={unplaced}
                 tableBodyList={unplaced.map((s) => ({
                   "": (
-                    <input
-                      type="checkbox"
+                    // The shared Checkbox, not a bare input: an unstyled native
+                    // box is drawn by the operating system, so the selection
+                    // column looked like black squares on one machine and
+                    // grey ticks on another, matching nothing else on screen.
+                    <Checkbox
                       aria-label={`Select ${s.full_name}`}
                       checked={picked.includes(s.id)}
-                      onChange={(e) => {
-                        e.stopPropagation();
+                      onCheckedChange={() =>
                         setPicked((p) =>
                           p.includes(s.id)
                             ? p.filter((x) => x !== s.id)
                             : [...p, s.id],
-                        );
-                      }}
+                        )
+                      }
                       onClick={(e) => e.stopPropagation()}
-                      className="size-4"
                     />
                   ),
                   Student: s.full_name,

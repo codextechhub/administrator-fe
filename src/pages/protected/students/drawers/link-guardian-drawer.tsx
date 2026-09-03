@@ -15,6 +15,8 @@ import {
   type StudentDetail,
 } from "@/redux/services/students/students-types";
 
+import { Checkbox } from "@/components/ui/checkbox";
+
 import { DrawerShell, Field, inputClass } from "./drawer-shell";
 
 /**
@@ -240,11 +242,10 @@ export function LinkGuardianDrawer({
         </Field>
 
         <label className="flex items-start gap-2.5">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={primary}
-            onChange={(e) => setPrimary(e.target.checked)}
-            className="mt-0.5 size-4"
+            onCheckedChange={(next) => setPrimary(next === true)}
+            className="mt-0.5"
           />
           <span className="min-w-0 text-sm text-black-01">
             Primary contact
