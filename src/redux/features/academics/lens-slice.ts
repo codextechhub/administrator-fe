@@ -1,4 +1,4 @@
-import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { type PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import type { RootStateType } from "@/redux/store";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,7 +59,24 @@ export const lensSliceReducer = lensSlice.reducer;
 export const selectBranchLens = (state: RootStateType): BranchLens =>
   state.academicsLens.branch;
 
-export const selectSessionLens = (state: RootStateType) => ({
-  id: state.academicsLens.sessionId,
-  name: state.academicsLens.sessionName,
-});
+/**
+ * Memoised, because it builds an OBJECT.
+ *
+ * An inline selector returning a fresh `{ id, name }` is a new reference on
+ * every call, so `useAppSelector` sees a change every render and re-renders
+ * forever. Redux says so out loud in development - "returned a different
+ * result when called with the same parameters" - and the churn is not
+ * cosmetic: it left the guardians list showing skeletons over data that had
+ * already arrived, because the render never settled long enough to commit the
+ * loaded state.
+ *
+ * createSelector keeps the last result while `sessionId` and `sessionName` are
+ * unchanged, so the reference is stable and the subscribers stop.
+ */
+export const selectSessionLens = createSelector(
+  [
+    (state: RootStateType) => state.academicsLens.sessionId,
+    (state: RootStateType) => state.academicsLens.sessionName,
+  ],
+  (id, name) => ({ id, name }),
+);

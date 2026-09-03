@@ -187,9 +187,15 @@ export default function GuardianDetail() {
 
       {guardian && editing && (
         <EditGuardianDrawer
-          // Keyed on the record so the drawer's draft starts from the values
-          // on screen; without it a second open would show the first open's.
-          key={`${guardian.id}-${guardian.full_name}-${guardian.phone}`}
+          // Keyed on the ID ALONE, and mounted only while open.
+          //
+          // The key used to include the name and phone, which are exactly the
+          // values a save changes - so a successful save invalidated the query,
+          // the refetched guardian arrived with a new key, and the drawer
+          // unmounted and remounted while its own request was still in flight.
+          // The save then reported "We could not save that" over a change that
+          // had already been written.
+          key={guardian.id}
           guardian={guardian}
           open={editing}
           onClose={() => setEditing(false)}
