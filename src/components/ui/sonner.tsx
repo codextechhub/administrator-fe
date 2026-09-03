@@ -36,19 +36,29 @@ function getContentLength(content: ReactNode | (() => ReactNode)): number {
 
 /**
  * How long a notification should stay up: long enough to read it, no longer.
- * Reading time at 15 characters per second, clamped to 4s..10s. Anything the
- * user must act on (an error, or a toast carrying an action/cancel button)
- * stays until it is dismissed.
+ * Reading time at 15 characters per second, clamped to 4s..10s.
+ *
+ * One thing overrides that, and it is not severity. A toast that ASKS
+ * something - one carrying an action or a cancel button - waits until it is
+ * answered, because a question that withdraws itself while you are reading it
+ * is worse than no question at all.
+ *
+ * Errors used to wait too, on the reasoning that they matter more. In practice
+ * that left the screen collecting them: every refused save, every expired
+ * session and every validation message stayed until somebody swept them away by
+ * hand, and the pile is what people stopped reading. An error a user can only
+ * acknowledge is still only an error to read, so it now goes when it has been
+ * read. An error that offers a way out keeps its button on screen, because that
+ * button is the question.
  */
 export function getNotificationDuration(
   message: ReactNode | (() => ReactNode),
   options: {
     description?: ReactNode | (() => ReactNode)
-    critical?: boolean
     requiresAction?: boolean
   } = {},
 ) {
-  if (options.critical || options.requiresAction) return Infinity
+  if (options.requiresAction) return Infinity
 
   const contentLength =
     getContentLength(message) + getContentLength(options.description ?? null)
@@ -68,7 +78,6 @@ export function getToastDuration(toastItem: Pick<
 >) {
   return getNotificationDuration(toastItem.title ?? null, {
     description: toastItem.description,
-    critical: toastItem.type === "error",
     requiresAction: Boolean(toastItem.action || toastItem.cancel),
   })
 }
