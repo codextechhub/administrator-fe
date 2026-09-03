@@ -45,10 +45,23 @@ export default defineConfig([
     // drawer, so splitting it further would restore the cycle it was made to
     // break. `promotion-picker.tsx` co-exports the read/write pair for the
     // control it defines, which belong beside it.
+    //
+    // `xvs-host.tsx` is the @xvs/finance host contract, and the package asserts
+    // one module against HostContract at compile time. Its hooks and its
+    // components have to BE the same module or that assertion has nothing to
+    // check, so splitting it would trade a build failure for a blank screen.
+    //
+    // The two route tables export their mounted paths beside the routes. That
+    // constant is derived from the route list on purpose: the school's nav is
+    // filtered against what is actually mounted, and a separate file would be a
+    // second list to keep in step - the drift they were written to prevent.
     files: [
       'src/components/**/*.{ts,tsx}',
       'src/pages/protected/branches/branch-display.tsx',
       'src/pages/protected/academics/programs/promotion-picker.tsx',
+      'src/xvs-host.tsx',
+      'src/routes/protected/finance-routes.tsx',
+      'src/routes/protected/procurement-routes.tsx',
     ],
     rules: {
       'react-refresh/only-export-components': 'off',
