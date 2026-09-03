@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useLocation, useParams } from "react-router";
 import { useFormik } from "formik";
 import { CircleCheckBig, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,10 +17,11 @@ import {
   useCreateTicketMutation,
 } from "@/redux/services/support/support-api";
 import type {
-  OnboardingTicketContext,
   TicketCategory,
+  TicketContext,
   TicketPriority,
 } from "@/redux/services/support/support-types";
+import { screenTicketContext } from "@/lib/support/ticket-context";
 import { escalationSchema } from "@/schema/onboarding";
 import { apiErrorMessage } from "@/utils/api-error";
 import { useOnboardingState } from "@/pages/protected/onboarding/use-onboarding-state";
@@ -78,27 +80,43 @@ const PRIORITY_OPTIONS: { value: TicketPriority; label: string }[] = [
 ];
 
 /**
- * The onboarding context a ticket carries, or nothing at all once live.
+ * The whole context a ticket carries: where they were, and - while the school
+ * is still being set up - how far through setup it had got.
  *
- * A function rather than an inline spread so the rule can be asserted without
- * driving the form: "an Onboarding ticket is one filed by a school that is not
- * live yet" is the whole of it, and it was previously true by assumption.
+ * A function rather than an inline spread so both rules can be asserted without
+ * driving the form.
+ *
+ * The screen is sent whatever the school's state, because it is true whatever
+ * the state: a ticket raised on the fees screen is about fees. The onboarding
+ * pair is sent only while pre-live, because that is the only time it means
+ * anything. Between them they keep every ticket from being stamped
+ * "Onboarding", which says the same thing about all of them.
+ *
+ * `screen` wins over the onboarding stamp where they disagree: a school still
+ * onboarding but standing on Roles gets `product_area: "Roles"`, which is where
+ * its question actually needs to go.
  */
-export function onboardingTicketContext({
+export function ticketContext({
+  screen,
   tenantIsPending,
   taskKey,
   readinessState,
 }: {
+  screen: TicketContext;
   tenantIsPending: boolean;
   taskKey?: string;
   readinessState?: string;
-}): OnboardingTicketContext | undefined {
-  if (!tenantIsPending) return undefined;
-  return {
-    product_area: "Onboarding",
-    ...(taskKey ? { onboarding_task_key: taskKey } : {}),
-    ...(readinessState ? { onboarding_readiness_state: readinessState } : {}),
+}): TicketContext | undefined {
+  const context: TicketContext = {
+    ...screen,
+    ...(tenantIsPending && taskKey ? { onboarding_task_key: taskKey } : {}),
+    ...(tenantIsPending && readinessState
+      ? { onboarding_readiness_state: readinessState }
+      : {}),
   };
+  // An empty object is not worth a key on the request, and the server treats a
+  // missing context and an empty one the same way.
+  return Object.keys(context).length ? context : undefined;
 }
 
 /** What another screen can hand the form to prefill it. */
@@ -197,11 +215,14 @@ export function SupportTicketForm({
     outstanding.find((task) => task.is_required)?.key ??
     outstanding[0]?.key;
 
-  // Onboarding context only while the school is pre-live. Once it is live the
-  // same form opens from the header on any page, and stamping those tickets
-  // `product_area: Onboarding` routed a fees bug to the onboarding queue.
-  // Context is optional on the server; sending none beats sending the wrong one.
-  const context = onboardingTicketContext({
+  // Where the person is standing. The panel opens over the page rather than
+  // navigating to one, so this is still the screen they were reading when
+  // something went wrong - which is the routing a ticket most needs and the
+  // thing the old blanket "Onboarding" stamp was standing in for.
+  const location = useLocation();
+  const params = useParams();
+  const context = ticketContext({
+    screen: screenTicketContext(location.pathname, params),
     tenantIsPending,
     taskKey: contextTaskKey,
     readinessState: state?.readiness_state,
