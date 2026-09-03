@@ -24,6 +24,7 @@ import {
 import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { Field, errorInputClass, inputClass } from "../drawers/drawer-shell";
 import { ChoiceButtons } from "./choice-buttons";
+import { StepRail } from "./step-rail";
 import { GuardianRows, type GuardianDraft } from "./guardian-rows";
 
 function today() {
@@ -428,27 +429,70 @@ export default function EnrolStudent() {
 
   return (
     <PageShell className="content-start gap-6 pb-24" grid>
-      {/* One form, one flag. Switching re-labels the section below rather than
-          navigating, so nothing typed so far is lost. */}
-      <div className="inline-flex w-fit rounded-full border border-white-02 bg-white p-0.5">
-        {[
-          { key: false, label: "Enrol a student" },
-          { key: true, label: "Save as an applicant" },
-        ].map((t) => (
-          <button
-            key={String(t.key)}
-            type="button"
-            onClick={() => setAsApplicant(t.key)}
-            className={
-              asApplicant === t.key
-                ? "rounded-full bg-white-03 px-3.5 py-1.5 text-sm font-semibold text-primary"
-                : "rounded-full px-3.5 py-1.5 text-sm text-gray-05"
-            }
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="min-w-0">
+        <h2 className="text-lg font-semibold text-black-01">
+          {asApplicant ? "Save an applicant" : "Enrol a student"}
+        </h2>
+        <p className="mt-1 text-sm text-gray-01">
+          {asApplicant
+            ? "An applicant is on nobody's register yet. They take no seat, and they are confirmed onto the roll once the school decides."
+            : "A student joins the roll and takes a seat in a class today."}
+        </p>
       </div>
+
+      {/* The choice, said rather than implied.
+          Two unlabelled pills asked the reader to work out that they were
+          choosing WHAT to create - and the difference between the two is the
+          most consequential thing on the form, because one takes a class seat
+          and the other does not. */}
+      <fieldset className="min-w-0">
+        <legend className="text-xs font-medium text-gray-05">
+          What are you creating?
+        </legend>
+        <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
+          {[
+            {
+              key: false,
+              label: "Enrol a student",
+              note: "Joins the roll now and takes a class seat.",
+            },
+            {
+              key: true,
+              label: "Save as an applicant",
+              note: "Waiting on a decision. Takes no seat.",
+            },
+          ].map((option) => {
+            const picked = asApplicant === option.key;
+            return (
+              <button
+                key={String(option.key)}
+                type="button"
+                role="radio"
+                aria-checked={picked}
+                onClick={() => setAsApplicant(option.key)}
+                className={cn(
+                  "min-w-0 rounded-lg border px-4 py-3 text-left transition-colors",
+                  picked
+                    ? "border-primary bg-white-03"
+                    : "border-border bg-white hover:border-primary/30",
+                )}
+              >
+                <span
+                  className={cn(
+                    "block text-sm font-semibold",
+                    picked ? "text-primary" : "text-black-01",
+                  )}
+                >
+                  {option.label}
+                </span>
+                <span className="mt-0.5 block text-xs text-gray-05">
+                  {option.note}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
 
       {/* Phones get a counter, not the rail. Five labels do not fit at 390px:
           the strip scrolls, so what you actually see is "Studer / Placeme /
@@ -459,52 +503,16 @@ export default function EnrolStudent() {
         Step {index + 1} of {STEPS.length} · {STEPS[index].label}
       </p>
 
-      <ol className="hidden max-w-full gap-1 overflow-x-auto pb-1 sm:flex">
-        {STEPS.map((x, i) => {
-          const visited = reached.includes(x.key);
-          const current = x.key === step;
-          const short = visited && !current ? missingIn(x.key) : 0;
-          return (
-            <li key={x.key} className="min-w-0">
-              <button
-                type="button"
-                // Unvisited steps stay shut, so the rail cannot be used to skip
-                // past the guardians and reach Review with nothing linked.
-                disabled={!visited}
-                onClick={() => goTo(x.key)}
-                aria-current={current ? "step" : undefined}
-                className={cn(
-                  "flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1.5 text-sm",
-                  current && "bg-white-03 font-semibold text-primary",
-                  !current && visited && "text-gray-05 hover:text-black-01",
-                  // Readable, not invisible. An upcoming step you cannot read
-                  // is not a rail, it is four grey dots - the whole point is
-                  // seeing what the form is going to ask for.
-                  !visited && "cursor-not-allowed text-gray-05/70",
-                )}
-              >
-                <span
-                  className={cn(
-                    "grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-semibold",
-                    current && "bg-primary text-white",
-                    !current && visited && short === 0 && "bg-green-700 text-white",
-                    !current && visited && short > 0 && "bg-amber-500 text-white",
-                    !visited && "bg-gray-04 text-gray-05",
-                  )}
-                >
-                  {i + 1}
-                </span>
-                {x.label}
-                {short > 0 && (
-                  <span className="text-xs font-normal text-amber-700">
-                    {short} missing
-                  </span>
-                )}
-              </button>
-            </li>
-          );
-        })}
-      </ol>
+      <StepRail
+        current={step}
+        onGo={(key) => goTo(key as StepKey)}
+        steps={STEPS.map((x) => ({
+          key: x.key,
+          label: x.label,
+          visited: reached.includes(x.key),
+          missing: missingIn(x.key),
+        }))}
+      />
 
       <p className="-mt-3 text-xs text-gray-05">
         {STEPS[index].hint}
@@ -804,11 +812,13 @@ export default function EnrolStudent() {
       </>)}
 
       {step === "guardians" && (
+        <Panel as="section" className="px-5.5 py-5">
         <GuardianRows
           rows={guardians}
           onChange={setGuardians}
           error={touched.guardians ? problems.guardians : undefined}
         />
+        </Panel>
       )}
 
       {step === "review" && (
@@ -887,11 +897,17 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="min-w-0">
+    // On a surface, like every other panel in the app. The sections rendered
+    // bare on the page background, so a form of twenty-one fields read as
+    // labels floating in space with nothing holding them together - no edge
+    // saying where one group of questions ends and the next begins.
+    <Panel as="section" className="px-5.5 py-5">
       <h3 className="text-sm font-semibold text-black-01">{title}</h3>
       {note && <p className="mt-0.5 text-xs text-gray-05">{note}</p>}
-      <div className="mt-3">{children}</div>
-    </section>
+      {/* A rule under the heading, so the heading reads as a heading rather
+          than as the first line of the fields below it. */}
+      <div className="mt-4 border-t border-white-02 pt-4">{children}</div>
+    </Panel>
   );
 }
 

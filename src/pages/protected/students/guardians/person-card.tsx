@@ -67,7 +67,12 @@ export function PersonCard({
     <button
       type="button"
       onClick={onOpen}
-      className="min-w-0 rounded-[10px] border border-transparent bg-white px-5 py-4.5 text-left transition-colors hover:border-white-03"
+      // A real border, not a transparent one. The prototype draws these on a
+      // grey page where a white card separates itself; this app's page is also
+      // white, so a transparent edge left the cards as floating text with no
+      // outline at all. Every other surface in the app carries `border-border`,
+      // and the hover deepens it rather than introducing it.
+      className="min-w-0 rounded-[10px] border border-border bg-white px-5 py-4.5 text-left transition-colors hover:border-primary/40"
     >
       <span className="flex items-start gap-3">
         <span

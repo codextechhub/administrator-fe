@@ -66,7 +66,14 @@ export default function Tabs({ tabKey, tabs }: TabsProps) {
       ref={listRef}
       // Sizes to its labels rather than forcing equal columns, and scrolls
       // rather than overflowing when a long set of tabs meets a narrow screen.
-      className="relative inline-flex h-11 max-w-full items-stretch overflow-x-auto bg-white rounded-full border border-border p-1"
+      //
+      // `justify-self-start` because inline-flex does NOT stop a grid item
+      // stretching: dropped straight into a `grid grid-cols-1` page - which is
+      // what PageShell is - the strip ran the full width of the screen with its
+      // tabs huddled at the left end. `self-start` does the same for a flex
+      // column. Neither has any effect in the block wrapper the roles screen
+      // uses, so this is safe for every caller.
+      className="relative inline-flex h-11 max-w-full items-stretch justify-self-start self-start overflow-x-auto bg-white rounded-full border border-border p-1"
       role="tablist"
       aria-label={tabKey}
     >

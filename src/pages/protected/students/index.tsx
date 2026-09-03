@@ -364,6 +364,11 @@ export default function StudentDirectory() {
             "Class",
             "Status",
             "Primary guardian",
+            // The row-menu column. CustomTable renders a sixth cell when
+            // `dropDown` is set, and without this the header row is one short -
+            // so every heading after it sits over the wrong column at the
+            // widths where the table stops stretching.
+            "",
           ]}
           loading={listLoading || isFetching}
           defaultBodyList={rows}

@@ -674,3 +674,47 @@ button:focus-visible .school-mark__ink {
   font-family: var(--font-geist-mono);
   font-variant-numeric: tabular-nums;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   The enrolment stepper's connector.
+
+   A line joins the five steps so they read as one journey rather than five
+   separate buttons, and the segment LEAVING the current step carries a light
+   travelling towards the next one. That is the only moving thing on the form,
+   and it is pointing at where the reader is going next - which is what a
+   stepper is for and what a row of numbered circles cannot say.
+
+   Reduced motion gets the same line without the travel: the segment stays
+   filled, so the direction is still legible, it simply does not move.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@keyframes step-connector-glow {
+  from {
+    background-position: -140% 0;
+  }
+  to {
+    background-position: 240% 0;
+  }
+}
+
+.step-connector-live {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-white-02) 0%,
+    var(--color-white-02) 34%,
+    var(--color-primary) 50%,
+    var(--color-white-02) 66%,
+    var(--color-white-02) 100%
+  );
+  background-size: 220% 100%;
+  animation: step-connector-glow 1.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-connector-live {
+    animation: none;
+    background-image: none;
+    background-color: var(--color-primary);
+    opacity: 0.45;
+  }
+}

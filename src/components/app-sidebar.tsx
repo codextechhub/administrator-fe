@@ -58,6 +58,22 @@ interface NavItem {
   items?: { title: string; url: string; isActive: boolean }[];
 }
 
+/**
+ * Every People screen that owns a path under /students.
+ *
+ * The Students directory is the only item whose URL is a prefix of the others,
+ * so it is the only one that needs to say what it is NOT. Listed once here so
+ * adding a screen cannot reintroduce two rows looking selected at once.
+ */
+const PEOPLE_SIBLINGS = [
+  routesPath.PROTECTED.STUDENTS.APPLICANTS,
+  routesPath.PROTECTED.STUDENTS.ASSIGN,
+  routesPath.PROTECTED.STUDENTS.GUARDIANS,
+  routesPath.PROTECTED.STUDENTS.PROMOTION,
+  routesPath.PROTECTED.STUDENTS.IMPORT,
+  routesPath.PROTECTED.STUDENTS.ENROL,
+];
+
 export function AppSidebar({
   onboarding = false,
   ...props
@@ -180,13 +196,17 @@ export function AppSidebar({
         title: "Students",
         url: routesPath.PROTECTED.STUDENTS.INDEX,
         icon: Users,
-        // Every student screen lives under /students, so a bare startsWith
-        // lights this item up on Applicants too and two rows look selected at
-        // once. The directory owns the prefix EXCEPT where a sibling item owns
-        // a deeper path of its own.
+        // Every People screen lives under /students, so a bare startsWith lights
+        // this row up on all five and two items look selected at once.
+        //
+        // The exclusion is DERIVED from the siblings rather than listed: the
+        // previous version named Applicants alone, so Classes & Transfers,
+        // Guardians and Promotion each lit Students up as well - and a sixth
+        // screen would have done it again. The directory owns /students except
+        // where a sibling owns a deeper path of its own.
         isActive:
           location.startsWith(routesPath.PROTECTED.STUDENTS.INDEX) &&
-          !location.startsWith(routesPath.PROTECTED.STUDENTS.APPLICANTS),
+          !PEOPLE_SIBLINGS.some((url) => location.startsWith(url)),
         childActive: false,
         permission: P.BROWSE_STUDENTS,
       },
