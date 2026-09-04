@@ -187,7 +187,12 @@ export const routesPath = {
       ENROL: "/students/enrol",
       ASSIGN: "/students/classes",
       PROMOTION: "/students/promotion",
-      IMPORT: "/students/import",
+      // No IMPORT here, and that is the decision rather than an omission.
+      // Bulk import is a thing you do TO the directory, not a place you go, so
+      // it is a drawer over the list the rows will land in - the same shape
+      // console uses. The constant that used to sit here named a path nothing
+      // mounts, so following it fell through to /students/:id and asked the
+      // server for a student called "import".
     },
     // The academic calendar is its OWN module now, not a child of academic
     // management. Spelled correctly here; the old /academic/calender paths
