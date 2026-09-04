@@ -379,6 +379,12 @@ function SidebarSeparator({
  * measuring against this box means only this box moves, and only when the item
  * is out of sight.
  *
+ * What it aims at is the deepest active item. An open group marks its heading
+ * active alongside the sub-item under it, so aiming at the first match parks
+ * the heading in view and leaves the screen you actually opened below the
+ * fold. The heading still comes along whenever the two fit together, because a
+ * sub-item reads better under the section it belongs to.
+ *
  * It corrects on every render rather than once per route, because the nav is
  * not its final height when the route changes: groups collapse, badge counts
  * arrive, and module links appear as their queries resolve. Aligning once left
@@ -411,7 +417,12 @@ function SidebarContent({ className, onScroll, ...props }: React.ComponentProps<
   React.useEffect(() => {
     const box = boxRef.current;
     if (!box) return;
-    const active = box.querySelector<HTMLElement>('[data-active="true"]');
+    // The last one, not the first. An open group marks its own heading active
+    // as well as the sub-item inside it, and the sub-item is the screen you are
+    // on; the heading sits above it and would be satisfied while the item
+    // itself stayed below the fold.
+    const marked = box.querySelectorAll<HTMLElement>('[data-active="true"]');
+    const active = marked[marked.length - 1];
     if (!active) return;
 
     if (active !== lastActive.current) {
@@ -424,7 +435,15 @@ function SidebarContent({ className, onScroll, ...props }: React.ComponentProps<
     const PADDING = 12;
     const boxBox = box.getBoundingClientRect();
     const item = active.getBoundingClientRect();
-    const above = item.top - boxBox.top - PADDING;
+
+    // Bring the group heading along when the pair fits, so a sub-item arrives
+    // with the name of the section it belongs to rather than alone.
+    const group = active.closest('[data-slot="collapsible"]');
+    const groupTop = group ? group.getBoundingClientRect().top : item.top;
+    const fits = item.bottom - groupTop + PADDING * 2 <= boxBox.height;
+    const wantedTop = fits ? Math.min(groupTop, item.top) : item.top;
+
+    const above = wantedTop - boxBox.top - PADDING;
     const below = item.bottom - boxBox.bottom + PADDING;
     const by = above < 0 ? above : below > 0 ? below : 0;
     if (by === 0) return;
