@@ -149,9 +149,40 @@ export function AppSidebar({
       : hasAnyPermission(...codes);
   };
 
+  /**
+   * Whether a door owns where the reader is.
+   *
+   * Lit when the location is under the door's own path AND no DEEPER door of
+   * the same group claims that place. Both halves matter, and each half has
+   * already broken this sidebar once:
+   *
+   *   - without the second, a parent lights alongside its child and two rows
+   *     look selected at once;
+   *   - without a door to point at, the exclusion darkens the whole group. A
+   *     hand-written list of excluded paths named /students/enrol and
+   *     /roles/change-requests, neither of which has a door, so opening either
+   *     unlit the parent and lit nothing else - and somebody halfway through
+   *     enrolling a child had no answer to "where am I?".
+   *
+   * Passing the sibling DOORS rather than their paths is what keeps the two
+   * halves in step: a group cannot exclude a path it does not offer, and a
+   * door whose claim is not a path prefix is still seen.
+   */
+  const owns = (url: string, deeper: NavItem[] = []) =>
+    location.startsWith(url) && !deeper.some((door) => door.isActive);
+
   // The onboarding nav, gated like every other group. A branch admin holds
   // `onboarding.progress.view` and nothing else, so they get the Control Room
   // and no Go-Live: a nav item that answers 403 is a door drawn on a wall.
+  const goLiveDoor: NavItem = {
+    title: "Go-Live",
+    url: routesPath.PROTECTED.ONBOARDING.GO_LIVE,
+    icon: Rocket,
+    isActive: location.startsWith(routesPath.PROTECTED.ONBOARDING.GO_LIVE),
+    childActive: false,
+    permission: P.VIEW_GO_LIVE_REQUESTS,
+  };
+
   const onboardingNav: NavItem[] = [
     {
       title: "Control Room",
@@ -161,20 +192,11 @@ export function AppSidebar({
       // control room, so the control room is where the reader still is. An
       // exact-path match unlit the item the moment they opened a step, leaving
       // the whole sidebar dark and no answer to "where am I?".
-      isActive:
-        location.startsWith(routesPath.PROTECTED.ONBOARDING.INDEX) &&
-        !location.startsWith(routesPath.PROTECTED.ONBOARDING.GO_LIVE),
+      isActive: owns(routesPath.PROTECTED.ONBOARDING.INDEX, [goLiveDoor]),
       childActive: false,
       permission: P.VIEW_ONBOARDING,
     },
-    {
-      title: "Go-Live",
-      url: routesPath.PROTECTED.ONBOARDING.GO_LIVE,
-      icon: Rocket,
-      isActive: location.startsWith(routesPath.PROTECTED.ONBOARDING.GO_LIVE),
-      childActive: false,
-      permission: P.VIEW_GO_LIVE_REQUESTS,
-    },
+    goLiveDoor,
   ].filter(canSee);
 
   // The People doors other than the directory. Hoisted out of `data` so the
@@ -258,9 +280,7 @@ export function AppSidebar({
     // could not see it. A screen no door claims at all - enrolling a student,
     // a profile - keeps the directory lit, because that is the list the
     // reader came from.
-    isActive:
-      location.startsWith(routesPath.PROTECTED.STUDENTS.INDEX) &&
-      !peopleDoors.some((door) => door.isActive),
+    isActive: owns(routesPath.PROTECTED.STUDENTS.INDEX, peopleDoors),
     childActive: false,
     permission: P.BROWSE_STUDENTS,
   };
@@ -508,11 +528,11 @@ export function AppSidebar({
         title: "Roles & Permissions",
         url: routesPath.PROTECTED.ROLES.INDEX,
         icon: ShieldCheck,
-        // Approvals owns a deeper path of its own, so a bare startsWith would
-        // light both rows at once.
-        isActive:
-          location.startsWith(routesPath.PROTECTED.ROLES.INDEX) &&
-          !location.startsWith(routesPath.PROTECTED.ROLES.CHANGE_REQUESTS),
+        // No deeper door under /roles, so nothing is excluded. It used to
+        // exclude /roles/change-requests, which has no door - so that screen
+        // darkened the whole sidebar. Approvals is not a sibling either: it
+        // sits at /approvals and cannot match this path.
+        isActive: owns(routesPath.PROTECTED.ROLES.INDEX),
         childActive: false,
         permission: P.VIEW_ROLES,
       },
