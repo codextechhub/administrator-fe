@@ -14,6 +14,8 @@ import {
   useMarkAllNotificationsReadMutation,
   useMarkNotificationsReadMutation,
 } from "@/redux/services/notifications/notifications-api";
+import { useAppSelector } from "@/redux/store";
+import { selectTenantIsPending } from "@/redux/features/auth/auth-slice";
 
 /**
  * The notification centre - a school's own feed over `/v1/notify/`.
@@ -45,6 +47,10 @@ const FILTERS: Array<{ value: Filter; label: string }> = [
 
 export default function Notifications() {
   const navigate = useNavigate();
+  // The page describes a school to itself, so it has to know which school it is
+  // talking to: a live school being told this is "while your school gets ready"
+  // is the app narrating a phase that finished months ago.
+  const tenantIsPending = useAppSelector(selectTenantIsPending);
   const [filter, setFilter] = useState<Filter>("unread");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -87,7 +93,9 @@ export default function Notifications() {
             Notification Centre
           </p>
           <p className="mt-0.5 text-xs text-gray-01">
-            Everything that has happened while your school gets ready.
+            {tenantIsPending
+              ? "Everything that has happened while your school gets ready."
+              : "Everything that has happened across your school."}
           </p>
         </div>
         <Button

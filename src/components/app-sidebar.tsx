@@ -16,6 +16,7 @@ import { routesPath } from "@/routes/routesPath";
 import { useGetStudentSummaryQuery } from "@/redux/services/students/students-api";
 import { Link, useLocation } from "react-router";
 import {
+  Bell,
   BookOpen,
   CalendarClock,
   ShoppingCart,
@@ -181,6 +182,20 @@ export function AppSidebar({
         isActive: location.startsWith(routesPath.PROTECTED.BRANCHES.INDEX),
         childActive: false,
         permission: P.BROWSE_BRANCHES,
+      },
+      {
+        // The bell reaches this too, but a bell is for what arrived while you
+        // were looking elsewhere. Somebody going back to read a go-live
+        // decision from last week is navigating, and had nowhere to navigate
+        // from: the page existed with no way into it but the bell.
+        //
+        // No permission, deliberately. A school's own post is not a capability
+        // it can be missing, which is why the screen itself gates nothing.
+        title: "Notifications",
+        url: routesPath.PROTECTED.NOTIFICATIONS,
+        icon: Bell,
+        isActive: location.startsWith(routesPath.PROTECTED.NOTIFICATIONS),
+        childActive: false,
       },
     ],
     people: [
