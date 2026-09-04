@@ -127,12 +127,26 @@ const STEPS: readonly Step[] = [
  */
 export default function EnrolStudent() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const branchLens = useBranchLens();
 
   // ?applicant=1 flips the form before anything is typed, so the Applicants
   // board can send someone straight to the right shape.
   const [asApplicant, setAsApplicant] = useState(params.get("applicant") === "1");
+
+  /**
+   * Move the switch, and move the address with it.
+   *
+   * The parameter is not just an entry point. It is what says which of the two
+   * things on this page you are doing, so the sidebar can light Applicants
+   * while you save one and the directory while you enrol one - and a reload,
+   * a bookmark or a back button keeps the choice you made rather than dropping
+   * you into the other form with your answers still in it.
+   */
+  function chooseShape(next: boolean) {
+    setAsApplicant(next);
+    setParams(next ? { applicant: "1" } : {}, { replace: true });
+  }
 
   const [form, setForm] = useState({
     first_name: "",
@@ -504,7 +518,7 @@ export default function EnrolStudent() {
                 type="button"
                 role="radio"
                 aria-checked={picked}
-                onClick={() => setAsApplicant(option.key)}
+                onClick={() => chooseShape(option.key)}
                 className={cn(
                   "min-w-0 rounded-lg border px-4 py-3 text-left transition-colors",
                   picked

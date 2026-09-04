@@ -83,7 +83,16 @@ export function AppSidebar({
    */
   onboarding?: boolean;
 }) {
-  const location = useLocation().pathname;
+  const { pathname: location, search } = useLocation();
+
+  // The enrol form is one form with one switch, and the switch decides which
+  // door it belongs to: saving an applicant is Applicants' work, enrolling is
+  // the directory's. Reading the flag here is what lets the two share a path
+  // without the nav having to guess - and the form keeps the parameter in the
+  // address as the switch moves, so this never goes stale.
+  const savingAnApplicant =
+    location === routesPath.PROTECTED.STUDENTS.ENROL &&
+    new URLSearchParams(search).get("applicant") === "1";
 
   const {
     hasPermission, hasAnyPermission, hasAllPermissions, hasModuleAccess,
@@ -183,7 +192,9 @@ export function AppSidebar({
       title: "Applicants",
       url: routesPath.PROTECTED.STUDENTS.APPLICANTS,
       icon: UserPlus,
-      isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.APPLICANTS),
+      isActive:
+        location.startsWith(routesPath.PROTECTED.STUDENTS.APPLICANTS) ||
+        savingAnApplicant,
       childActive: false,
       permission: P.BROWSE_STUDENTS,
       // Applications waiting on a decision. A job, not a total.
@@ -238,15 +249,18 @@ export function AppSidebar({
     url: routesPath.PROTECTED.STUDENTS.INDEX,
     icon: Users,
     // Every People screen lives under /students, so a bare startsWith lights
-    // this row up on all of them and two items look selected at once. The
-    // exclusion is read off `peopleDoors`, so it cannot name a path that has
-    // no door: the directory owns /students except where another door owns a
-    // deeper path of its own, and a screen with no door of its own -
-    // enrolling, importing, a profile - keeps the directory lit, because
-    // that is the list the reader came from.
+    // this row up on all of them and two items look selected at once.
+    //
+    // The rule is the whole intent, said once: the directory is lit when no
+    // OTHER People door is. Reading `door.isActive` rather than `door.url`
+    // is what makes that true of a door whose claim is not a path prefix -
+    // Applicants owns the enrol form in applicant mode, and a url comparison
+    // could not see it. A screen no door claims at all - enrolling a student,
+    // a profile - keeps the directory lit, because that is the list the
+    // reader came from.
     isActive:
       location.startsWith(routesPath.PROTECTED.STUDENTS.INDEX) &&
-      !peopleDoors.some((door) => location.startsWith(door.url)),
+      !peopleDoors.some((door) => door.isActive),
     childActive: false,
     permission: P.BROWSE_STUDENTS,
   };
