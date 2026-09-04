@@ -237,6 +237,13 @@ export function UploadStep({
 
   const canNext = !!templateId && !!file && !uploading;
 
+  // The fixed template's name, from the detail fetch or the list, whichever
+  // has arrived.
+  const lockedName =
+    template?.name
+    ?? templates.find((t) => t.id === templateId)?.name
+    ?? (templates.length === 1 ? templates[0].name : undefined);
+
   const ext = file?.name.split(".").pop()?.toUpperCase() ?? "";
 
   return (
@@ -246,11 +253,30 @@ export function UploadStep({
         <p className="text-xs text-gray-01 mt-1">Choose the dataset template that matches your file, then drop your CSV or XLSX to begin.</p>
       </div>
 
-      {/* Template selector */}
+      {/* Template selector.
+
+          When the template is FIXED there is no choice to offer, and offering
+          a dead one is worse than offering none: a disabled input greys its own
+          text, so a template that had loaded correctly looked exactly like a
+          template that had failed to load, and the first thing a school did was
+          try to pick one. The settled case is shown as a fact instead. */}
       <div>
         <div className="flex items-center gap-2 mb-1.5">
           <label className="block text-xs font-semibold text-black-01">Import template</label>
         </div>
+        {lockTemplate ? (
+          <div className="flex h-10 items-center gap-2 rounded-md border border-white-02 bg-gray-04 px-3">
+            <FileSpreadsheet className="size-4 shrink-0 text-primary" />
+            <span className="truncate text-sm font-medium text-black-01">
+              {/* Whichever request has landed. The list arrives first and the
+                  detail follows, so reading only the detail showed "no
+                  template" for the moment in between - the very state this
+                  block exists to stop the reader seeing. */}
+              {lockedName
+                ?? (templatesLoading ? "Loading…" : "No template is set up for this import")}
+            </span>
+          </div>
+        ) : (
         <Combobox
           value={templateId ? String(templateId) : null}
           onValueChange={(v) => { if (!lockTemplate) onTemplateChange(v ? Number(v) : null); }}
@@ -281,6 +307,7 @@ export function UploadStep({
             </ComboboxContent>
           )}
         </Combobox>
+        )}
         <p className="text-[11px] text-gray-400 mt-1">
           {lockTemplate ? "Template is fixed for this import type." : "Only Active templates are available for import."}
         </p>
