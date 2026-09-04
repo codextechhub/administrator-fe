@@ -366,11 +366,84 @@ function SidebarSeparator({
   );
 }
 
-function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
+/**
+ * The scrolling body of the sidebar, which keeps the current screen in view.
+ *
+ * The nav is taller than the rail on any real school, so the item you are on is
+ * often below the fold. Arriving from the search box - which is the whole point
+ * of the search box - put you on a screen whose nav item you could not see, and
+ * nothing said where in the menu you had landed.
+ *
+ * It scrolls this box and nothing else. `scrollIntoView` would have been one
+ * line, but it walks every scrollable ancestor and will move the page too;
+ * measuring against this box means only this box moves, and only when the item
+ * is out of sight.
+ *
+ * It corrects on every render rather than once per route, because the nav is
+ * not its final height when the route changes: groups collapse, badge counts
+ * arrive, and module links appear as their queries resolve. Aligning once left
+ * the item a hundred pixels below the fold with a hundred pixels of scroll
+ * still available. Each pass is a measurement and, when it is already right,
+ * nothing.
+ *
+ * Once the reader scrolls this box themselves it stops, until they move to
+ * another screen. A menu that hauls itself back while somebody is looking
+ * through it is worse than one that never moved. Ours is told from theirs by
+ * where the box ends up, not by when the event arrives: a scroll event is
+ * dispatched a frame or more after the position changes, so a flag raised
+ * around the write can still be down when the event for that write lands, and
+ * the box would then believe the reader had taken over on the very first
+ * alignment of a cold load.
+ *
+ * Driven off the active element rather than the route, so this file stays free
+ * of the router: the sidebar re-renders when the route changes, which is how
+ * the item became active in the first place.
+ */
+function SidebarContent({ className, onScroll, ...props }: React.ComponentProps<"div">) {
+  const boxRef = React.useRef<HTMLDivElement>(null);
+  const lastActive = React.useRef<Element | null>(null);
+  // True once the reader has scrolled this box themselves, which stops us
+  // pulling it back under them. Reset when they move to another screen.
+  const readerMoved = React.useRef(false);
+  // Where we last left the box, to tell our own scrolling from theirs.
+  const leftAt = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return;
+    const active = box.querySelector<HTMLElement>('[data-active="true"]');
+    if (!active) return;
+
+    if (active !== lastActive.current) {
+      lastActive.current = active;
+      readerMoved.current = false;
+    }
+    if (readerMoved.current) return;
+
+    // A little air, so the item is not flush against the edge it came from.
+    const PADDING = 12;
+    const boxBox = box.getBoundingClientRect();
+    const item = active.getBoundingClientRect();
+    const above = item.top - boxBox.top - PADDING;
+    const below = item.bottom - boxBox.bottom + PADDING;
+    const by = above < 0 ? above : below > 0 ? below : 0;
+    if (by === 0) return;
+
+    box.scrollTop += by;
+    leftAt.current = box.scrollTop;
+  });
+
   return (
     <div
+      ref={boxRef}
       data-slot="sidebar-content"
       data-sidebar="content"
+      onScroll={(event) => {
+        if (event.currentTarget.scrollTop !== leftAt.current) {
+          readerMoved.current = true;
+        }
+        onScroll?.(event);
+      }}
       className={cn(
         "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
         className,
@@ -379,7 +452,6 @@ function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
     />
   );
 }
-
 function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
