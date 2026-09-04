@@ -284,7 +284,12 @@ export default function SupportTicketDetail() {
                 sizes to its content by default, and without it the list simply
                 pushes the composer out of the box instead of scrolling. */}
             <div className="grid max-h-[60dvh] min-h-[22rem] grid-rows-[auto_minmax(0,1fr)_auto] lg:max-h-[62dvh]">
-              <p className="px-5 pt-5 font-mont text-sm font-semibold sm:px-6 sm:pt-6">
+              {/* The rule is the top edge of the scrolling box, not decoration.
+                  Without it the thread simply stops mid-air when you scroll and
+                  the oldest message looks cut off by nothing; with it the
+                  conversation visibly passes underneath the heading, which is
+                  what tells you there is more above. */}
+              <p className="border-b border-white-02 px-5 pb-3 pt-5 font-mont text-sm font-semibold sm:px-6 sm:pt-6">
                 Conversation
               </p>
 
