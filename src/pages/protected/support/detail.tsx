@@ -1,35 +1,80 @@
 import { useState } from "react";
-import { useParams } from "react-router";
-import { ArrowUpRight, Loader2, Paperclip, Send } from "lucide-react";
+import { useNavigate, useParams } from "react-router";
+import { ArrowLeft, ArrowUpRight, Loader2, Paperclip, Send } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CustomTextArea } from "@/components/custom/custom-textarea";
 import { PageShell } from "@/components/layout/page-shell";
+import { cn } from "@/lib/utils";
 import { formatRelativeDate } from "@/utils/relative-date";
 import { apiErrorMessage } from "@/utils/api-error";
+import { routesPath } from "@/routes/routesPath";
 import {
   useAddTicketCommentMutation,
   useEscalateTicketMutation,
   useGetTicketQuery,
   useTransitionTicketMutation,
 } from "@/redux/services/support/support-api";
-import type { TicketComment } from "@/redux/services/support/support-types";
+import type {
+  TicketComment,
+  TicketStatus,
+} from "@/redux/services/support/support-types";
 
 /**
  * One ticket, and the conversation on it.
  *
- * The thread is the ticket. Escalating does not open a second one and does not
- * move this one anywhere: the same reference and the same replies travel up, so
- * the person who raised it keeps watching the thing they were given rather than
- * losing it into a ticket they cannot see.
+ * Built on the same two-column shape as the Console's ticket page - the thread
+ * on the left, what the ticket IS on the right - so a CodeX operator and a
+ * school administrator looking at the same ticket are reading the same screen.
+ * What differs is the vocabulary, and it differs deliberately.
+ *
+ * A school does not need to be told which tenant it is, and cannot assign work
+ * to CodeX staff, so those panels are absent rather than shown greyed out. What
+ * it does need, and the Console has no equivalent of, is where the ticket now
+ * sits: "Ngozi Eze sent this to CodeX" is the fact a teacher is missing when
+ * their own school goes quiet on them.
+ *
+ * The thread IS the ticket. Escalating opens nothing new and moves nothing: the
+ * same reference and the same replies travel up, so the person who raised it
+ * keeps watching the thing they were given.
  *
  * What the reader may do here is the server's answer, not this screen's.
  * `capabilities` arrives per ticket because access is not a permission alone -
- * the person who raised a ticket may reply to it whatever keys they hold, and a
- * triager's reach is narrowed by branch. Reading a permission here instead
- * would be a second opinion that can disagree with the one that counts.
+ * whoever raised a ticket may reply to it whatever keys they hold, and a
+ * triager's reach is narrowed by branch.
  */
+
+const CARD = "rounded-md border border-border bg-white";
+
+const STATUS_TONE: Record<TicketStatus, string> = {
+  OPEN: "bg-primary/10 text-primary",
+  ASSIGNED: "bg-violet-500/10 text-violet-600",
+  IN_PROGRESS: "bg-yellow-01/10 text-yellow-01-text",
+  RESOLVED: "bg-green-01/10 text-green-01-text",
+  CLOSED: "bg-gray-05/10 text-gray-06-text",
+};
+
+function StatusBadge({ status }: { status: TicketStatus }) {
+  return (
+    <Badge className={cn("font-mont text-xs capitalize", STATUS_TONE[status])}>
+      {status.replace("_", " ").toLowerCase()}
+    </Badge>
+  );
+}
+
+/** One label over one value, the shape the Console's detail panel uses. */
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs text-gray-01">{label}</dt>
+      <dd className="mt-0.5 break-words font-medium text-black-01">{value}</dd>
+    </div>
+  );
+}
+
 export default function SupportTicketDetail() {
+  const navigate = useNavigate();
   const { id = "" } = useParams<{ id: string }>();
   const { data, isLoading, isError, refetch } = useGetTicketQuery(id, { skip: !id });
   const ticket = data?.data;
@@ -55,7 +100,7 @@ export default function SupportTicketDetail() {
   if (isError || !ticket) {
     return (
       <PageShell>
-        <div className="rounded-2xl border border-border bg-white py-20 text-center">
+        <div className={cn(CARD, "py-20 text-center")}>
           <p className="font-mont text-sm font-medium text-gray-05">
             We could not load this ticket
           </p>
@@ -74,6 +119,7 @@ export default function SupportTicketDetail() {
   const canEscalate = ticket.capabilities?.can_escalate === true;
   const isEscalated = Boolean(ticket.escalated_at);
   const isClosed = ticket.status === "CLOSED";
+  const ticketAttachments = (ticket.attachments ?? []).filter((file) => !file.comment_id);
 
   const send = async () => {
     if (!reply.trim()) return;
@@ -106,166 +152,239 @@ export default function SupportTicketDetail() {
 
   return (
     <PageShell className="space-y-5 text-black-01">
-      <div className="rounded-2xl border border-border bg-white p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-mont text-xs text-gray-05">{ticket.ticket_number}</p>
-            <h1 className="mt-0.5 font-mont text-lg font-semibold text-black-01">
-              {ticket.title}
-            </h1>
-            <p className="mt-1 text-xs text-gray-01">
-              Raised by {ticket.requester?.name ?? "somebody"}{" "}
-              {formatRelativeDate(ticket.created_at)}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-gray-03 px-3 py-1 font-mont text-xs font-medium text-black-01">
-              {ticket.status.replace("_", " ").toLowerCase()}
-            </span>
-            {isEscalated && (
-              <span className="rounded-full bg-pry-01 px-3 py-1 font-mont text-xs font-medium text-primary">
-                With CodeX
-              </span>
-            )}
-          </div>
-        </div>
+      <button
+        onClick={() => navigate(routesPath.PROTECTED.SUPPORT.INDEX)}
+        className="inline-flex cursor-pointer items-center gap-1 text-sm text-gray-01 hover:text-black-01"
+      >
+        <ArrowLeft className="size-4" />
+        Back to support
+      </button>
 
-        <p className="mt-4 whitespace-pre-wrap text-sm text-gray-01">{ticket.description}</p>
-
-        {isEscalated && (
-          // Said plainly, because the person who raised it should not have to
-          // work out from a badge why the school went quiet.
-          <p className="mt-4 rounded-xl bg-pry-01/40 px-3 py-2 text-[13px] text-primary">
-            {ticket.escalated_by?.name ?? "Your school"} sent this to CodeX{" "}
-            {formatRelativeDate(ticket.escalated_at!)}. Replies here still reach
-            everybody on it.
-          </p>
-        )}
-      </div>
-
-      {/* ── The conversation ─────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-border bg-white p-5">
-        <p className="font-mont text-sm font-semibold">Conversation</p>
-        {!ticket.comments?.length ? (
-          <p className="mt-3 text-sm text-gray-01">
-            No replies yet. Anything written here is seen by everybody on the
-            ticket.
-          </p>
-        ) : (
-          <ul className="mt-4 grid gap-4">
-            {ticket.comments.map((comment: TicketComment) => (
-              <li key={comment.id} className="grid gap-1">
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="font-mont text-sm font-medium text-black-01">
-                    {comment.author?.name ?? "Unknown"}
-                  </span>
-                  {comment.author?.tenant_kind === "PLATFORM" && (
-                    <span className="rounded-full bg-pry-01 px-2 py-0.5 text-[10px] font-medium text-primary">
-                      CodeX
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-05">
-                    {formatRelativeDate(comment.created_at)}
-                  </span>
-                </div>
-                <p className="whitespace-pre-wrap text-sm text-gray-01">{comment.body}</p>
-                {comment.attachments?.length > 0 && (
-                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-gray-05">
-                    <Paperclip className="size-3.5" />
-                    {comment.attachments.length} file
-                    {comment.attachments.length === 1 ? "" : "s"}
+      {/* One column on a phone, thread-and-facts on a wide screen. The right
+          rail is fixed-width so the conversation keeps a readable measure
+          rather than stretching across a 27-inch display. */}
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="grid min-w-0 gap-5">
+          <section className={cn(CARD, "min-w-0 overflow-hidden")}>
+            <div className="border-b border-white-02 p-5 sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-mont text-xs font-medium text-primary">
+                    {ticket.ticket_number}
                   </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+                  <h1 className="mt-1 font-mont text-xl font-semibold text-black-01">
+                    {ticket.title}
+                  </h1>
+                </div>
+                <StatusBadge status={ticket.status} />
+              </div>
 
-        {canComment && !isClosed && (
-          <div className="mt-5 grid gap-2">
-            <CustomTextArea
-              id="reply"
-              label="Reply"
-              rows={3}
-              placeholder="Add what you have found, or what you have tried."
-              value={reply}
-              onChange={(event) => setReply(event.target.value)}
-            />
-            <div className="flex justify-end">
-              <Button onClick={send} loading={replying} disabled={!reply.trim() || replying}>
-                <Send className="size-4" />
-                Post reply
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── What a triager may do with it ────────────────────────────────── */}
-      {canManage && !isClosed && (
-        <div className="rounded-2xl border border-border bg-white p-5">
-          <p className="font-mont text-sm font-semibold">Manage this ticket</p>
-
-          {canEscalate ? (
-            <>
-              <p className="mt-1 text-xs text-gray-01">
-                This is your school's to solve. If it is beyond you, send it to
-                CodeX and the whole thread goes with it.
+              <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-gray-01">
+                {ticket.description}
               </p>
-              {escalateOpen ? (
-                <div className="mt-3 grid gap-2">
+
+              {ticketAttachments.length > 0 && (
+                <div className="mt-4 border-t border-white-02 pt-3">
+                  <p className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-01">
+                    <Paperclip className="size-3.5" />
+                    {ticketAttachments.length} attachment
+                    {ticketAttachments.length === 1 ? "" : "s"}
+                  </p>
+                  <ul className="mt-2 grid gap-1">
+                    {ticketAttachments.map((file) => (
+                      <li key={file.id} className="truncate text-xs text-gray-05">
+                        {file.original_filename}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* ── The conversation ──────────────────────────────────────── */}
+            <div className="p-5 sm:p-6">
+              <p className="font-mont text-sm font-semibold">Conversation</p>
+
+              {!ticket.comments?.length ? (
+                <p className="mt-3 text-sm text-gray-01">
+                  No replies yet. Anything written here is seen by everybody on
+                  the ticket.
+                </p>
+              ) : (
+                <ul className="mt-4 grid gap-5">
+                  {ticket.comments.map((comment: TicketComment) => {
+                    const fromCodex = comment.author?.tenant_kind === "PLATFORM";
+                    return (
+                      <li key={comment.id} className="grid min-w-0 gap-1.5">
+                        <div className="flex flex-wrap items-baseline gap-2">
+                          <span className="font-mont text-sm font-medium text-black-01">
+                            {comment.author?.name ?? "Unknown"}
+                          </span>
+                          {fromCodex && (
+                            <span className="rounded-full bg-pry-01 px-2 py-0.5 text-[10px] font-medium text-primary">
+                              CodeX
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-05">
+                            {formatRelativeDate(comment.created_at)}
+                          </span>
+                        </div>
+                        <div
+                          className={cn(
+                            "min-w-0 whitespace-pre-wrap rounded-md px-3 py-2 text-sm leading-6",
+                            // A reply from CodeX reads as coming from outside
+                            // the school, which is what it is.
+                            fromCodex
+                              ? "bg-pry-01/40 text-black-01"
+                              : "bg-gray-03 text-gray-01",
+                          )}
+                        >
+                          {comment.body}
+                        </div>
+                        {comment.attachments?.length > 0 && (
+                          <p className="inline-flex items-center gap-1 text-xs text-gray-05">
+                            <Paperclip className="size-3.5" />
+                            {comment.attachments.length} file
+                            {comment.attachments.length === 1 ? "" : "s"}
+                          </p>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              {canComment && !isClosed && (
+                <div className="mt-5 grid gap-2">
                   <CustomTextArea
-                    id="escalate-note"
-                    label="What have you already tried?"
+                    id="reply"
+                    label="Reply"
                     rows={3}
-                    placeholder="One line saves CodeX asking you the same question."
-                    value={escalateNote}
-                    onChange={(event) => setEscalateNote(event.target.value)}
+                    placeholder="Add what you have found, or what you have tried."
+                    value={reply}
+                    onChange={(event) => setReply(event.target.value)}
                   />
-                  <div className="flex flex-wrap justify-end gap-2">
-                    <Button variant="ghost" onClick={() => setEscalateOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={sendUp} loading={escalating} disabled={escalating}>
-                      <ArrowUpRight className="size-4" />
-                      Send to CodeX
+                  <div className="flex justify-end">
+                    <Button onClick={send} loading={replying} disabled={!reply.trim() || replying}>
+                      <Send className="size-4" />
+                      Post reply
                     </Button>
                   </div>
                 </div>
-              ) : (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => setEscalateOpen(true)}>
-                    <ArrowUpRight className="size-4" />
-                    Send to CodeX
-                  </Button>
-                  {ticket.status !== "RESOLVED" && (
-                    <Button
-                      variant="outline"
-                      onClick={() => move("RESOLVED")}
-                      loading={transitioning}
-                    >
-                      Mark resolved
-                    </Button>
-                  )}
-                  <Button variant="ghost" onClick={() => move("CLOSED")} loading={transitioning}>
-                    Close
-                  </Button>
-                </div>
               )}
-            </>
-          ) : (
-            <div className="mt-3 flex flex-wrap gap-2">
-              <p className="w-full text-xs text-gray-01">
-                CodeX has this one. You can still reply, and close it once it is
-                sorted.
+
+              {isClosed && (
+                <p className="mt-5 rounded-md bg-gray-03 px-3 py-2 text-[13px] text-gray-01">
+                  This ticket is closed. Raise a new one if it happens again.
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* ── What the ticket is, and where it sits ───────────────────────── */}
+        <aside className="grid min-w-0 content-start gap-4">
+          {isEscalated && (
+            // The fact a teacher is missing when their own school goes quiet.
+            // Named, dated, and explicit that the thread did not move.
+            <div className={cn(CARD, "border-primary/20 bg-pry-01/30 p-4")}>
+              <p className="font-mont text-sm font-semibold text-primary">With CodeX</p>
+              <p className="mt-1 text-[13px] leading-6 text-primary">
+                {ticket.escalated_by?.name ?? "Your school"} sent this to CodeX{" "}
+                {formatRelativeDate(ticket.escalated_at!)}. Replies here still
+                reach everybody on it.
               </p>
-              <Button variant="ghost" onClick={() => move("CLOSED")} loading={transitioning}>
-                Close
-              </Button>
             </div>
           )}
-        </div>
-      )}
+
+          <div className={cn(CARD, "p-5")}>
+            <h2 className="font-mont text-sm font-semibold">Ticket details</h2>
+            <dl className="mt-4 grid gap-3 text-sm">
+              <Fact label="Raised by" value={ticket.requester?.name ?? "-"} />
+              <Fact label="Raised" value={formatRelativeDate(ticket.created_at)} />
+              <Fact label="Category" value={ticket.category} />
+              <Fact label="Priority" value={ticket.priority} />
+              {ticket.branch_name ? (
+                <Fact label="Branch" value={ticket.branch_name} />
+              ) : null}
+              {ticket.resolved_at ? (
+                <Fact label="Resolved" value={formatRelativeDate(ticket.resolved_at)} />
+              ) : null}
+            </dl>
+          </div>
+
+          {canManage && !isClosed && (
+            <div className={cn(CARD, "p-5")}>
+              <h2 className="font-mont text-sm font-semibold">Manage</h2>
+
+              {canEscalate ? (
+                <>
+                  <p className="mt-1 text-xs leading-5 text-gray-01">
+                    This one is your school's to solve. If it is beyond you, send
+                    it to CodeX and the whole thread goes with it.
+                  </p>
+                  {escalateOpen ? (
+                    <div className="mt-3 grid gap-2">
+                      <CustomTextArea
+                        id="escalate-note"
+                        label="What have you already tried?"
+                        rows={3}
+                        placeholder="One line saves CodeX asking you the same question."
+                        value={escalateNote}
+                        onChange={(event) => setEscalateNote(event.target.value)}
+                      />
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button variant="ghost" onClick={() => setEscalateOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={sendUp} loading={escalating} disabled={escalating}>
+                          <ArrowUpRight className="size-4" />
+                          Send
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="mt-3 w-full"
+                      onClick={() => setEscalateOpen(true)}
+                    >
+                      <ArrowUpRight className="size-4" />
+                      Send to CodeX
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <p className="mt-1 text-xs leading-5 text-gray-01">
+                  CodeX has this one. You can still reply, and close it once it
+                  is sorted.
+                </p>
+              )}
+
+              <div className="mt-3 grid gap-2">
+                {ticket.status !== "RESOLVED" && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => move("RESOLVED")}
+                    loading={transitioning}
+                  >
+                    Mark resolved
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => move("CLOSED")}
+                  loading={transitioning}
+                >
+                  Close ticket
+                </Button>
+              </div>
+            </div>
+          )}
+        </aside>
+      </div>
     </PageShell>
   );
 }
