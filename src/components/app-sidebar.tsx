@@ -14,10 +14,12 @@ import { HomeIcon, TeamMgtIcon } from "@/assets/navbar-svg";
 import { NavAccordionProvider, NavMain } from "./nav-main";
 import { routesPath } from "@/routes/routesPath";
 import { useGetStudentSummaryQuery } from "@/redux/services/students/students-api";
+import { useGetPendingApprovalsQuery } from "@/redux/services/dashboard/workflow-api";
 import { Link, useLocation } from "react-router";
 import {
   Bell,
   BookOpen,
+  Headset,
   CalendarClock,
   ShoppingCart,
   Wallet,
@@ -27,6 +29,7 @@ import {
   GraduationCap,
   ListChecks,
   Rocket,
+  ShieldCheck,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -66,15 +69,6 @@ interface NavItem {
  * so it is the only one that needs to say what it is NOT. Listed once here so
  * adding a screen cannot reintroduce two rows looking selected at once.
  */
-const PEOPLE_SIBLINGS = [
-  routesPath.PROTECTED.STUDENTS.APPLICANTS,
-  routesPath.PROTECTED.STUDENTS.ASSIGN,
-  routesPath.PROTECTED.STUDENTS.GUARDIANS,
-  routesPath.PROTECTED.STUDENTS.PROMOTION,
-  routesPath.PROTECTED.STUDENTS.IMPORT,
-  routesPath.PROTECTED.STUDENTS.ENROL,
-];
-
 export function AppSidebar({
   onboarding = false,
   ...props
@@ -113,9 +107,19 @@ export function AppSidebar({
   const { data: summary } = useGetStudentSummaryQuery(undefined, {
     skip: onboarding || !hasPermission(P.BROWSE_STUDENTS),
   });
+  // Documents waiting on THIS reader. The endpoint is personal - it returns
+  // only what the caller may act on - so it needs no permission key and is
+  // fetched for everybody: a teacher's queue is simply empty, and the item
+  // below is hidden when it is.
+  const { data: pendingApprovals } = useGetPendingApprovalsQuery(undefined, {
+    skip: onboarding,
+  });
   const waiting = {
     applicants: summary?.data?.applicants,
     unassigned: summary?.data?.unassigned,
+    // Undefined rather than 0 when there is nothing: the badge is for work
+    // outstanding, and a nav item wearing a grey zero is noise on every screen.
+    approvals: pendingApprovals?.results?.length || undefined,
   };
 
   const schoolName =
@@ -164,6 +168,89 @@ export function AppSidebar({
     },
   ].filter(canSee);
 
+  // The People doors other than the directory. Hoisted out of `data` so the
+  // Students item can derive its exclusion from the doors that ACTUALLY
+  // exist, rather than from a list kept beside them.
+  //
+  // That list is how the group went dark. It named /students/enrol and
+  // /students/import, neither of which has a door - so opening either unlit
+  // Students and lit nothing else, and a registrar halfway through enrolling
+  // a child had no answer to "where am I?". The onboarding group above
+  // carries a comment about the same failure; this is it again, one group
+  // down.
+  const peopleDoors: NavItem[] = [
+    {
+      title: "Applicants",
+      url: routesPath.PROTECTED.STUDENTS.APPLICANTS,
+      icon: UserPlus,
+      isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.APPLICANTS),
+      childActive: false,
+      permission: P.BROWSE_STUDENTS,
+      // Applications waiting on a decision. A job, not a total.
+      badge: waiting.applicants,
+    },
+    {
+      // Placing children, and reading a register. Its own door because the
+      // unplaced list is a worklist somebody is asked to empty, not a view
+      // of the directory.
+      title: "Classes & Transfers",
+      url: routesPath.PROTECTED.STUDENTS.ASSIGN,
+      icon: ArrowLeftRight,
+      isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.ASSIGN),
+      childActive: false,
+      permission: P.ASSIGN_CLASS,
+      // Children on the roll with no class. The worklist this screen exists
+      // to empty, so the number belongs on its door.
+      badge: waiting.unassigned,
+    },
+    {
+      // The households. Its own door because "who do we call about this
+      // family" is a question asked without a student in mind.
+      title: "Guardians",
+      url: routesPath.PROTECTED.STUDENTS.GUARDIANS,
+      icon: Contact,
+      isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.GUARDIANS),
+      childActive: false,
+      permission: P.BROWSE_STUDENTS,
+    },
+    {
+      // The end-of-session move. Its own door because it is a thing a school
+      // does once a year, deliberately, and not a view of anything.
+      title: "Promotion",
+      url: routesPath.PROTECTED.STUDENTS.PROMOTION,
+      icon: GraduationCap,
+      isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.PROMOTION),
+      childActive: false,
+      permission: P.MANAGE_STUDENTS,
+    },
+  ];
+
+  const studentsDoor: NavItem = {
+    // Student Management. Only the directory is listed today: the profile
+    // hangs off it and needs no door of its own, and Applicants, Guardians,
+    // Classes & Transfers and Promotion join this list in the phases that
+    // build them. A nav item that 404s is a door drawn on a wall.
+    //
+    // The design's live counts sit on Applicants and Classes & Transfers,
+    // not here: this item is the whole roll, and a count of it is a fact
+    // rather than a job.
+    title: "Students",
+    url: routesPath.PROTECTED.STUDENTS.INDEX,
+    icon: Users,
+    // Every People screen lives under /students, so a bare startsWith lights
+    // this row up on all of them and two items look selected at once. The
+    // exclusion is read off `peopleDoors`, so it cannot name a path that has
+    // no door: the directory owns /students except where another door owns a
+    // deeper path of its own, and a screen with no door of its own -
+    // enrolling, importing, a profile - keeps the directory lit, because
+    // that is the list the reader came from.
+    isActive:
+      location.startsWith(routesPath.PROTECTED.STUDENTS.INDEX) &&
+      !peopleDoors.some((door) => location.startsWith(door.url)),
+    childActive: false,
+    permission: P.BROWSE_STUDENTS,
+  };
+
   const data: Record<string, NavItem[]> = {
     overview: [
       {
@@ -183,6 +270,14 @@ export function AppSidebar({
         childActive: false,
         permission: P.BROWSE_BRANCHES,
       },
+    ],
+    // Where the school and CodeX talk to each other: the post that arrived, and
+    // the place you go when something is wrong. Grouped as Communication rather
+    // than named after its two items, because a heading that repeats the labels
+    // beneath it tells a reader nothing they cannot already see.
+    //
+    // Last, below everything a person actually came here to do.
+    help: [
       {
         // The bell reaches this too, but a bell is for what arrived while you
         // were looking elsewhere. Somebody going back to read a go-live
@@ -197,79 +292,19 @@ export function AppSidebar({
         isActive: location.startsWith(routesPath.PROTECTED.NOTIFICATIONS),
         childActive: false,
       },
-    ],
-    people: [
       {
-        // Student Management. Only the directory is listed today: the profile
-        // hangs off it and needs no door of its own, and Applicants, Guardians,
-        // Classes & Transfers and Promotion join this list in the phases that
-        // build them. A nav item that 404s is a door drawn on a wall.
-        //
-        // The design's live counts sit on Applicants and Classes & Transfers,
-        // not here: this item is the whole roll, and a count of it is a fact
-        // rather than a job.
-        title: "Students",
-        url: routesPath.PROTECTED.STUDENTS.INDEX,
-        icon: Users,
-        // Every People screen lives under /students, so a bare startsWith lights
-        // this row up on all five and two items look selected at once.
-        //
-        // The exclusion is DERIVED from the siblings rather than listed: the
-        // previous version named Applicants alone, so Classes & Transfers,
-        // Guardians and Promotion each lit Students up as well - and a sixth
-        // screen would have done it again. The directory owns /students except
-        // where a sibling owns a deeper path of its own.
-        isActive:
-          location.startsWith(routesPath.PROTECTED.STUDENTS.INDEX) &&
-          !PEOPLE_SIBLINGS.some((url) => location.startsWith(url)),
+        // No permission, like Notifications. Raising a ticket is open to
+        // anybody with an account - a person who cannot reach a single other
+        // screen is exactly the person who needs to say so - and what the desk
+        // then shows them is the server's answer, not a nav decision.
+        title: "Support",
+        url: routesPath.PROTECTED.SUPPORT.INDEX,
+        icon: Headset,
+        isActive: location.startsWith(routesPath.PROTECTED.SUPPORT.INDEX),
         childActive: false,
-        permission: P.BROWSE_STUDENTS,
-      },
-      {
-        title: "Applicants",
-        url: routesPath.PROTECTED.STUDENTS.APPLICANTS,
-        icon: UserPlus,
-        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.APPLICANTS),
-        childActive: false,
-        permission: P.BROWSE_STUDENTS,
-        // Applications waiting on a decision. A job, not a total.
-        badge: waiting.applicants,
-      },
-      {
-        // Placing children, and reading a register. Its own door because the
-        // unplaced list is a worklist somebody is asked to empty, not a view
-        // of the directory.
-        title: "Classes & Transfers",
-        url: routesPath.PROTECTED.STUDENTS.ASSIGN,
-        icon: ArrowLeftRight,
-        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.ASSIGN),
-        childActive: false,
-        permission: P.ASSIGN_CLASS,
-        // Children on the roll with no class. The worklist this screen exists
-        // to empty, so the number belongs on its door.
-        badge: waiting.unassigned,
-      },
-      {
-        // The households. Its own door because "who do we call about this
-        // family" is a question asked without a student in mind.
-        title: "Guardians",
-        url: routesPath.PROTECTED.STUDENTS.GUARDIANS,
-        icon: Contact,
-        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.GUARDIANS),
-        childActive: false,
-        permission: P.BROWSE_STUDENTS,
-      },
-      {
-        // The end-of-session move. Its own door because it is a thing a school
-        // does once a year, deliberately, and not a view of anything.
-        title: "Promotion",
-        url: routesPath.PROTECTED.STUDENTS.PROMOTION,
-        icon: GraduationCap,
-        isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.PROMOTION),
-        childActive: false,
-        permission: P.MANAGE_STUDENTS,
       },
     ],
+    people: [studentsDoor, ...peopleDoors],
     academics: [
       {
         // Academic Structure is the module: the overview and everything that
@@ -450,6 +485,37 @@ export function AppSidebar({
         ],
       },
     ],
+    // Who can do what. Its own group rather than a row under People: People is
+    // the children on the roll, and access is about the staff who operate the
+    // system. The onboarding screen at /onboarding/roles covers the same rows
+    // once during setup and then disappears; these are the permanent doors.
+    administration: [
+      {
+        title: "Roles & Permissions",
+        url: routesPath.PROTECTED.ROLES.INDEX,
+        icon: ShieldCheck,
+        // Approvals owns a deeper path of its own, so a bare startsWith would
+        // light both rows at once.
+        isActive:
+          location.startsWith(routesPath.PROTECTED.ROLES.INDEX) &&
+          !location.startsWith(routesPath.PROTECTED.ROLES.CHANGE_REQUESTS),
+        childActive: false,
+        permission: P.VIEW_ROLES,
+      },
+      {
+        // Purchase orders, claims and payment runs routed here for a decision.
+        // Always present, badge only when something waits: an inbox that
+        // disappears when empty cannot be checked, and somebody who has just
+        // been made an approver would have no way to find it before their first
+        // document arrives.
+        title: "Approvals",
+        url: routesPath.PROTECTED.APPROVALS.INDEX,
+        icon: ListChecks,
+        isActive: location.startsWith(routesPath.PROTECTED.APPROVALS.INDEX),
+        childActive: false,
+        badge: waiting.approvals,
+      },
+    ],
     // Finance and Procurement are separate consoles: opening one replaces this
     // sidebar with that area's own. They are grouped apart from the school's
     // day-to-day work for that reason, and each carries a trailing arrow so the
@@ -493,7 +559,9 @@ export function AppSidebar({
   const overview = data.overview.filter(canSee);
   const people = data.people.filter(canSee);
   const academics = data.academics.filter(canSee);
+  const administration = data.administration.filter(canSee);
   const business = data.business.filter(canSee);
+  const help = data.help.filter(canSee);
 
   const { state } = useSidebar();
   return (
@@ -549,8 +617,14 @@ export function AppSidebar({
               {academics.length > 0 && (
                 <NavMain items={academics} groupTitle="Academics" />
               )}
+              {administration.length > 0 && (
+                <NavMain items={administration} groupTitle="Administration" />
+              )}
               {business.length > 0 && (
-                <NavMain items={business} groupTitle="Finance & Operations" />
+                <NavMain items={business} groupTitle="Operations" />
+              )}
+              {help.length > 0 && (
+                <NavMain items={help} groupTitle="Communication" />
               )}
             </>
           )}
