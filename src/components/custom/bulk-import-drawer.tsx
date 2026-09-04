@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { X } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import ImportWizard, {
@@ -30,11 +31,17 @@ export function ImportProcessDrawer({
   open,
   title,
   description,
+  onCancel,
   children,
 }: {
   open: boolean;
   title: ReactNode;
   description?: ReactNode;
+  /**
+   * Leaves the wizard, through the same confirmation an in-progress batch
+   * gets. Absent leaves the header with no way out, which is what it had.
+   */
+  onCancel?: () => void;
   children: ReactNode;
 }) {
   return (
@@ -47,15 +54,38 @@ export function ImportProcessDrawer({
         onPointerDownOutside={(event) => event.preventDefault()}
         className="console-geist flex w-full gap-0 overflow-hidden p-0 sm:max-w-5xl"
       >
+        {/* The header carries the way out.
+            Escape, the backdrop and the sheet's own close button are all
+            deliberately disabled here, because losing a half-uploaded batch to
+            a stray click is worse than a second click. That left the only exit
+            at the bottom of a seven-step wizard, and on the last steps it is
+            below the fold - so somebody who opened this by mistake had to scroll
+            to leave. The X is the same guarded exit, where a reader looks for
+            it: it routes through the same confirmation, so nothing is lost by
+            pressing it. */}
         <SheetHeader className="border-b border-white-02 px-4 py-4 text-left sm:px-6">
-          <SheetTitle className="font-mont text-base font-semibold text-black-01">
-            {title}
-          </SheetTitle>
-          {description ? (
-            <SheetDescription className="font-mont text-xs text-gray-01">
-              {description}
-            </SheetDescription>
-          ) : null}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <SheetTitle className="font-mont text-base font-semibold text-black-01">
+                {title}
+              </SheetTitle>
+              {description ? (
+                <SheetDescription className="font-mont text-xs text-gray-01">
+                  {description}
+                </SheetDescription>
+              ) : null}
+            </div>
+            {onCancel ? (
+              <button
+                type="button"
+                onClick={onCancel}
+                aria-label="Cancel this import"
+                className="-mt-1 -mr-1 grid size-8 shrink-0 place-items-center rounded-md text-gray-05 transition-colors hover:bg-gray-04 hover:text-black-01"
+              >
+                <X className="size-4.5" />
+              </button>
+            ) : null}
+          </div>
         </SheetHeader>
         <ScrollArea className="min-h-0 flex-1 bg-gray-50/60">
           <div className="p-3 sm:p-5">
@@ -185,7 +215,12 @@ export default function BulkImportDrawer({
 
   return (
     <>
-      <ImportProcessDrawer open={open} title={title} description={description}>
+      <ImportProcessDrawer
+        open={open}
+        title={title}
+        description={description}
+        onCancel={requestCancel}
+      >
         <ImportWizard
           key={wizardKey}
           datasetType={datasetType}

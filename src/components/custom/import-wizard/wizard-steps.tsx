@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Check, Upload, AlertTriangle, Download, ChevronRight, ChevronLeft, X, FileSpreadsheet, Play, ExternalLink } from "lucide-react";
+import { Check, Upload, AlertTriangle, Download, ChevronRight, ChevronLeft, ChevronDown, X, FileSpreadsheet, Play, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -176,6 +176,7 @@ export function UploadStep({
 
   const { data: templateDetailData } = useGetImportTemplateQuery(templateId!, { skip: !templateId });
   const template = unwrap<ImportTemplate>(templateDetailData);
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
@@ -470,10 +471,59 @@ function TemplateCard({ template }: { template: ImportTemplate }) {
         <span>Format: <b className="text-black-01 uppercase">{template.default_file_format}</b></span>
       </div>
       {template.instructions && (
-        <div className="rounded border border-gray-200 bg-white p-3 text-xs text-gray-01 leading-relaxed whitespace-pre-line">
-          {template.instructions}
-        </div>
+        <TemplateInstructions text={template.instructions} />
       )}
+    </div>
+  );
+}
+
+/**
+ * The template's rules, folded away until they are wanted.
+ *
+ * **Length is the point.** A template that states every refusal and every
+ * warning is what stops a school building the wrong spreadsheet, so the answer
+ * is not to write less of it: the students template alone runs to four
+ * paragraphs, and unfolded it pushed the file drop zone off the screen, which
+ * is the one thing the reader came to this step to do.
+ *
+ * Folded is the default and shows the first lines, so the reader can see what
+ * kind of thing it is before deciding to open it. It stays open once opened,
+ * because somebody reading the rules is building the file beside them.
+ */
+function TemplateInstructions({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="rounded border border-gray-200 bg-white">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+      >
+        <span className="text-xs font-semibold text-black-01">
+          How to fill this in
+        </span>
+        <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-primary">
+          {open ? "Hide" : "Read"}
+          <ChevronDown
+            className={cn(
+              "size-3.5 transition-transform",
+              open && "rotate-180",
+            )}
+          />
+        </span>
+      </button>
+      <div
+        className={cn(
+          "px-3 pb-3 text-xs leading-relaxed whitespace-pre-line text-gray-01",
+          // Folded, the first lines are still readable, so the reader can tell
+          // what is behind the button rather than guessing from its label.
+          !open && "line-clamp-2 pb-2 text-gray-05",
+        )}
+      >
+        {text}
+      </div>
     </div>
   );
 }
