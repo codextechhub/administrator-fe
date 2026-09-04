@@ -22,6 +22,7 @@ import { classesRoutes } from "@/routes/protected/classes-routes";
 import { onboardingRoutes, onboardingWelcomeRoute } from "@/routes/protected/onboarding-routes";
 import { overviewRoutes } from "@/routes/protected/overview-routes";
 import { studentsRoutes } from "@/routes/protected/students-routes";
+import { supportRoutes } from "@/routes/protected/support-routes";
 import { financeRoutes, FINANCE_MOUNTED_PATHS } from "@/routes/protected/finance-routes";
 import {
   procurementRoutes,
@@ -55,6 +56,7 @@ const SERVED_PATHS = new Set([
     ...academicRoutes,
     ...classesRoutes,
     ...studentsRoutes,
+    ...supportRoutes,
   ]
     .map((route) => route.path)
     .filter((path): path is string => typeof path === "string"),
@@ -109,6 +111,7 @@ const ROUTE_HANDLES = collectHandles([
   ...academicRoutes,
   ...classesRoutes,
   ...studentsRoutes,
+  ...supportRoutes,
   ...financeRoutes,
   ...procurementRoutes,
 ] as RouteLike[]);

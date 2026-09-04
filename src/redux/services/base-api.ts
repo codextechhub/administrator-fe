@@ -437,6 +437,10 @@ export const baseApi = createApi({
     "AcademicOverview",
     "Fees",
     "Roles",
+    // Requests waiting on a decision, and the decisions already taken. Separate
+    // from Roles because approving one rewrites a role: the inbox and the roles
+    // table both have to move, and a single tag would refetch neither reliably.
+    "RoleChangeRequests",
     "ProxySessions",
     "Onboarding",
     "GoLiveRequests",
@@ -446,5 +450,6 @@ export const baseApi = createApi({
     "Notifications",
     "ImportTemplates",
     "ImportBatches",
+    "Tickets",
   ],
 });

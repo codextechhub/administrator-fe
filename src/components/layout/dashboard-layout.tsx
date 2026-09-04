@@ -384,7 +384,14 @@ export default function DashboardLayout() {
           {/* Deliberately below the sticky block, not inside it: the strip plus
               the expiry warning can run to three lines on a phone, and pinning
               all of that would eat the fold on every onboarding screen. */}
-          {onboardingRoute && <OnboardingStatusStrip />}
+          {/* Only while the school is still being set up. The strip reports
+              checklist progress, and telling a school that went live in March
+              that "onboarding is closed" is the app narrating a phase nobody is
+              in - on the notification centre, which carries the onboarding flag
+              purely to stay open before go-live, it was pure noise. The
+              onboarding screen itself still says so, in its own words, to the
+              school reading its own record. */}
+          {onboardingRoute && tenantIsPending && <OnboardingStatusStrip />}
 
           {/* The lenses themselves live at the foot of the sidebar - see
               lens-pills. What stays here is the statement that follows from

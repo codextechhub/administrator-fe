@@ -118,7 +118,38 @@ export const routesPath = {
     // The notification centre. Open during onboarding, which is when a school
     // gets most of its post.
     NOTIFICATIONS: "/notifications",
+    // The school's own support desk. Its staff raise tickets here and whoever
+    // holds the triage key works them; only what they escalate reaches CodeX.
+    // Open before go-live too - a school being set up is exactly when it needs
+    // to be able to ask for help.
+    SUPPORT: {
+      INDEX: "/support",
+      DETAIL: "/support/:id",
+      DETAIL_ID: (id: string | number) => `/support/${id}`,
+    },
     BRANCHES: { INDEX: "/branches" },
+    // Who can do what, after go-live. The onboarding screen at
+    // /onboarding/roles asks a school to confirm its baseline once and is gone
+    // the moment the school is live; this is the permanent door, and the only
+    // one a school has for its second year.
+    ROLES: {
+      INDEX: "/roles",
+      // Restricted permissions cannot be granted by editing a role, so every
+      // request for one lands here. Deliberately UNDER /roles and reached from
+      // that screen: it decides who may do a job, which is a different question
+      // from the one /approvals answers, and giving it the plain word would
+      // leave a bursar hunting for her purchase order in the wrong inbox.
+      CHANGE_REQUESTS: "/roles/change-requests",
+    },
+    // The approval inbox: purchase orders, expense claims, payment runs and
+    // anything else a workflow template routes for a decision. Personal by
+    // construction - the endpoint returns only what this reader may act on - so
+    // there is no "everyone's approvals" view here the way the console has one.
+    APPROVALS: {
+      INDEX: "/approvals",
+      DETAIL: "/approvals/:id",
+      DETAIL_PATH: (id: string) => `/approvals/${id}`,
+    },
     // Academic Structure. One module, one URL prefix: the overview and every
     // screen that hangs off it. Sessions and classes moved under here from
     // /academic/session and /classes when the module was reorganised - they are

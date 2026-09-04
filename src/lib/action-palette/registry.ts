@@ -493,6 +493,21 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.ONBOARDING.GO_LIVE },
   },
   {
+    // The desk, as opposed to the form. "Get help" below files a ticket; this
+    // opens the list of what has already been raised, which is where somebody
+    // goes to read an answer rather than to ask a question.
+    id: "view-support",
+    label: "View support tickets",
+    aliases: ["support desk", "my tickets", "raised issues", "helpdesk"],
+    section: "Onboarding",
+    group: "Help",
+    kind: "view",
+    // Open to everybody, like the screen. What the desk then lists is the
+    // server's answer per reader.
+    gate: null,
+    run: { to: R.SUPPORT.INDEX },
+  },
+  {
     id: "get-help",
     label: "Get help",
     aliases: ["support", "raise ticket", "contact codex", "report a problem"],
@@ -600,6 +615,9 @@ export const ACTIONS: ActionDef[] = [...SCHOOL_ACTIONS, ...CONSOLE_ACTIONS];
 const PENDING_SURFACE_PREFIXES: readonly string[] = [
   "/onboarding",
   "/notifications",
+  // A school still being set up is exactly when it needs to ask for help, and
+  // needs somewhere to read the answer.
+  "/support",
   "/academic-structure",
   "/academic-calendar",
   "/timetables",

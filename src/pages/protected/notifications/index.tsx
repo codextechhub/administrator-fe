@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatRelativeDate } from "@/utils/relative-date";
 import { PageShell } from "@/components/layout/page-shell";
+import Tabs from "@/components/custom/tab";
 import {
   useGetNotificationsQuery,
   useGetUnreadNotificationCountQuery,
@@ -110,29 +111,17 @@ export default function Notifications() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div
-          className="flex h-11 w-fit items-center gap-x-1 rounded-sm bg-white px-1.5 py-1"
-          role="tablist"
-          aria-label="Read state"
-        >
-          {FILTERS.map(({ value, label }) => (
-            <button
-              key={value}
-              role="tab"
-              aria-selected={filter === value}
-              onClick={() => {
-                setFilter(value);
-                setPage(1);
-              }}
-              className={cn(
-                "h-full min-w-20 cursor-pointer rounded bg-transparent px-2 font-mont text-sm font-medium text-black-01",
-                filter === value && "bg-pry-01",
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {/* The app's own switcher: one highlight that slides between tabs
+            rather than a background switching off one and on another. The eye
+            follows the move and knows which tab it came from. */}
+        <Tabs
+          tabs={FILTERS.map(({ value, label }) => ({ value, label }))}
+          activeTab={filter}
+          setActiveTab={(value) => {
+            setFilter(value as Filter);
+            setPage(1);
+          }}
+        />
         <div className="relative w-full sm:max-w-70">
           <Input
             value={search}
@@ -149,7 +138,7 @@ export default function Notifications() {
         </div>
       </div>
 
-      <section className="rounded-md bg-white min-w-0">
+      <section className="min-w-0 rounded-md border border-border bg-white">
         {isLoading ? (
           <div className="grid h-72 place-content-center">
             <Loader2 className="size-6 animate-spin text-primary" />

@@ -8,17 +8,42 @@ export interface TabOption {
 }
 
 interface TabsProps {
-  tabKey: string;
   tabs: TabOption[];
+  /**
+   * URL-driven: the query key the active tab is kept under, so the tab is part
+   * of the address and survives a refresh or a link somebody was sent.
+   */
+  tabKey?: string;
+  /**
+   * Controlled: the active value and its setter, for a screen whose tab is a
+   * filter rather than a place - a support queue narrowed to Resolved is not an
+   * address worth sending anybody.
+   *
+   * Passing `activeTab` chooses this mode. Neither given means the first tab,
+   * uncontrolled and inert, which is what an empty tab list would render anyway.
+   */
+  activeTab?: string;
+  setActiveTab?: (value: string) => void;
 }
 
-export default function Tabs({ tabKey, tabs }: TabsProps) {
+export default function Tabs({ tabKey, tabs, activeTab, setActiveTab }: TabsProps) {
+  // Called unconditionally: a hook cannot hide behind a prop.
   const [searchParams, setSearchParams] = useSearchParams();
 
   const defaultTab = tabs[0]?.value ?? "";
-  const activeTab = searchParams.get(tabKey) ?? defaultTab;
+  const isControlled = activeTab !== undefined;
+  const active = isControlled
+    ? activeTab
+    : tabKey
+      ? (searchParams.get(tabKey) ?? defaultTab)
+      : defaultTab;
 
   const handleTabClick = (value: string) => {
+    if (isControlled) {
+      setActiveTab?.(value);
+      return;
+    }
+    if (!tabKey) return;
     setSearchParams((prev: URLSearchParams) => {
       const next = new URLSearchParams(prev);
       next.set(tabKey, value);
@@ -49,7 +74,7 @@ export default function Tabs({ tabKey, tabs }: TabsProps) {
 
   // Layout effect so the highlight is in place on the first paint rather than
   // sliding in from zero the moment the screen appears.
-  useLayoutEffect(measure, [measure, activeTab, tabs]);
+  useLayoutEffect(measure, [measure, active, tabs]);
 
   useEffect(() => {
     const list = listRef.current;
@@ -75,7 +100,7 @@ export default function Tabs({ tabKey, tabs }: TabsProps) {
       // uses, so this is safe for every caller.
       className="relative inline-flex h-11 max-w-full items-stretch justify-self-start self-start overflow-x-auto bg-white rounded-full border border-border p-1"
       role="tablist"
-      aria-label={tabKey}
+      aria-label={tabKey ?? "tabs"}
     >
       {/* One highlight that slides, rather than a background that switches off
           one button and on another. The eye follows the move and knows which
@@ -91,7 +116,7 @@ export default function Tabs({ tabKey, tabs }: TabsProps) {
         }}
       />
       {tabs.map((tab) => {
-        const isActive = activeTab === tab.value;
+        const isActive = active === tab.value;
         return (
           <button
             key={tab.value}
