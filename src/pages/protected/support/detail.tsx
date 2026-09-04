@@ -1,11 +1,21 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft, ArrowUpRight, Loader2, Paperclip, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Bell,
+  BellOff,
+  Loader2,
+  Paperclip,
+  RotateCcw,
+  Send,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CustomTextArea } from "@/components/custom/custom-textarea";
 import { PageShell } from "@/components/layout/page-shell";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { formatRelativeDate } from "@/utils/relative-date";
 import { apiErrorMessage } from "@/utils/api-error";
@@ -14,6 +24,7 @@ import {
   useAddTicketCommentMutation,
   useEscalateTicketMutation,
   useGetTicketQuery,
+  useSetTicketFollowingMutation,
   useTransitionTicketMutation,
 } from "@/redux/services/support/support-api";
 import type {
@@ -86,6 +97,19 @@ export default function SupportTicketDetail() {
   const [addComment, { isLoading: replying }] = useAddTicketCommentMutation();
   const [escalate, { isLoading: escalating }] = useEscalateTicketMutation();
   const [transition, { isLoading: transitioning }] = useTransitionTicketMutation();
+  const [setFollowing, { isLoading: muting }] = useSetTicketFollowingMutation();
+
+  // The thread scrolls inside its own box, so arriving at a ticket has to land
+  // on the newest message rather than the oldest. Without this, opening a long
+  // thread shows a conversation from three weeks ago and the reply box below
+  // something nobody is answering.
+  const threadRef = useRef<HTMLDivElement>(null);
+  const commentCount = ticket?.comments?.length ?? 0;
+  useEffect(() => {
+    const viewport = threadRef.current;
+    if (!viewport) return;
+    viewport.scrollTop = viewport.scrollHeight;
+  }, [commentCount, id]);
 
   if (isLoading) {
     return (
@@ -119,6 +143,10 @@ export default function SupportTicketDetail() {
   const canEscalate = ticket.capabilities?.can_escalate === true;
   const isEscalated = Boolean(ticket.escalated_at);
   const isClosed = ticket.status === "CLOSED";
+  const isResolved = ticket.status === "RESOLVED";
+  // Absent means following: the server only records a row once somebody has
+  // deliberately muted, and everyone on a ticket hears about it by default.
+  const following = ticket.is_following !== false;
   const ticketAttachments = (ticket.attachments ?? []).filter((file) => !file.comment_id);
 
   const send = async () => {
@@ -142,7 +170,28 @@ export default function SupportTicketDetail() {
     }
   };
 
-  const move = async (status: "RESOLVED" | "CLOSED") => {
+  /**
+   * Reopening lands on IN_PROGRESS, not OPEN.
+   *
+   * The server's lifecycle has no route back to OPEN - RESOLVED and CLOSED both
+   * lead only to IN_PROGRESS - and it is the truthful state anyway: a ticket
+   * somebody has already worked and is now working again was never untouched.
+   * The badge says "in progress" the moment this lands, so the screen does not
+   * claim otherwise.
+   */
+  const reopen = () => move("IN_PROGRESS");
+
+  const toggleMute = async () => {
+    const next = !following;
+    try {
+      await setFollowing({ id: ticket.id, following: next }).unwrap();
+      toast.success(next ? "You will be notified about this ticket." : "Notifications muted.");
+    } catch (error) {
+      toast.error(apiErrorMessage(error, "We could not change your notifications."));
+    }
+  };
+
+  const move = async (status: "RESOLVED" | "CLOSED" | "IN_PROGRESS") => {
     try {
       await transition({ id: ticket.id, status }).unwrap();
     } catch (error) {
@@ -176,7 +225,30 @@ export default function SupportTicketDetail() {
                     {ticket.title}
                   </h1>
                 </div>
-                <StatusBadge status={ticket.status} />
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <StatusBadge status={ticket.status} />
+                  {/* Muting is not leaving. The ticket stays open to you and
+                      you can still reply; it just stops paging you, which is
+                      what somebody on twenty threads actually needs. */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 shrink-0 gap-1.5 px-2.5 text-xs"
+                    aria-pressed={!following}
+                    disabled={muting}
+                    onClick={toggleMute}
+                  >
+                    {muting ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : following ? (
+                      <BellOff className="size-3.5" />
+                    ) : (
+                      <Bell className="size-3.5" />
+                    )}
+                    {following ? "Mute" : "Unmute"}
+                  </Button>
+                </div>
               </div>
 
               <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-gray-01">
@@ -201,17 +273,33 @@ export default function SupportTicketDetail() {
               )}
             </div>
 
-            {/* ── The conversation ──────────────────────────────────────── */}
-            <div className="p-5 sm:p-6">
-              <p className="font-mont text-sm font-semibold">Conversation</p>
+            {/* ── The conversation ──────────────────────────────────────────
+                A bounded box the thread scrolls inside, with the reply stuck to
+                the bottom of it, the way the Console does it. A long thread that
+                grows the page pushes the reply box off the screen, so answering
+                a ticket means scrolling back down past everything you have just
+                read. Bounding it means the thing you came to do never moves.
+
+                `min-h-0` on the middle row is what lets it shrink: a grid row
+                sizes to its content by default, and without it the list simply
+                pushes the composer out of the box instead of scrolling. */}
+            <div className="grid max-h-[60dvh] min-h-[22rem] grid-rows-[auto_minmax(0,1fr)_auto] lg:max-h-[62dvh]">
+              <p className="px-5 pt-5 font-mont text-sm font-semibold sm:px-6 sm:pt-6">
+                Conversation
+              </p>
 
               {!ticket.comments?.length ? (
-                <p className="mt-3 text-sm text-gray-01">
+                <p className="px-5 py-3 text-sm text-gray-01 sm:px-6">
                   No replies yet. Anything written here is seen by everybody on
                   the ticket.
                 </p>
               ) : (
-                <ul className="mt-4 grid gap-5">
+                <ScrollArea
+                  viewportRef={threadRef}
+                  className="min-h-0"
+                  viewportClassName="px-5 py-4 sm:px-6"
+                >
+                <ul className="grid gap-5">
                   {ticket.comments.map((comment: TicketComment) => {
                     const fromCodex = comment.author?.tenant_kind === "PLATFORM";
                     return (
@@ -252,10 +340,13 @@ export default function SupportTicketDetail() {
                     );
                   })}
                 </ul>
+                </ScrollArea>
               )}
 
-              {canComment && !isClosed && (
-                <div className="mt-5 grid gap-2">
+              {canComment && !isClosed ? (
+                // Pinned: the composer is the last row of the grid, so it sits
+                // under the thread however long the thread gets.
+                <div className="grid gap-2 border-t border-white-02 p-5 sm:p-6">
                   <CustomTextArea
                     id="reply"
                     label="Reply"
@@ -271,12 +362,12 @@ export default function SupportTicketDetail() {
                     </Button>
                   </div>
                 </div>
-              )}
-
-              {isClosed && (
-                <p className="mt-5 rounded-md bg-gray-03 px-3 py-2 text-[13px] text-gray-01">
-                  This ticket is closed. Raise a new one if it happens again.
+              ) : isClosed ? (
+                <p className="border-t border-white-02 px-5 py-4 text-[13px] text-gray-01 sm:px-6">
+                  This ticket is closed. Reopen it if the problem is back.
                 </p>
+              ) : (
+                <span />
               )}
             </div>
           </section>
@@ -313,11 +404,15 @@ export default function SupportTicketDetail() {
             </dl>
           </div>
 
-          {canManage && !isClosed && (
+          {canManage && (
             <div className={cn(CARD, "p-5")}>
               <h2 className="font-mont text-sm font-semibold">Manage</h2>
 
-              {canEscalate ? (
+              {isClosed ? (
+                <p className="mt-1 text-xs leading-5 text-gray-01">
+                  This ticket is closed. Reopen it if the problem is back.
+                </p>
+              ) : canEscalate ? (
                 <>
                   <p className="mt-1 text-xs leading-5 text-gray-01">
                     This one is your school's to solve. If it is beyond you, send
@@ -362,7 +457,18 @@ export default function SupportTicketDetail() {
               )}
 
               <div className="mt-3 grid gap-2">
-                {ticket.status !== "RESOLVED" && (
+                {(isResolved || isClosed) && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={reopen}
+                    loading={transitioning}
+                  >
+                    <RotateCcw className="size-4" />
+                    Mark open
+                  </Button>
+                )}
+                {!isResolved && !isClosed && (
                   <Button
                     variant="outline"
                     className="w-full"
@@ -372,14 +478,16 @@ export default function SupportTicketDetail() {
                     Mark resolved
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => move("CLOSED")}
-                  loading={transitioning}
-                >
-                  Close ticket
-                </Button>
+                {!isClosed && (
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => move("CLOSED")}
+                    loading={transitioning}
+                  >
+                    Close ticket
+                  </Button>
+                )}
               </div>
             </div>
           )}

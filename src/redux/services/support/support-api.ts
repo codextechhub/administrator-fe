@@ -126,6 +126,27 @@ export const supportApi = baseApi.injectEndpoints({
     }),
 
     /**
+     * Follow or mute a ticket without changing who may open it.
+     *
+     * Muting is not leaving: the ticket stays visible and repliable, it just
+     * stops paging you. A busy triager on twenty threads needs that, and the
+     * server re-follows a thread the moment they comment on it, because writing
+     * on something is a clearer statement of interest than a switch they flipped
+     * a fortnight ago.
+     */
+    setTicketFollowing: builder.mutation<
+      Envelope<unknown>,
+      { id: string | number; following: boolean }
+    >({
+      query: ({ id, following }) => ({
+        url: `/support/tickets/${id}/follow/`,
+        method: following ? "POST" : "DELETE",
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Tickets"],
+    }),
+
+    /**
      * Attach one file to a ticket that already exists.
      *
      * Separate from creating the ticket because the endpoint needs the id. So a
@@ -162,5 +183,6 @@ export const {
   useAddTicketCommentMutation,
   useTransitionTicketMutation,
   useEscalateTicketMutation,
+  useSetTicketFollowingMutation,
   useAddTicketAttachmentMutation,
 } = supportApi;
