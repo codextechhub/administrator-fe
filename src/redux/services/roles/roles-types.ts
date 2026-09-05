@@ -77,3 +77,65 @@ export interface RoleUpdate {
   /** A REPLACEMENT list, not an addition. */
   permission_keys?: string[];
 }
+
+
+/** One permission a request wants added or taken away. */
+export interface RoleChangeDeltaItem {
+  id: number;
+  operation: "ADD" | "REMOVE";
+  permission: {
+    key: string;
+    description: string;
+    sensitivity_level: string;
+    is_restricted: boolean;
+  };
+}
+
+/**
+ * A request to change what a role reaches, waiting on a decision.
+ *
+ * Restricted permissions cannot be granted by editing a role directly: the
+ * server refuses and asks for one of these instead. So this is not an optional
+ * workflow a school can ignore - it is the only route to every permission that
+ * actually spends or bills money.
+ */
+export interface RoleChangeRequest {
+  id: number;
+  target_role: number;
+  status: "PENDING" | "APPROVED" | "DENIED" | "APPLY_FAILED";
+  justification: string;
+  requested_by: number | null;
+  reviewer: number | null;
+  reviewer_notes: string;
+  submitted_at: string;
+  decided_at: string | null;
+  delta_items: RoleChangeDeltaItem[];
+}
+
+/** A decision on one request. Denial requires a reason; approval does not. */
+export interface RoleChangeDecision {
+  id: number;
+  action: "APPROVE" | "DENY";
+  notes?: string;
+}
+
+/** What raising a request needs. */
+export interface NewRoleChangeRequest {
+  target_role: number;
+  justification: string;
+  delta_items: { permission_key: string; operation: "ADD" | "REMOVE" }[];
+}
+
+
+/** One person holding a role, as the drawer's People tab lists them. */
+export interface RoleHolder {
+  id: number;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  /** Null when the role is held school-wide rather than at one branch. */
+  branch: number | null;
+  assignment_status: string;
+  assigned_at: string;
+  assigned_by_name: string | null;
+}

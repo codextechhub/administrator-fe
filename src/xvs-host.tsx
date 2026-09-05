@@ -15,12 +15,15 @@ import { type ComponentType } from "react";
 // checked nothing here.
 import type {
   HostAvatarProps, HostBranch, HostPerson, HostQueryResult, HostExportProps,
+  HostRole,
 } from "@xvs/finance/host";
 import { ExportButton } from "@/components/custom/export-button";
 import { returnInitial } from "@/utils/helpers";
 
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import { useGetSchoolStaffQuery } from "@/redux/services/staff/staff-api";
+import { useGetSchoolRolesQuery } from "@/redux/services/roles/roles-api";
+import { routesPath } from "@/routes/routesPath";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { SchoolMark } from "@/components/school-mark";
 import { useAppSelector } from "@/redux/store";
@@ -46,6 +49,40 @@ export function useDirectory(): HostQueryResult<HostPerson> {
     role: s.role, status: s.status,
   }));
   return { data: rows, isLoading, isError };
+}
+
+/** The school's own roles, through the slice this app already keeps.
+ *
+ *  Deliberately this app's ``rolesApi`` rather than a copy inside the package:
+ *  the roles screen and the drawer read the same rows through the same tags, so
+ *  approving a role change refreshes an approver picker without either side
+ *  knowing about the other.
+ */
+export function useRoles(): HostQueryResult<HostRole> {
+  const { data, isLoading, isError } = useGetSchoolRolesQuery();
+  const rows = data?.data.map((role) => ({
+    id: role.id, key: role.key, name: role.name, status: role.status,
+    assigned_users_count: role.assigned_users_count,
+  }));
+  return { data: rows, isLoading, isError };
+}
+
+/** This app keeps no recently-opened trail, so noting one is a no-op.
+ *
+ *  A real answer rather than a gap: the console has a trail worth writing to
+ *  and this app does not, and a screen shared between them should not have to
+ *  know which it is running inside. */
+export function useLogRecentOpen(_entry: unknown): void {}
+
+/** Where this app lists who holds which role: the drawer's People tab. */
+export const rolesHref = routesPath.PROTECTED.ROLES.INDEX;
+
+/** No platform-wide staffing view exists for one school, so the tab is empty.
+ *
+ *  Rendering nothing rather than omitting the tab: the shared screen decides
+ *  its own layout, and an app that cannot fill a slot fills it with nothing. */
+export function ApprovalRolesTab() {
+  return null;
 }
 
 /** The school's own mark, not the platform's.

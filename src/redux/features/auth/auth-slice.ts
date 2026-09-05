@@ -170,6 +170,15 @@ export const selectUser = (state: RootStateType) => state.auth.user;
 // call, so a legacy persisted session with no `permissions` key would re-render
 // its consumers on every dispatched action regardless of the reducer guard.
 const NO_PERMISSIONS: string[] = [];
+/** Whether this session is on the platform tenant rather than a school's.
+
+The shared workflow screens ask, because a platform reader may point a step at
+things a school never can. In a school app the answer is always false, and it
+is answered honestly from the session rather than hard-coded, so an impersonated
+CodeX session reads correctly too. */
+export const selectIsPlatformTenant = (state: RootStateType) =>
+  state.auth.tenant?.kind === "PLATFORM";
+
 export const selectPermissions = (state: RootStateType) =>
   state.auth.permissions ?? NO_PERMISSIONS;
 export const selectSchool = (state: RootStateType) => state.auth.school ?? null;

@@ -43,6 +43,39 @@
       "@/pages/protected/workflow/components/*": [
             "./node_modules/@xvs/finance/src/components/workflow/*"
       ],
+      "@/pages/protected/workflow/approvals": [
+            "./node_modules/@xvs/finance/src/pages/workflow/approvals"
+      ],
+      "@/pages/protected/workflow/approvals/*": [
+            "./node_modules/@xvs/finance/src/pages/workflow/approvals/*"
+      ],
+      "@/pages/protected/workflow/my-submissions": [
+            "./node_modules/@xvs/finance/src/pages/workflow/my-submissions"
+      ],
+      "@/pages/protected/workflow/my-submissions/*": [
+            "./node_modules/@xvs/finance/src/pages/workflow/my-submissions/*"
+      ],
+      "@/pages/protected/workflow/instances": [
+            "./node_modules/@xvs/finance/src/pages/workflow/instances"
+      ],
+      "@/pages/protected/workflow/instances/*": [
+            "./node_modules/@xvs/finance/src/pages/workflow/instances/*"
+      ],
+      "@/pages/protected/workflow/approver-groups": [
+            "./node_modules/@xvs/finance/src/pages/workflow/approver-groups"
+      ],
+      "@/pages/protected/workflow/approver-groups/*": [
+            "./node_modules/@xvs/finance/src/pages/workflow/approver-groups/*"
+      ],
+      "@/pages/protected/workflow/templates": [
+            "./node_modules/@xvs/finance/src/pages/workflow/templates"
+      ],
+      "@/pages/protected/workflow/templates/*": [
+            "./node_modules/@xvs/finance/src/pages/workflow/templates/*"
+      ],
+      "@/redux/services/workflow/*": [
+            "./node_modules/@xvs/finance/src/redux/services/workflow/*"
+      ],
       "@/pages/protected/workflow/delegations": [
             "./node_modules/@xvs/finance/src/pages/workflow/delegations"
       ],

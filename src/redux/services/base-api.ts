@@ -16,6 +16,7 @@ import {
 import type { ActiveImpersonation, TenantInfo } from "../features/auth/auth-types";
 import { getTenantSlug } from "@/utils/tenant-context";
 import { toast } from "sonner";
+import { askToPostWithoutApproval } from "@/lib/approval-confirm";
 import Cookies from "js-cookie";
 import { routesPath } from "@/routes/routesPath";
 import { refreshTokenSingleFlight } from "@/utils/token-refresh";
@@ -245,6 +246,27 @@ export const baseQueryInterceptor: BaseQueryFn<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const res: any = result.error;
 
+  // The school holds a workflow template with no stages, so this document would
+  // go out unreviewed. Not an error to report - a question to ask. Answered
+  // yes, the very same request is sent again carrying the confirmation and the
+  // reader's reason, and its result becomes this call's result: the screen that
+  // posted knows nothing about any of it and simply succeeds. Answered no, the
+  // refusal is returned untouched and its own message explains itself.
+  if (res?.status === 409 && res?.data?.error?.code === "APPROVAL_NOT_CONFIGURED") {
+    const reason = await askToPostWithoutApproval(
+      String(res?.data?.message ?? "Nobody will review this document."),
+    );
+    if (reason === null) return result;
+
+    const retried = { ...(tenantArgs as FetchArgs) };
+    retried.body = {
+      ...((retried.body as Record<string, unknown>) ?? {}),
+      confirm_without_approval: true,
+      reason,
+    };
+    return baseQuery(retried, api, extraOptions);
+  }
+
   // Cache resets and the identity-swap gate intentionally abort requests during
   // an identity change. They are not connectivity failures and must never
   // produce a burst of misleading "Could not reach the server" toasts.
@@ -441,6 +463,15 @@ export const baseApi = createApi({
     // from Roles because approving one rewrites a role: the inbox and the roles
     // table both have to move, and a single tag would refetch neither reliably.
     "RoleChangeRequests",
+    // The org chart the shared workflow screens read when a step is pointed at a
+    // position rather than a person. Declared here because RTK refuses a tag the
+    // base api has not seen, and the screens that use them come from the package.
+    "OrgNodes",
+    "OrgPositions",
+    "OrgPositionTree",
+    "OrgAssignments",
+    "OrgMatrixReports",
+    "StaffProfiles",
     "ProxySessions",
     "Onboarding",
     "GoLiveRequests",

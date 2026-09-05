@@ -7,6 +7,8 @@ import { type RouteObject } from "react-router";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { overviewRoutes } from "./overview-routes";
 import { branchesRoutes } from "./branches-routes";
+import { rolesRoutes } from "./roles-routes";
+import { workflowRoutes } from "./workflow-routes";
 import { academicRoutes } from "./academic-routes";
 import { classesRoutes } from "./classes-routes";
 import { studentsRoutes } from "./students-routes";
@@ -25,6 +27,8 @@ export const protectedRoutes = [
       ...onboardingRoutes,
       ...overviewRoutes,
       ...branchesRoutes,
+      ...rolesRoutes,
+      ...workflowRoutes,
       ...academicRoutes,
       ...classesRoutes,
       ...studentsRoutes,

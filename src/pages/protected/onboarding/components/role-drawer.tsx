@@ -17,11 +17,14 @@ import { cn } from "@/lib/utils";
 import { CustomInput } from "@/components/custom/custom-input";
 import { CustomTextArea } from "@/components/custom/custom-textarea";
 import { usePermissions } from "@/hooks/use-permissions";
+import Tabs from "@/components/custom/tab";
 import { P } from "@/permissions";
 import {
   useCreateSchoolRoleMutation,
   useGetPermissionCatalogueQuery,
+  useGetRoleHoldersQuery,
   useGetSchoolRoleQuery,
+  useSetSchoolRoleStatusMutation,
   useUpdateSchoolRoleMutation,
 } from "@/redux/services/roles/roles-api";
 import type { CataloguePermission } from "@/redux/services/roles/roles-types";
@@ -82,6 +85,9 @@ export function RoleDrawer({
 
   const [search, setSearch] = useState("");
   const [openModules, setOpenModules] = useState<Set<string>>(new Set());
+  // Controlled rather than URL-driven: a drawer is not an address, and a
+  // ?tab= left in the bar after it closes describes a screen nobody is on.
+  const [tab, setTab] = useState("reach");
   const [errors, setErrors] = useState<Record<string, string>>({});
   // Edits carry the role they belong to, so opening a different role falls
   // straight back to that role's own values. Resetting in an effect instead
@@ -107,7 +113,21 @@ export function RoleDrawer({
   const ticked = mine ? mine.ticked : baseline;
   const name = mine ? mine.name : (detail?.name ?? "");
   const description = mine ? mine.description : (detail?.description ?? "");
-  const dirty = !!mine;
+  // Compared against the server's values rather than "has this reader touched
+  // anything", so unticking a box that was just ticked greys Save again. The
+  // old test was the presence of an edit object, which survived undoing every
+  // change: Save stayed live and offered to write a role back exactly as it
+  // already was.
+  const dirty = useMemo(() => {
+    if (!mine) return false;
+    if (mine.name.trim() !== (detail?.name ?? "").trim()) return true;
+    if (mine.description.trim() !== (detail?.description ?? "").trim()) return true;
+    if (mine.ticked.size !== baseline.size) return true;
+    for (const key of mine.ticked) {
+      if (!baseline.has(key)) return true;
+    }
+    return false;
+  }, [mine, detail, baseline]);
 
   /** The edit set to build the next one from - the current one, or the server's. */
   const from = () =>
@@ -237,6 +257,32 @@ export function RoleDrawer({
     }
   };
 
+  const [setStatus, { isLoading: settingStatus }] = useSetSchoolRoleStatusMutation();
+
+  const toggleStatus = async () => {
+    if (!detail) return;
+    const next = detail.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    try {
+      await setStatus({
+        key: detail.key,
+        status: next,
+        reason:
+          next === "INACTIVE"
+            ? "Taken out of use from the roles screen."
+            : "Put back in use from the roles screen.",
+      }).unwrap();
+      toast.success(
+        next === "INACTIVE"
+          ? `${detail.name} is out of use. Nobody holding it has what it granted.`
+          : `${detail.name} is back in use.`,
+      );
+    } catch (error) {
+      toast.error(
+        apiErrorMessage(error, "We could not change that. Try again."),
+      );
+    }
+  };
+
   const loading = (!creating && role.isLoading) || catalogue.isLoading;
 
   return (
@@ -258,7 +304,26 @@ export function RoleDrawer({
           </SheetDescription>
         </SheetHeader>
 
+        {/* Only for a role that exists: a role being created has no holders to
+            show and no second tab worth offering. */}
+        {!creating && (
+          <div className="px-5 pt-3">
+            <Tabs
+              tabs={[
+                { label: "What it can reach", value: "reach" },
+                { label: "Who holds it", value: "people" },
+              ]}
+              activeTab={tab}
+              setActiveTab={setTab}
+            />
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {!creating && tab === "people" && (
+            <RoleHolders roleKey={roleKey as string} />
+          )}
+          {(creating || tab === "reach") && (<>
           {locked && (
             <p className="flex items-start gap-2 rounded-md border border-border px-3 py-2.5 text-[13px] text-gray-06">
               <Lock className="size-3.5 shrink-0 mt-0.5 text-gray-05" />
@@ -442,7 +507,35 @@ export function RoleDrawer({
                 </div>
               );
             })}
+          </>)}
         </div>
+
+        {/* Taking a role out of use sits apart from Save, because it is not an
+            edit to what the role reaches - it decides whether the role grants
+            anything at all. Absent for a locked role and while creating one. */}
+        {!creating && !locked && mayWrite && detail && (
+          <div className="border-t border-border px-5 py-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium text-black-01">
+                {detail.status === "ACTIVE" ? "In use" : "Not in use"}
+              </p>
+              <p className="text-xs text-gray-06 text-pretty">
+                {detail.status === "ACTIVE"
+                  ? "Everyone holding it has what it grants."
+                  : "Nobody holding it has what it grants, and the assignments are kept."}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              loading={settingStatus}
+              onClick={toggleStatus}
+            >
+              {detail.status === "ACTIVE" ? "Take out of use" : "Put back in use"}
+            </Button>
+          </div>
+        )}
 
         <div className="border-t border-border px-5 py-3.5 flex gap-2.5">
           <Button variant="outline" className="flex-1" onClick={close}>
@@ -461,5 +554,54 @@ export function RoleDrawer({
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+
+/** The people holding this role, and where.
+
+The roles table promises a count and could not say who. A school deciding
+whether to change what a role reaches needs to know whose access it is about to
+change, and that question was answerable only from the console.
+*/
+function RoleHolders({ roleKey }: { roleKey: string }) {
+  const { data, isLoading } = useGetRoleHoldersQuery({ role: roleKey });
+  const holders = data?.data ?? [];
+
+  if (isLoading) {
+    return <p className="text-[13px] text-gray-06">Loading…</p>;
+  }
+  if (holders.length === 0) {
+    return (
+      <p className="rounded-md border border-border px-3 py-2.5 text-[13px] text-gray-06">
+        Nobody holds this role yet. Until somebody does, it grants nothing and
+        anything routed to it waits.
+      </p>
+    );
+  }
+  return (
+    <ul className="space-y-2">
+      {holders.map((holder) => (
+        <li
+          key={holder.id}
+          className="flex items-start justify-between gap-3 rounded-md border border-border px-3 py-2.5"
+        >
+          <div className="min-w-0">
+            <p className="text-[13px] font-medium text-black-01 truncate">
+              {holder.user_name}
+            </p>
+            <p className="text-xs text-gray-06 truncate">{holder.user_email}</p>
+          </div>
+          {/* Only where it changes the meaning: a role held school-wide says so
+              by saying nothing, and a branch name on every row of a one-branch
+              school is a column that repeats itself. */}
+          {holder.branch !== null && (
+            <Badge variant="inactive" className="text-[11px] shrink-0">
+              One branch
+            </Badge>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }

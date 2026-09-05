@@ -73,11 +73,6 @@ export const routesPath = {
       ANALYTICS: "/procurement/analytics",
       SETTINGS: "/procurement/settings",
     },
-    WORKFLOW: {
-      TEMPLATES: "/workflow/templates",
-      INSTANCE_DETAIL_PATH: "/workflow/instances/:id",
-      INSTANCE_DETAIL: (id: string) => `/workflow/instances/${id}`,
-    },
     AUDIT: { EVENTS: "/audit/events" },
     EXPORT: {
       QUEUES: "/export/queues",
@@ -145,10 +140,28 @@ export const routesPath = {
     // anything else a workflow template routes for a decision. Personal by
     // construction - the endpoint returns only what this reader may act on - so
     // there is no "everyone's approvals" view here the way the console has one.
-    APPROVALS: {
-      INDEX: "/approvals",
-      DETAIL: "/approvals/:id",
-      DETAIL_PATH: (id: string) => `/approvals/${id}`,
+    WORKFLOW: {
+      // Where documents go for a decision. Approvals is what waits on you;
+      // My Submissions is what you sent and are waiting on somebody else for.
+      // Both queues are personal, which is the whole shape of this area for a
+      // school: there is no view of a colleague's.
+      APPROVALS: "/workflow/approvals",
+      APPROVAL_DETAIL: "/workflow/approvals/:id",
+      APPROVAL_DETAIL_PATH: (id: string) => `/workflow/approvals/${id}`,
+      SUBMISSION_DETAIL: "/workflow/my-submissions/:id",
+      MY_SUBMISSIONS: "/workflow/my-submissions",
+      DELEGATIONS: "/workflow/delegations",
+      APPROVER_GROUPS: "/workflow/approver-groups",
+      TEMPLATES: "/workflow/templates",
+      TEMPLATE_NEW: "/workflow/templates/new",
+      TEMPLATE_DETAIL: "/workflow/templates/:id",
+      TEMPLATE_EDIT: "/workflow/templates/:id/edit",
+      // Instances are not mounted in this app - a school approves its own queue
+      // rather than auditing everyone's - but procurement links a requisition to
+      // its instance, so the path has to exist for that link to be typed.
+      INSTANCES: "/workflow/instances",
+      INSTANCE_DETAIL_PATH: "/workflow/instances/:id",
+      INSTANCE_DETAIL: (id: string) => `/workflow/instances/${id}`,
     },
     // Academic Structure. One module, one URL prefix: the overview and every
     // screen that hangs off it. Sessions and classes moved under here from

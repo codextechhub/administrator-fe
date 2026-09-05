@@ -1,4 +1,5 @@
 import { Separator } from "@/components/ui/separator";
+import { ApprovalConfirmDialog } from "@/components/approval-confirm-dialog";
 import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { WorkspaceToaster } from "@/components/ui/sonner";
 import { AppSidebar } from "../app-sidebar";
@@ -435,6 +436,7 @@ export default function DashboardLayout() {
             {pageIsClosed ? <NotLiveNotice /> : <Outlet />}
           </div>
         </SidebarInset>
+        <ApprovalConfirmDialog />
       </SidebarProvider>
     </DashboardHeaderContext.Provider>
   );

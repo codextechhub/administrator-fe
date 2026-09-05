@@ -283,6 +283,25 @@ export const P = {
   APPROVE_ROLE_CHANGE:     "100805",  // approve a role edit routed through maker-checker
   ASSIGN_ROLE:             "100811",  // assign or revoke roles from school users
 
+  // Named the console's way because the shared screens name them that way. Both
+  // point at keys this app already grants under its own spelling - the staff
+  // list and the org chart - so this registers the alias, not a new power.
+  ACCESS_TEAM_PANEL:       "100301",  // view the staff list and member profiles
+  VIEW_ORGANOGRAM:         "100901",  // view the organogram
+
+  // ── Workflow & Approvals ───────────────────────────────────────────────────
+  // The shared approval screens gate on these, and they carry the SAME codes as
+  // the console because they name the same backend keys: a school reading its
+  // own approval rules and CodeX reading a school's are the same permission.
+  VIEW_WORKFLOW_TEMPLATES:   "600101",  // read the approval rules that govern this school
+  MANAGE_WORKFLOW_TEMPLATES: "600108",  // publish or edit an approval rule
+  VIEW_WORKFLOW_INSTANCES:   "600201",  // read documents in flight
+  SUBMIT_WORKFLOW:           "600202",  // send a document for approval
+  CANCEL_WORKFLOW:           "600204",  // cancel a stuck instance
+  REVERSE_WORKFLOW_ACTION:   "600305",  // reverse a recorded decision
+  VIEW_APPROVER_GROUPS:      "600401",  // browse the named approver pools
+  MANAGE_APPROVER_GROUPS:    "600408",  // create groups, add or remove members
+
   // ── Proxy (view the app as another user in this school) ────────────────────
   VIEW_PROXY_SESSIONS:     "100901",  // read the proxy session history / trail
   START_PROXY_SESSION:     "100912",  // search users and start viewing as one

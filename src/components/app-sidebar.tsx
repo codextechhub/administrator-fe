@@ -537,17 +537,54 @@ export function AppSidebar({
         permission: P.VIEW_ROLES,
       },
       {
-        // Purchase orders, claims and payment runs routed here for a decision.
-        // Always present, badge only when something waits: an inbox that
-        // disappears when empty cannot be checked, and somebody who has just
-        // been made an approver would have no way to find it before their first
-        // document arrives.
-        title: "Approvals",
-        url: routesPath.PROTECTED.APPROVALS.INDEX,
+        // Documents routed for a decision. Two personal queues under one door:
+        // what waits on this reader, and what they are waiting on somebody else
+        // for. Always present, badge only when something waits - an inbox that
+        // disappears when empty cannot be checked, and a new approver would have
+        // no way to find it before their first document arrives.
+        title: "Workflow",
+        url: routesPath.PROTECTED.WORKFLOW.APPROVALS,
         icon: ListChecks,
-        isActive: location.startsWith(routesPath.PROTECTED.APPROVALS.INDEX),
-        childActive: false,
+        isActive: location.startsWith("/workflow"),
+        childActive: location.startsWith("/workflow"),
         badge: waiting.approvals,
+        items: [
+          {
+            title: "Approvals",
+            url: routesPath.PROTECTED.WORKFLOW.APPROVALS,
+            isActive: location.startsWith(routesPath.PROTECTED.WORKFLOW.APPROVALS),
+          },
+          {
+            title: "My Submissions",
+            url: routesPath.PROTECTED.WORKFLOW.MY_SUBMISSIONS,
+            isActive: location.startsWith(
+              routesPath.PROTECTED.WORKFLOW.MY_SUBMISSIONS,
+            ),
+          },
+          {
+            title: "Delegations",
+            url: routesPath.PROTECTED.WORKFLOW.DELEGATIONS,
+            isActive: location.startsWith(
+              routesPath.PROTECTED.WORKFLOW.DELEGATIONS,
+            ),
+          },
+          {
+            title: "Approver Groups",
+            url: routesPath.PROTECTED.WORKFLOW.APPROVER_GROUPS,
+            isActive: location.startsWith(
+              routesPath.PROTECTED.WORKFLOW.APPROVER_GROUPS,
+            ),
+          },
+          ...(hasModuleAccess("workflow.template.")
+            ? [{
+                title: "Templates",
+                url: routesPath.PROTECTED.WORKFLOW.TEMPLATES,
+                isActive: location.startsWith(
+                  routesPath.PROTECTED.WORKFLOW.TEMPLATES,
+                ),
+              }]
+            : []),
+        ],
       },
     ],
     // Finance and Procurement are separate consoles: opening one replaces this

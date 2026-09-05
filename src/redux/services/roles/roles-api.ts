@@ -4,6 +4,10 @@ import { getTenantSlug } from "@/utils/tenant-context";
 import type {
   CatalogueModule,
   NewRole,
+  NewRoleChangeRequest,
+  RoleHolder,
+  RoleChangeDecision,
+  RoleChangeRequest,
   RoleUpdate,
   SchoolRole,
   SchoolRoleDetail,
@@ -69,6 +73,30 @@ export const rolesApi = baseApi.injectEndpoints({
      * every grant the list does not name. The drawer therefore has to send the
      * full ticked set, never a delta.
      */
+    /**
+     * Take a role out of use, or bring it back.
+     *
+     * Not a delete. A role somebody holds is somebody's access, and archiving
+     * it keeps the record of who held what; INACTIVE stops it granting anything
+     * while leaving the assignments readable. Deleting is a separate act the
+     * onboarding surface deliberately does not offer at all.
+     */
+    setSchoolRoleStatus: builder.mutation<
+      Envelope<SchoolRoleDetail>,
+      { key: string; status: "ACTIVE" | "INACTIVE"; reason: string }
+    >({
+      query: ({ key, ...body }) => ({
+        url: `${scope()}/roles/${key}/`,
+        method: "PATCH",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: (_r, _e, { key }) => [
+        "Roles",
+        { type: "Roles", id: key },
+      ],
+    }),
+
     updateSchoolRole: builder.mutation<Envelope<SchoolRoleDetail>, RoleUpdate>({
       query: ({ key, ...body }) => ({
         url: `${scope()}/roles/${key}/`,
@@ -82,6 +110,85 @@ export const rolesApi = baseApi.injectEndpoints({
         "Onboarding",
       ],
     }),
+
+    /**
+     * The people holding one role.
+     *
+     * Answers the question the roles table raises and could not settle: it
+     * reports "4 people" and, until this, there was no way to find out which
+     * four. Filtered server-side by role key rather than fetched whole and
+     * filtered here, because a school's assignment list grows with its staff
+     * and this drawer wants one role's worth.
+     */
+    getRoleHolders: builder.query<
+      PaginatedEnvelope<RoleHolder>,
+      { role: string }
+    >({
+      query: ({ role }) => ({
+        url: `${scope()}/role-assignments/`,
+        method: "GET",
+        params: { role, assignment_status: "ACTIVE" },
+      }),
+      extraOptions: { silent: true },
+      providesTags: (_r, _e, { role }) => [{ type: "Roles", id: `holders-${role}` }],
+    }),
+
+    /**
+     * Requests to change what a role reaches, newest first.
+     *
+     * Not an optional workflow. Every permission that bills a family or moves
+     * money is marked restricted, and the server refuses to grant one by
+     * editing a role: it asks for a request instead. A school with no screen for
+     * these can create roles and can never give them the powers they exist for.
+     */
+    getRoleChangeRequests: builder.query<
+      PaginatedEnvelope<RoleChangeRequest>,
+      { status?: string } | void
+    >({
+      query: (params) => ({
+        url: `${scope()}/role-change-requests/`,
+        method: "GET",
+        params: params && "status" in params && params.status
+          ? { status: params.status }
+          : undefined,
+      }),
+      extraOptions: { silent: true },
+      providesTags: ["RoleChangeRequests"],
+    }),
+
+    createRoleChangeRequest: builder.mutation<
+      Envelope<RoleChangeRequest>,
+      NewRoleChangeRequest
+    >({
+      query: (body) => ({
+        url: `${scope()}/role-change-requests/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["RoleChangeRequests"],
+    }),
+
+    /**
+     * Approve or deny one request.
+     *
+     * Approving rewrites the target role in the same transaction, so Roles is
+     * invalidated too: the roles table's permission counts are wrong the moment
+     * this returns, and a stale count on a permissions screen is worse than a
+     * spinner.
+     */
+    decideRoleChangeRequest: builder.mutation<
+      Envelope<RoleChangeRequest>,
+      RoleChangeDecision
+    >({
+      query: ({ id, ...body }) => ({
+        url: `${scope()}/role-change-requests/${id}/decide/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["RoleChangeRequests", "Roles"],
+    }),
   }),
 });
 
@@ -91,4 +198,9 @@ export const {
   useGetPermissionCatalogueQuery,
   useCreateSchoolRoleMutation,
   useUpdateSchoolRoleMutation,
+  useSetSchoolRoleStatusMutation,
+  useGetRoleHoldersQuery,
+  useGetRoleChangeRequestsQuery,
+  useCreateRoleChangeRequestMutation,
+  useDecideRoleChangeRequestMutation,
 } = rolesApi;
