@@ -217,6 +217,47 @@ const REGISTRY: Record<string, string> = {
   "300608": "academics.timetable.manage",
   "300616": "academics.timetable.publish",
 
+  // ── platform surfaces the shared screens reach  (MM=11) ────────────────────
+  // Platform keys, deliberately outside the school namespace at MM=10, and the
+  // only two here. The approval screens come from @xvs/finance and read this
+  // registry, so a key they name has to resolve even when the resource it
+  // guards is not the school's own.
+  //
+  // The staff directory behind `platform.team.view` is tenant-scoped by the
+  // backend: a school admin holding it lists their own school's people and
+  // nobody else's, which is what makes it safe to grant here. RR and AA match
+  // the console's numbering for the same two resources so the pair can be read
+  // side by side; only MM differs, because MM=10 is already this app's own.
+  "110301": "platform.team.view",
+
+  // Codex's org chart, and the endpoint behind it answers to CX staff alone. No
+  // school role holds this, which is the point: an organogram-sourced approval
+  // stage cannot resolve an approver for a school, so the builder must not
+  // offer the source at all. A school's own organogram would be its own
+  // resource under a `school.organogram.*` key rather than this one.
+  "110901": "platform.organogram.view",
+
+  // ── workflow / templates  (MM=60, RR=01) ───────────────────────────────────
+  // The approval screens belong to @xvs/finance and read this app's registry,
+  // so every workflow code a shared screen names has to resolve here. Only
+  // `workflow.template.view` arrives with the package; the rest are this app's
+  // to declare. The codes match the console's because they name the same
+  // backend keys: a school reading its own approval rules and CodeX reading a
+  // school's are one permission.
+  "600108": "workflow.template.manage",
+
+  // ── workflow / instances  (MM=60, RR=02) ───────────────────────────────────
+  "600201": "workflow.instance.view",
+  "600202": "workflow.instance.submit",   // send a document for approval
+  "600204": "workflow.instance.cancel",   // terminate a stuck instance
+
+  // ── workflow / actions  (MM=60, RR=03) ─────────────────────────────────────
+  "600305": "workflow.action.reverse",    // reverse a recorded decision
+
+  // ── workflow / approver groups  (MM=60, RR=04) ─────────────────────────────
+  "600401": "workflow.group.view",
+  "600408": "workflow.group.manage",      // create groups and edit membership
+
 };
 
 /**
@@ -283,11 +324,12 @@ export const P = {
   APPROVE_ROLE_CHANGE:     "100805",  // approve a role edit routed through maker-checker
   ASSIGN_ROLE:             "100811",  // assign or revoke roles from school users
 
-  // Named the console's way because the shared screens name them that way. Both
-  // point at keys this app already grants under its own spelling - the staff
-  // list and the org chart - so this registers the alias, not a new power.
-  ACCESS_TEAM_PANEL:       "100301",  // view the staff list and member profiles
-  VIEW_ORGANOGRAM:         "100901",  // view the organogram
+  // Named the console's way because the shared approval screens name them that
+  // way, and carrying their own codes because the registry is a bijection: one
+  // code per name, one key per code. Sharing a number with a school permission
+  // does not alias the two, it hands this name the other one's meaning.
+  ACCESS_TEAM_PANEL:       "110301",  // list this school's people, to pick an approver
+  VIEW_ORGANOGRAM:         "110901",  // read Codex's org chart, which no school role may
 
   // ── Workflow & Approvals ───────────────────────────────────────────────────
   // The shared approval screens gate on these, and they carry the SAME codes as
