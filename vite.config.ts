@@ -1,10 +1,24 @@
 import path from "path"
+import { realpathSync } from "node:fs"
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 const pkg = (...segments: string[]) =>
   path.resolve(__dirname, "./node_modules/@xvs/finance", ...segments)
+
+// Where the package really lives. `npm link` makes node_modules/@xvs/finance a
+// symlink to a sibling checkout, and Vite refuses to serve any file outside the
+// project root, so that location has to be named in server.fs.allow or every
+// finance module 403s in the dev server. On a normal install this resolves back
+// inside node_modules and the entry costs nothing.
+const packageRoot = (() => {
+  try {
+    return realpathSync(pkg())
+  } catch {
+    return pkg()
+  }
+})()
 
 // Specifiers the shared package writes as `@/…` and this app redirects into
 // @xvs/finance. Aliasing them is only half the job - see PACKAGE_SPECIFIERS
@@ -62,7 +76,7 @@ export default defineConfig({
   // Without this both default to 5173 and whichever starts second silently
   // moves to the next free port, which breaks any link built against it.
   // strictPort makes that failure loud instead of silent.
-  server: { port: 5174, strictPort: true },
+  server: { port: 5174, strictPort: true, fs: { allow: [__dirname, packageRoot] } },
   plugins: [
     react({
       babel: {
